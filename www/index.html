@@ -79,8 +79,14 @@ main{overflow:auto;min-width:0;padding-inline:20px;padding-block:20px calc(24px 
 /* Vente */
 .sale{display:grid;grid-template-columns:minmax(0,1fr) 360px;gap:20px;align-items:start}
 .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:14px}
-.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);overflow:hidden;text-align:left;padding:0;display:flex;flex-direction:column;position:relative}
-.card:active{transform:scale(.98)}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);overflow:hidden;text-align:left;padding:0;display:flex;flex-direction:column;position:relative;cursor:pointer;transition:transform .12s ease, box-shadow .12s ease}
+.card:active{transform:scale(.97)}
+.card.pop{animation:pop .35s ease}
+@keyframes pop{40%{transform:scale(1.04);box-shadow:0 0 0 4px var(--accent-soft)}}
+.card .zoom{position:absolute;top:8px;left:8px;width:40px;height:40px;border-radius:99px;border:0;background:rgba(20,18,40,.55);color:#fff;display:grid;place-items:center}
+.card .zoom svg{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:2.2;stroke-linecap:round}
+.card .phw{position:relative;display:block}
+.card .nphotos{position:absolute;left:8px;bottom:8px;background:rgba(20,18,40,.55);color:#fff;border-radius:6px;font-size:12px;padding:1px 6px;font-weight:700}
 .card .ph{aspect-ratio:1/1;max-width:100%;background:var(--sunk);display:block;width:100%;object-fit:cover}
 .card .bd{padding:10px 12px 12px;display:flex;flex-direction:column;gap:6px;flex:1}
 .card .nm{font-weight:700;line-height:1.25}
@@ -181,15 +187,82 @@ th,td{text-align:left;padding:8px 6px;border-bottom:1px solid var(--line)}
 th{font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
 td.r,th.r{text-align:right}
 
+/* Accueil */
+.hello{display:flex;align-items:center;gap:16px;margin-bottom:18px;flex-wrap:wrap}
+.hello svg{width:64px;height:64px;flex:none}
+.hello h1{font-size:34px;line-height:1.05}
+.hello p{margin:4px 0 0;color:var(--muted);font-size:17px}
+.today{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:20px}
+.today span{background:var(--surface);border:1px solid var(--line);border-radius:99px;padding:8px 14px;font-weight:700;font-size:15px}
+.today b{font-family:var(--f-display);font-size:17px}
+.tiles{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}
+.tile{border:0;border-radius:22px;padding:20px;min-height:170px;text-align:left;display:flex;flex-direction:column;justify-content:space-between;gap:16px;position:relative;overflow:hidden;color:var(--t-ink);background:var(--t-bg);transition:transform .15s ease}
+.tile:active{transform:scale(.97)}
+.tile::after{content:"";position:absolute;right:-30px;bottom:-40px;width:150px;height:170px;border-radius:50% 50% 50% 50%/60% 60% 40% 40%;background:var(--t-blob);opacity:.55}
+.tile .ic{width:58px;height:58px;border-radius:16px;background:var(--t-chip);display:grid;place-items:center;position:relative;z-index:1}
+.tile .ic svg{width:32px;height:32px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.tile h2{font-size:26px;position:relative;z-index:1}
+.tile small{display:block;font-size:15px;opacity:.85;margin-top:2px;font-weight:700;position:relative;z-index:1}
+.tile.big{grid-column:span 2;min-height:220px}
+.tile.big h2{font-size:38px}
+.tile.wide{grid-column:1/-1;min-height:0;flex-direction:row;align-items:center;justify-content:flex-start;padding:16px 20px}
+.tile.wide h2{font-size:22px}
+.tile.wide::after{display:none}
+.t-vente{--t-bg:var(--accent);--t-ink:var(--accent-ink);--t-chip:rgba(255,255,255,.18);--t-blob:rgba(255,255,255,.22)}
+.t-vitrine{--t-bg:var(--resin-soft);--t-ink:var(--resin);--t-chip:var(--surface);--t-blob:var(--resin)}
+.t-cmd{--t-bg:var(--accent-soft);--t-ink:var(--accent);--t-chip:var(--surface);--t-blob:var(--accent)}
+.t-cat{--t-bg:var(--ok-soft);--t-ink:var(--ok);--t-chip:var(--surface);--t-blob:var(--ok)}
+.t-bilan{--t-bg:var(--surface);--t-ink:var(--ink);--t-chip:var(--sunk);--t-blob:var(--line)}
+.t-save{--t-bg:var(--sunk);--t-ink:var(--ink);--t-chip:var(--surface);--t-blob:var(--line)}
+.tile.t-vitrine::after,.tile.t-cmd::after,.tile.t-cat::after{opacity:.16}
+.tile.t-bilan{border:1px solid var(--line)}
+
+/* Vitrine et fiche article */
+.show{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:16px}
+.show button{border:0;padding:0;background:var(--surface);border-radius:20px;overflow:hidden;text-align:left;display:flex;flex-direction:column;border:1px solid var(--line)}
+.show img{width:100%;aspect-ratio:4/5;object-fit:cover;display:block;background:var(--sunk);max-width:100%}
+.show .cap{padding:12px 14px 14px;display:flex;justify-content:space-between;align-items:end;gap:8px}
+.show .cap b{font:800 22px/1 var(--f-display);white-space:nowrap}
+dialog.full .dlg{max-height:none;height:100%}
+dialog.full{width:100vw;max-width:100vw;height:100%;max-height:100%;border-radius:0;margin:0}
+.fiche{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr);height:100%;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+.gal{position:relative;background:#0E0D16;min-height:0;display:flex;flex-direction:column}
+.slides{flex:1;display:flex;overflow-x:auto;scroll-snap-type:x mandatory;scrollbar-width:none;min-height:0}
+.slides::-webkit-scrollbar{display:none}
+.slides img{flex:0 0 100%;width:100%;height:100%;object-fit:contain;scroll-snap-align:center}
+.dots{display:flex;gap:8px;justify-content:center;padding:12px}
+.dots i{width:9px;height:9px;border-radius:99px;background:rgba(255,255,255,.35)}
+.dots i.on{background:#fff;width:24px}
+.fiche .info{padding:28px 24px;display:flex;flex-direction:column;gap:14px;overflow:auto}
+.fiche .info h2{font-size:32px}
+.fiche .info .price{font:800 40px/1 var(--f-display);color:var(--accent)}
+.fiche .close{position:absolute;top:14px;left:14px;width:48px;height:48px;border-radius:99px;border:0;background:rgba(255,255,255,.9);color:#1C1B2E;font-size:26px;line-height:1;z-index:2}
+.fiche .navs{display:flex;gap:10px;margin-top:auto}
+.fiche .navs .btn{flex:1}
+.phbtns{display:flex;gap:10px;flex-wrap:wrap}
+.photos figure .main{position:absolute;left:4px;bottom:4px;background:var(--accent);color:var(--accent-ink);font-size:11px;font-weight:700;border-radius:6px;padding:1px 6px;width:auto;height:auto}
+.photos figure button.star{left:4px;right:auto;top:4px}
+
+/* Moment de réussite après une vente */
+.yay{position:fixed;inset:0;display:grid;place-items:center;z-index:60;pointer-events:none}
+.yay div{background:var(--surface);border-radius:28px;padding:28px 36px;text-align:center;box-shadow:0 20px 60px rgba(12,10,30,.3);animation:yay 1.6s ease forwards}
+.yay svg{width:84px;height:84px}
+.yay b{display:block;font:800 26px/1.2 var(--f-display);margin-top:8px}
+.yay span{color:var(--muted);font-weight:700}
+@keyframes yay{0%{transform:scale(.6);opacity:0}15%{transform:scale(1.05);opacity:1}25%{transform:scale(1)}80%{opacity:1}100%{opacity:0;transform:translateY(-20px)}}
+
 .toast{position:fixed;left:50%;bottom:calc(24px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:12px 18px;border-radius:12px;font-weight:700;z-index:50;max-width:calc(100vw - 32px)}
 .cartfab{display:none}
 
 @media (max-width:900px){ .sale{grid-template-columns:1fr} .cart{position:static;max-height:none} }
+@media (max-width:900px){ .tiles{grid-template-columns:repeat(2,minmax(0,1fr))} .fiche{grid-template-columns:1fr;grid-template-rows:55% 1fr} }
 @media (max-width:640px){
+  .tile{min-height:140px;padding:16px} .tile h2{font-size:22px} .tile.big h2{font-size:30px} .tile.big{min-height:170px}
+  .show{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px} .show .cap{flex-direction:column;align-items:start} .show .cap b{font-size:18px}
   .app{grid-template-columns:1fr;grid-template-rows:1fr auto}
   .rail{flex-direction:row;order:2;border-right:0;border-top:1px solid var(--line);padding:6px 8px calc(6px + env(safe-area-inset-bottom,0px));justify-content:space-around}
   .brand{display:none}
-  .nav{flex:1;font-size:12px;padding:6px 2px}
+  .nav{flex:1;font-size:11px;padding:6px 1px}
   main{padding-inline:16px}
   .grid{grid-template-columns:repeat(2,minmax(0,1fr))}
   .orders{grid-template-columns:1fr}
@@ -204,7 +277,9 @@ td.r,th.r{text-align:right}
       <svg viewBox="0 0 64 64"><path d="M32 6C32 6 14 28 14 40a18 18 0 0 0 36 0C50 28 32 6 32 6Z" fill="var(--accent)"/><path d="M24 40a8 8 0 0 0 8 8" stroke="var(--accent-ink)" stroke-width="3.5" fill="none" stroke-linecap="round"/></svg>
       <small>Dragonne<br>Créa</small>
     </div>
+    <button class="nav" data-view="accueil"><svg viewBox="0 0 24 24"><path d="M4 11 12 4l8 7"/><path d="M6 10v10h12V10"/></svg>Accueil</button>
     <button class="nav" data-view="vente"><svg viewBox="0 0 24 24"><path d="M4 7h16l-1.5 11a2 2 0 0 1-2 1.7H7.5a2 2 0 0 1-2-1.7Z"/><path d="M9 7a3 3 0 0 1 6 0"/></svg>Vente</button>
+    <button class="nav" data-view="vitrine"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="9" cy="10" r="2"/><path d="m21 16-5-5-8 8"/></svg>Vitrine</button>
     <button class="nav" data-view="commandes"><svg viewBox="0 0 24 24"><rect x="5" y="4" width="14" height="17" rx="2"/><path d="M9 9h6M9 13h6M9 17h3"/></svg>Commandes<span class="badge num" id="badge" hidden></span></button>
     <button class="nav" data-view="catalogue"><svg viewBox="0 0 24 24"><rect x="4" y="4" width="7" height="7" rx="1.5"/><rect x="13" y="4" width="7" height="7" rx="1.5"/><rect x="4" y="13" width="7" height="7" rx="1.5"/><rect x="13" y="13" width="7" height="7" rx="1.5"/></svg>Catalogue</button>
     <button class="nav" data-view="bilan"><svg viewBox="0 0 24 24"><path d="M5 20V10M12 20V4M19 20v-7"/></svg>Bilan</button>
@@ -213,7 +288,8 @@ td.r,th.r{text-align:right}
 </div>
 
 <dialog id="dlg"><div class="dlg" id="dlgInner"></div></dialog>
-<input type="file" id="fileIn" accept="image/*" hidden>
+<input type="file" id="fileIn" accept="image/*" multiple hidden>
+<input type="file" id="camIn" accept="image/*" capture="environment" hidden>
 <input type="file" id="jsonIn" accept="application/json,.json" hidden>
 
 <script>
@@ -259,6 +335,7 @@ const DB = {
 };
 
 const S = { articles:[], orders:[], settings:null, cart:[], view:"vente", cat:"Tout", filter:"ouvertes", q:"", bilanDay:todayISO() };
+const MAXPH = 6;
 const STATUTS = { a_faire:"À fabriquer", en_cours:"En cours", prete:"Prête", livree:"Livrée", annulee:"Annulée" };
 const saveSettings = () => DB.put("kv", S.settings);
 
@@ -289,7 +366,7 @@ async function seed(){
     ["Trophée fin de saison", "Souvenirs", 35, "commande", 0, 21, "goutte", 20]
   ];
   for(const [nom, cat, prix, mode, stock, delai, shape, hue] of ex){
-    await DB.put("articles", {id:uid(), nom, cat, prix, mode, stock, delai, photos:[samplePhoto("Exemple", hue, shape)], exemple:true, actif:true, cree:new Date().toISOString()});
+    await DB.put("articles", {id:uid(), nom, cat, prix, mode, stock, delai, photos: mode === "commande" ? [samplePhoto("Exemple", hue, shape), samplePhoto("Exemple · détail", hue + 60, shape)] : [samplePhoto("Exemple", hue, shape)], exemple:true, actif:true, cree:new Date().toISOString()});
   }
 }
 
@@ -301,7 +378,7 @@ async function boot(){
   if(!S.settings.seeded){ await seed(); S.settings.seeded = true; await saveSettings(); }
   await reload();
   try { navigator.storage && navigator.storage.persist && navigator.storage.persist(); } catch(e){}
-  go("vente");
+  go("accueil");
 }
 async function reload(){
   S.articles = (await DB.all("articles")).sort((a,b) => a.cat.localeCompare(b.cat) || a.nom.localeCompare(b.nom));
@@ -315,13 +392,113 @@ function go(v){
   render(); $("#main").scrollTop = 0;
 }
 document.querySelectorAll(".nav").forEach(n => n.addEventListener("click", () => go(n.dataset.view)));
-function render(){ ({vente:renderVente, commandes:renderCommandes, catalogue:renderCatalogue, bilan:renderBilan})[S.view](); }
+function render(){ ({accueil:renderAccueil, vitrine:renderVitrine, vente:renderVente, commandes:renderCommandes, catalogue:renderCatalogue, bilan:renderBilan})[S.view](); }
 
 const art = id => S.articles.find(a => a.id === id);
 const inCart = id => S.cart.filter(l => l.artId === id).reduce((s,l) => s + l.qte, 0);
 const modeTag = a => a.mode === "stock"
   ? (a.stock > 0 ? `<span class="tag stock num">${a.stock} en stock</span>` : `<span class="tag out">Épuisé</span>`)
   : `<span class="tag cmd num">Sur commande · ${a.delai} j</span>`;
+
+/* ---------- Accueil ---------- */
+const ICONS = {
+  vente:'<path d="M4 7h16l-1.5 11a2 2 0 0 1-2 1.7H7.5a2 2 0 0 1-2-1.7Z"/><path d="M9 7a3 3 0 0 1 6 0"/>',
+  vitrine:'<rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="9" cy="10" r="2"/><path d="m21 16-5-5-8 8"/>',
+  cmd:'<rect x="5" y="4" width="14" height="17" rx="2"/><path d="M9 9h6M9 13h6M9 17h3"/>',
+  cat:'<rect x="4" y="4" width="7" height="7" rx="1.5"/><rect x="13" y="4" width="7" height="7" rx="1.5"/><rect x="4" y="13" width="7" height="7" rx="1.5"/><path d="M16.5 13v7M13 16.5h7"/>',
+  bilan:'<path d="M5 20V10M12 20V4M19 20v-7"/>',
+  save:'<path d="M12 4v11M7 10l5 5 5-5"/><path d="M5 19h14"/>'
+};
+const ic = k => `<span class="ic"><svg viewBox="0 0 24 24">${ICONS[k]}</svg></span>`;
+function todayCash(){
+  const d = todayISO(); let s = 0;
+  S.orders.forEach(o => o.paiements.forEach(p => { if(dayOf(p.date) === d) s += p.montant; }));
+  return r2(s);
+}
+function renderAccueil(){
+  const cmds = S.orders.filter(o => o.type === "commande");
+  const aFaire = cmds.filter(o => ["a_faire","en_cours"].includes(o.statut)).length;
+  const pretes = cmds.filter(o => o.statut === "prete").length;
+  const retard = cmds.filter(o => !["livree","annulee"].includes(o.statut) && o.livraison && o.livraison < todayISO()).length;
+  const nCart = S.cart.reduce((s,l) => s + l.qte, 0);
+  const nPh = S.articles.filter(a => a.actif && a.photos.length).length;
+  const last = S.settings.lastBackup;
+  const days = last ? Math.floor((Date.now() - new Date(last)) / 864e5) : null;
+  const h = new Date().getHours();
+  $("#main").innerHTML = `
+  <div class="hello">
+    <svg viewBox="0 0 64 64" aria-hidden="true"><path d="M32 6C32 6 14 28 14 40a18 18 0 0 0 36 0C50 28 32 6 32 6Z" fill="var(--accent)"/><path d="M24 40a8 8 0 0 0 8 8" stroke="var(--accent-ink)" stroke-width="3.5" fill="none" stroke-linecap="round"/></svg>
+    <div><h1>${h < 18 ? "Bonjour" : "Bonsoir"} !</h1><p>Dragonne Créa · ${esc(S.settings.club)}</p></div>
+  </div>
+  <div class="today">
+    <span>Aujourd'hui <b class="num">${eur(todayCash())}</b></span>
+    ${aFaire ? `<span>${aFaire} à fabriquer</span>` : ""}
+    ${pretes ? `<span style="color:var(--ok)">${pretes} prête${pretes>1?"s":""} à remettre</span>` : ""}
+    ${retard ? `<span style="color:var(--danger)">${retard} en retard</span>` : ""}
+  </div>
+  <div class="tiles">
+    <button class="tile t-vente big" data-go="vente">${ic("vente")}<div><h2>Vendre</h2><small>${nCart ? `${nCart} article${nCart>1?"s":""} dans le panier` : "Encaisser une vente ou prendre une commande"}</small></div></button>
+    <button class="tile t-vitrine" data-go="vitrine">${ic("vitrine")}<div><h2>Vitrine</h2><small>Montrer les pièces en grand · ${nPh} en photo</small></div></button>
+    <button class="tile t-cmd" data-go="commandes">${ic("cmd")}<div><h2>Commandes</h2><small>${aFaire || pretes ? `${aFaire} en cours · ${pretes} prête${pretes>1?"s":""}` : "Aucune en attente"}</small></div></button>
+    <button class="tile t-cat" data-go="catalogue">${ic("cat")}<div><h2>Catalogue</h2><small>${S.articles.length} article${S.articles.length>1?"s":""} · ajouter une pièce</small></div></button>
+    <button class="tile t-bilan" data-go="bilan">${ic("bilan")}<div><h2>Bilan</h2><small class="num">${eur(todayCash())} encaissés aujourd'hui</small></div></button>
+    <button class="tile t-save wide" id="tSave">${ic("save")}<div><h2>Sauvegarde</h2><small ${days === null || days > 7 ? 'style="color:var(--warn)"' : ""}>${days === null ? "Jamais faite, pensez-y" : days === 0 ? "Faite aujourd'hui" : `Dernière il y a ${days} jour${days>1?"s":""}`}</small></div></button>
+  </div>`;
+  $("#main").querySelectorAll("[data-go]").forEach(b => b.onclick = () => go(b.dataset.go));
+  $("#tSave").onclick = backup;
+}
+
+/* ---------- Vitrine : présenter les pièces en grand ---------- */
+function renderVitrine(){
+  const actifs = S.articles.filter(a => a.actif);
+  const cats = ["Tout", ...new Set(actifs.map(a => a.cat))];
+  if(!cats.includes(S.cat)) S.cat = "Tout";
+  const list = actifs.filter(a => S.cat === "Tout" || a.cat === S.cat);
+  S.ficheList = list.map(a => a.id);
+  $("#main").innerHTML = `
+  <div class="head"><div><h1>Vitrine</h1><p>Touchez une pièce pour la montrer en plein écran</p></div></div>
+  <div class="chips">${cats.map(c => `<button class="chip" data-cat="${esc(c)}" aria-pressed="${c===S.cat}">${esc(c)}</button>`).join("")}</div>
+  ${list.length ? `<div class="show">${list.map(a => `<button data-fiche="${a.id}">
+      ${a.photos[0] ? `<img src="${a.photos[0]}" alt="">` : `<span style="aspect-ratio:4/5;background:var(--sunk);display:block"></span>`}
+      <span class="cap"><span><span style="font-weight:700;display:block">${esc(a.nom)}</span>${modeTag(a)}</span><b class="num">${eur(a.prix)}</b></span></button>`).join("")}</div>`
+    : `<div class="panel"><p class="muted">Aucune pièce à montrer. Ajoutez des articles avec leurs photos depuis le Catalogue.</p></div>`}`;
+  $("#main").querySelectorAll("[data-cat]").forEach(b => b.onclick = () => { S.cat = b.dataset.cat; renderVitrine(); });
+  $("#main").querySelectorAll("[data-fiche]").forEach(b => b.onclick = () => openFiche(b.dataset.fiche, "vitrine"));
+}
+function openFiche(id, from){
+  const a = art(id); if(!a) return;
+  const list = from === "vitrine" ? (S.ficheList || []) : [];
+  const i = list.indexOf(id);
+  const out = a.mode === "stock" && a.stock - inCart(a.id) <= 0;
+  openDlg(`<div class="fiche">
+    <div class="gal">
+      <button class="close" id="fClose" aria-label="Fermer">×</button>
+      <div class="slides" id="fSlides">${a.photos.length ? a.photos.map((p,k) => `<img src="${p}" alt="${esc(a.nom)}, photo ${k+1}">`).join("") : `<div style="flex:0 0 100%;display:grid;place-items:center;color:#aaa">Pas encore de photo</div>`}</div>
+      ${a.photos.length > 1 ? `<div class="dots" id="fDots">${a.photos.map((_,k) => `<i class="${k ? "" : "on"}"></i>`).join("")}</div>` : ""}
+    </div>
+    <div class="info">
+      <span class="muted" style="font-weight:700;text-transform:uppercase;letter-spacing:.06em;font-size:13px">${esc(a.cat)}</span>
+      <h2>${esc(a.nom)}</h2>
+      <div class="price num">${eur(a.prix)}</div>
+      <div>${modeTag(a)}</div>
+      ${a.mode === "commande" ? `<p class="muted" style="margin:0">Fabriqué à la demande et personnalisable (prénom, numéro, couleurs). Prêt en ${a.delai} jour${a.delai>1?"s":""} environ.</p>` : ""}
+      <button class="btn primary" id="fAdd" ${out ? "disabled" : ""}>${out ? "Plus de stock" : "Ajouter au panier"}</button>
+      ${list.length > 1 ? `<div class="navs"><button class="btn ghost" id="fPrev">← Précédente</button><button class="btn ghost" id="fNext">Suivante →</button></div>` : ""}
+    </div></div>`, true);
+  $("#fClose").onclick = closeDlg;
+  $("#fAdd").onclick = () => { addToCart(a.id); closeDlg(); };
+  const sl = $("#fSlides"), dots = $("#fDots");
+  if(dots) sl.onscroll = () => { const k = Math.round(sl.scrollLeft / sl.clientWidth); dots.querySelectorAll("i").forEach((d,j) => d.classList.toggle("on", j === k)); };
+  if(list.length > 1){
+    $("#fPrev").onclick = () => openFiche(list[(i - 1 + list.length) % list.length], from);
+    $("#fNext").onclick = () => openFiche(list[(i + 1) % list.length], from);
+  }
+}
+function celebrate(title, sub){
+  const y = document.createElement("div"); y.className = "yay"; y.setAttribute("role","status");
+  y.innerHTML = `<div><svg viewBox="0 0 64 64" aria-hidden="true"><path d="M32 4C32 4 12 28 12 41a20 20 0 0 0 40 0C52 28 32 4 32 4Z" fill="var(--ok)"/><path d="m22 41 7 7 13-14" stroke="#fff" stroke-width="5" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg><b>${esc(title)}</b><span>${sub}</span></div>`;
+  document.body.appendChild(y); setTimeout(() => y.remove(), 1700);
+}
 
 /* ---------- Vente ---------- */
 function renderVente(){
@@ -336,17 +513,23 @@ function renderVente(){
       <div class="chips">${cats.map(c => `<button class="chip" data-cat="${esc(c)}" aria-pressed="${c===S.cat}">${esc(c)}</button>`).join("")}</div>
       ${list.length ? `<div class="grid">${list.map(a => {
         const n = inCart(a.id), out = a.mode === "stock" && a.stock - n <= 0;
-        return `<button class="card${a.mode==="stock" && a.stock<=0 ? " dim":""}" data-add="${a.id}">
-          ${a.photos[0] ? `<img class="ph" src="${a.photos[0]}" alt="">` : `<span class="ph"></span>`}
+        return `<div class="card${a.mode==="stock" && a.stock<=0 ? " dim":""}" role="button" tabindex="0" data-add="${a.id}" aria-label="Ajouter ${esc(a.nom)} au panier">
+          <span class="phw">${a.photos[0] ? `<img class="ph" src="${a.photos[0]}" alt="">` : `<span class="ph"></span>`}
+          ${a.photos.length > 1 ? `<span class="nphotos num">${a.photos.length} photos</span>` : ""}</span>
+          <button class="zoom" data-zoom="${a.id}" aria-label="Voir les photos de ${esc(a.nom)}"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="6"/><path d="m20 20-4.5-4.5M11 8v6M8 11h6"/></svg></button>
           ${n ? `<span class="incart num">${n}</span>` : ""}
           <span class="bd"><span class="nm">${esc(a.nom)}</span><span>${modeTag(a)} ${a.exemple ? '<span class="tag ex">Exemple</span>' : ""}</span>
-          <span class="pr num">${eur(a.prix)}</span></span></button>`; }).join("")}</div>`
+          <span class="pr num">${eur(a.prix)}</span></span></div>`; }).join("")}</div>`
       : `<div class="panel"><p class="muted">Aucun article dans cette catégorie. Ajoutez-en depuis l'onglet Catalogue.</p></div>`}
     </section>
     <aside class="cart" aria-label="Panier">${cartHTML()}</aside>
   </div>`;
   $("#main").querySelectorAll("[data-cat]").forEach(b => b.onclick = () => { S.cat = b.dataset.cat; renderVente(); });
-  $("#main").querySelectorAll("[data-add]").forEach(b => b.onclick = () => addToCart(b.dataset.add));
+  $("#main").querySelectorAll("[data-add]").forEach(b => {
+    b.onclick = () => addToCart(b.dataset.add);
+    b.onkeydown = e => { if(e.key === "Enter" || e.key === " "){ e.preventDefault(); addToCart(b.dataset.add); } };
+  });
+  $("#main").querySelectorAll("[data-zoom]").forEach(b => b.onclick = e => { e.stopPropagation(); openFiche(b.dataset.zoom, "vente"); });
   bindCart();
 }
 function cartTotals(){
@@ -386,7 +569,9 @@ function addToCart(id){
   // Les articles sur commande gardent une ligne par pièce personnalisée
   const l = a.mode === "stock" ? S.cart.find(x => x.artId === id) : null;
   if(l) l.qte++; else S.cart.push({artId:id, nom:a.nom, prix:a.prix, mode:a.mode, qte:1, perso:"", delai:a.delai||0});
+  if(S.view !== "vente") return toast(`${a.nom} ajouté au panier`);
   renderVente();
+  const c = document.querySelector(`[data-add="${id}"]`); if(c) c.classList.add("pop");
 }
 
 /* ---------- Encaissement / prise de commande ---------- */
@@ -459,7 +644,7 @@ function openCheckout(){
     }
     await saveSettings();
     S.cart = []; closeDlg(); await reload(); renderVente();
-    toast(cmdLines.length ? `Commande n° ${nums[nums.length-1]} enregistrée` : `Vente n° ${nums[0]} enregistrée`);
+    celebrate(cmdLines.length ? "Commande enregistrée" : "Vente enregistrée", cmdLines.length ? `n° ${nums[nums.length-1]} · ${esc(client.nom)}` : `n° ${nums[0]}`);
   };
   setTimeout(() => { const n = $("#coNom"); if(n && hasCmd) n.focus(); }, 50);
 }
@@ -558,8 +743,13 @@ function editArticle(id){
     openDlg(`
     <header><h2>${a0 ? "Modifier l'article" : "Nouvel article"}</h2></header>
     <div class="body">
-      <div class="photos" id="phs">${a.photos.map((p,i) => `<figure><img src="${p}" alt="Photo ${i+1}"><button type="button" data-rm="${i}" aria-label="Retirer la photo">×</button></figure>`).join("")}
-        ${a.photos.length < 3 ? `<label class="addph" for="fileIn">+ Photo<br>${a.photos.length}/3</label>` : ""}</div>
+      <div class="f" style="display:flex;flex-direction:column;gap:10px;font-weight:700;font-size:14px">Photos <span class="h" style="font-weight:400;color:var(--muted)">jusqu'à ${MAXPH} · la première est celle affichée à la vente, touchez ★ pour en changer</span>
+        <div class="photos" id="phs">${a.photos.map((p,i) => `<figure><img src="${p}" alt="Photo ${i+1}">
+          ${i === 0 ? `<span class="main">Principale</span>` : `<button type="button" class="star" data-main="${i}" aria-label="Mettre en photo principale">★</button>`}
+          <button type="button" data-rm="${i}" aria-label="Retirer la photo">×</button></figure>`).join("")}
+          ${a.photos.length ? "" : `<div class="addph" aria-hidden="true">Aucune<br>photo</div>`}</div>
+        ${a.photos.length < MAXPH ? `<div class="phbtns"><button type="button" class="btn small primary" id="phCam">Prendre une photo</button><button type="button" class="btn small ghost" id="phGal">Choisir dans la galerie</button></div>` : ""}
+      </div>
       <div class="fgrid">
         <label class="f">Nom de l'article *<input type="text" id="aNom" value="${esc(a.nom)}"></label>
         <label class="f">Catégorie *<input type="text" id="aCat" list="catList" value="${esc(a.cat)}" placeholder="ex. Porte-clés"><datalist id="catList">${cats.map(c => `<option value="${esc(c)}">`).join("")}</datalist></label>
@@ -579,8 +769,16 @@ function editArticle(id){
     document.querySelectorAll("[data-mode]").forEach(b => b.onclick = () => { keep(); a.mode = b.dataset.mode; draw(); });
     document.querySelectorAll("[data-act]").forEach(b => b.onclick = () => { keep(); a.actif = b.dataset.act === "1"; draw(); });
     document.querySelectorAll("[data-rm]").forEach(b => b.onclick = () => { keep(); a.photos.splice(+b.dataset.rm, 1); draw(); });
-    $("#fileIn").onchange = async e => { const f = e.target.files[0]; e.target.value = ""; if(!f) return; keep();
-      try { a.photos.push(await resizeImage(f)); draw(); } catch(err){ toast("Photo illisible, essayez une autre image"); } };
+    document.querySelectorAll("[data-main]").forEach(b => b.onclick = () => { keep(); const [p] = a.photos.splice(+b.dataset.main, 1); a.photos.unshift(p); draw(); });
+    const addFiles = async e => { const files = [...e.target.files]; e.target.value = ""; if(!files.length) return; keep();
+      let ko = 0; const place = MAXPH - a.photos.length;
+      for(const f of files.slice(0, place)){ try { a.photos.push(await resizeImage(f)); } catch(err){ ko++; } }
+      draw();
+      if(ko) toast("Une photo n'a pas pu être lue");
+      else if(files.length > place) toast(`${MAXPH} photos maximum : les suivantes n'ont pas été ajoutées`); };
+    $("#fileIn").onchange = addFiles; $("#camIn").onchange = addFiles;
+    const pc = $("#phCam"); if(pc) pc.onclick = () => $("#camIn").click();
+    const pg = $("#phGal"); if(pg) pg.onclick = () => $("#fileIn").click();
     $("#aCancel").onclick = closeDlg;
     const del = $("#aDel"); if(del) del.onclick = async () => {
       if(!(await ask("Supprimer l'article ?", `« ${esc(a.nom)} » sera retiré du catalogue. Les commandes déjà prises ne sont pas modifiées.`, "Supprimer", true))) return draw();
@@ -693,7 +891,12 @@ function exportCSV(from, to){
 }
 function backup(){
   const data = {app:"dragonne-club", version:1, date:new Date().toISOString(), settings:S.settings, articles:S.articles, orders:S.orders};
-  download(`sauvegarde-dragonne-club_${todayISO()}.json`, JSON.stringify(data), "application/json").then(ok => ok && !IS_APP && toast("Sauvegarde téléchargée"));
+  download(`sauvegarde-dragonne-club_${todayISO()}.json`, JSON.stringify(data), "application/json").then(ok => {
+    if(!ok) return;
+    S.settings.lastBackup = new Date().toISOString(); saveSettings();
+    if(!IS_APP) toast("Sauvegarde téléchargée");
+    if(S.view === "accueil") renderAccueil();
+  });
 }
 $("#jsonIn").onchange = async e => {
   const f = e.target.files[0]; e.target.value = ""; if(!f) return;
@@ -710,8 +913,9 @@ $("#jsonIn").onchange = async e => {
 };
 
 /* ---------- Boîtes de dialogue ---------- */
-function openDlg(html){ $("#dlgInner").innerHTML = html; const d = $("#dlg"); if(!d.open) d.showModal(); }
+function openDlg(html, full){ $("#dlgInner").innerHTML = html; const d = $("#dlg"); d.classList.toggle("full", !!full); if(!d.open) d.showModal(); }
 function closeDlg(){ const d = $("#dlg"); if(d.open) d.close(); }
+$("#dlg").addEventListener("close", () => { const d = $("#dlg"); if(d.classList.contains("full")){ d.classList.remove("full"); if(S.view === "vente") renderVente(); } });
 function ask(title, msg, okLabel, danger){
   return new Promise(res => {
     const prev = $("#dlg").open ? $("#dlgInner").innerHTML : null;
