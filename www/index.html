@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="theme-color" content="#4B3AA8">
+<meta name="theme-color" content="#2D3A8C">
 <title>Dragonne Créa Club</title>
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icon-192.png">
@@ -18,7 +18,7 @@
 /* Layout : rail de navigation à gauche (tablette), barre en bas (téléphone) ; vente = catalogue + panier côte à côte */
 :root{
   --bg:#F2F2F7; --surface:#FFFFFF; --sunk:#E9E8F1; --ink:#1C1B2E; --muted:#66637D; --line:#DCDAE7;
-  --accent:#4B3AA8; --accent-ink:#FFFFFF; --accent-soft:#E7E3FA;
+  --accent:#2D3A8C; --accent-ink:#FFFFFF; --accent-soft:#E3E6F7; --sea:#0F7C83; --sea-soft:#DAF0F0;
   --resin:#B86E0A; --resin-soft:#FBEBD3;
   --ok:#2C7A4B; --ok-soft:#DDF1E4; --warn:#A5501A; --danger:#B3261E; --danger-soft:#FBE3E1;
   --f-display:"Bricolage Grotesque", "Trebuchet MS", system-ui, sans-serif;
@@ -27,12 +27,12 @@
 }
 @media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
   --bg:#13121C; --surface:#1D1B2B; --sunk:#262438; --ink:#ECEAF6; --muted:#A3A0BA; --line:#353249;
-  --accent:#9A8BF0; --accent-ink:#13121C; --accent-soft:#2D2850;
+  --accent:#97A3F2; --accent-ink:#13121C; --accent-soft:#232A4D; --sea:#52C5CB; --sea-soft:#10302F;
   --resin:#EDA94B; --resin-soft:#3A2A14; --ok:#63C08B; --ok-soft:#183324; --warn:#E59158; --danger:#F07A72; --danger-soft:#3E1C1A;
   color-scheme:dark; } }
 :root[data-theme="dark"]{
   --bg:#13121C; --surface:#1D1B2B; --sunk:#262438; --ink:#ECEAF6; --muted:#A3A0BA; --line:#353249;
-  --accent:#9A8BF0; --accent-ink:#13121C; --accent-soft:#2D2850;
+  --accent:#97A3F2; --accent-ink:#13121C; --accent-soft:#232A4D; --sea:#52C5CB; --sea-soft:#10302F;
   --resin:#EDA94B; --resin-soft:#3A2A14; --ok:#63C08B; --ok-soft:#183324; --warn:#E59158; --danger:#F07A72; --danger-soft:#3E1C1A;
   color-scheme:dark; }
 
@@ -48,8 +48,8 @@ h1,h2,h3{font-family:var(--f-display);font-weight:800;margin:0;text-wrap:balance
 
 .app{display:grid;grid-template-columns:104px 1fr;height:100%;padding-top:env(safe-area-inset-top,0px)}
 .rail{background:var(--surface);border-right:1px solid var(--line);display:flex;flex-direction:column;align-items:stretch;gap:6px;padding:14px 10px;padding-bottom:calc(14px + env(safe-area-inset-bottom,0px))}
-.brand{display:flex;flex-direction:column;align-items:center;gap:2px;margin-bottom:14px}
-.brand svg{width:44px;height:44px}
+.brand{display:flex;flex-direction:column;align-items:center;gap:4px;margin-bottom:12px;border:0;background:none;padding:0}
+.brand img{width:62px;height:62px;border-radius:99px;background:#fff;object-fit:contain;box-shadow:0 0 0 1px var(--line)}
 .brand small{font:700 10px/1.1 var(--f-display);letter-spacing:.06em;text-transform:uppercase;color:var(--muted);text-align:center}
 .nav{border:0;background:none;border-radius:12px;padding:10px 4px;display:flex;flex-direction:column;align-items:center;gap:4px;color:var(--muted);font-size:13px;font-weight:700;position:relative}
 .nav svg{width:26px;height:26px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
@@ -159,6 +159,14 @@ dialog::backdrop{background:rgba(12,10,30,.55)}
 .acts{display:flex;gap:8px;flex-wrap:wrap}
 .meta{font-size:14px;color:var(--muted);display:flex;gap:4px 14px;flex-wrap:wrap}
 .meta a{color:var(--accent);font-weight:700}
+.order.pick{cursor:pointer}
+.order.on{outline:3px solid var(--danger);outline-offset:-1px;background:var(--danger-soft)}
+.order.off{opacity:.4}
+.check{flex:none;width:30px;height:30px;border-radius:8px;border:2px solid var(--line);display:grid;place-items:center;font-weight:800;background:var(--surface);margin-right:10px}
+.order.on .check{background:var(--danger);border-color:var(--danger);color:#fff}
+.selbar{position:sticky;bottom:0;margin-top:16px;background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:12px 16px;display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;box-shadow:0 -8px 24px rgba(12,10,30,.08)}
+.refund{display:flex;gap:12px;align-items:flex-start;background:var(--sunk);border-radius:12px;padding:12px 14px;cursor:pointer}
+.refund input{width:24px;height:24px;margin-top:2px;flex:none;accent-color:var(--accent)}
 
 /* Catalogue */
 .list{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);overflow:hidden}
@@ -189,7 +197,7 @@ td.r,th.r{text-align:right}
 
 /* Accueil */
 .hello{display:flex;align-items:center;gap:16px;margin-bottom:18px;flex-wrap:wrap}
-.hello svg{width:64px;height:64px;flex:none}
+.hello .logo{height:150px;width:auto;max-width:100%;background:#fff;border-radius:20px;padding:8px;box-shadow:0 0 0 1px var(--line);flex:none}
 .hello h1{font-size:34px;line-height:1.05}
 .hello p{margin:4px 0 0;color:var(--muted);font-size:17px}
 .today{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:20px}
@@ -209,7 +217,7 @@ td.r,th.r{text-align:right}
 .tile.wide h2{font-size:22px}
 .tile.wide::after{display:none}
 .t-vente{--t-bg:var(--accent);--t-ink:var(--accent-ink);--t-chip:rgba(255,255,255,.18);--t-blob:rgba(255,255,255,.22)}
-.t-vitrine{--t-bg:var(--resin-soft);--t-ink:var(--resin);--t-chip:var(--surface);--t-blob:var(--resin)}
+.t-vitrine{--t-bg:var(--sea-soft);--t-ink:var(--sea);--t-chip:var(--surface);--t-blob:var(--sea)}
 .t-cmd{--t-bg:var(--accent-soft);--t-ink:var(--accent);--t-chip:var(--surface);--t-blob:var(--accent)}
 .t-cat{--t-bg:var(--ok-soft);--t-ink:var(--ok);--t-chip:var(--surface);--t-blob:var(--ok)}
 .t-bilan{--t-bg:var(--surface);--t-ink:var(--ink);--t-chip:var(--sunk);--t-blob:var(--line)}
@@ -257,6 +265,7 @@ dialog.full{width:100vw;max-width:100vw;height:100%;max-height:100%;border-radiu
 @media (max-width:900px){ .sale{grid-template-columns:1fr} .cart{position:static;max-height:none} }
 @media (max-width:900px){ .tiles{grid-template-columns:repeat(2,minmax(0,1fr))} .fiche{grid-template-columns:1fr;grid-template-rows:55% 1fr} }
 @media (max-width:640px){
+  .hello{flex-wrap:nowrap} .hello .logo{height:96px;border-radius:14px;padding:5px} .hello h1{font-size:26px}
   .tile{min-height:140px;padding:16px} .tile h2{font-size:22px} .tile.big h2{font-size:30px} .tile.big{min-height:170px}
   .show{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px} .show .cap{flex-direction:column;align-items:start} .show .cap b{font-size:18px}
   .app{grid-template-columns:1fr;grid-template-rows:1fr auto}
@@ -273,10 +282,10 @@ dialog.full{width:100vw;max-width:100vw;height:100%;max-height:100%;border-radiu
 <body>
 <div class="app">
   <nav class="rail" aria-label="Sections">
-    <div class="brand" aria-hidden="true">
-      <svg viewBox="0 0 64 64"><path d="M32 6C32 6 14 28 14 40a18 18 0 0 0 36 0C50 28 32 6 32 6Z" fill="var(--accent)"/><path d="M24 40a8 8 0 0 0 8 8" stroke="var(--accent-ink)" stroke-width="3.5" fill="none" stroke-linecap="round"/></svg>
+    <button class="brand" data-view="accueil" aria-label="Accueil">
+      <img src="emblem.png" alt="">
       <small>Dragonne<br>Créa</small>
-    </div>
+    </button>
     <button class="nav" data-view="accueil"><svg viewBox="0 0 24 24"><path d="M4 11 12 4l8 7"/><path d="M6 10v10h12V10"/></svg>Accueil</button>
     <button class="nav" data-view="vente"><svg viewBox="0 0 24 24"><path d="M4 7h16l-1.5 11a2 2 0 0 1-2 1.7H7.5a2 2 0 0 1-2-1.7Z"/><path d="M9 7a3 3 0 0 1 6 0"/></svg>Vente</button>
     <button class="nav" data-view="vitrine"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="9" cy="10" r="2"/><path d="m21 16-5-5-8 8"/></svg>Vitrine</button>
@@ -334,7 +343,7 @@ const DB = {
   clear(s){ return this.tx(s, "readwrite", st => { st.clear(); }); }
 };
 
-const S = { articles:[], orders:[], settings:null, cart:[], view:"vente", cat:"Tout", filter:"ouvertes", q:"", bilanDay:todayISO() };
+const S = { articles:[], orders:[], settings:null, cart:[], view:"vente", cat:"Tout", filter:"ouvertes", q:"", bilanDay:todayISO(), sel:null };
 const MAXPH = 6;
 const STATUTS = { a_faire:"À fabriquer", en_cours:"En cours", prete:"Prête", livree:"Livrée", annulee:"Annulée" };
 const saveSettings = () => DB.put("kv", S.settings);
@@ -387,11 +396,11 @@ async function reload(){
   const b = $("#badge"); b.hidden = !open; b.textContent = open;
 }
 function go(v){
-  S.view = v;
+  S.view = v; S.sel = null;
   document.querySelectorAll(".nav").forEach(n => n.dataset.view === v ? n.setAttribute("aria-current","page") : n.removeAttribute("aria-current"));
   render(); $("#main").scrollTop = 0;
 }
-document.querySelectorAll(".nav").forEach(n => n.addEventListener("click", () => go(n.dataset.view)));
+document.querySelectorAll(".nav, .brand").forEach(n => n.addEventListener("click", () => go(n.dataset.view)));
 function render(){ ({accueil:renderAccueil, vitrine:renderVitrine, vente:renderVente, commandes:renderCommandes, catalogue:renderCatalogue, bilan:renderBilan})[S.view](); }
 
 const art = id => S.articles.find(a => a.id === id);
@@ -427,8 +436,8 @@ function renderAccueil(){
   const h = new Date().getHours();
   $("#main").innerHTML = `
   <div class="hello">
-    <svg viewBox="0 0 64 64" aria-hidden="true"><path d="M32 6C32 6 14 28 14 40a18 18 0 0 0 36 0C50 28 32 6 32 6Z" fill="var(--accent)"/><path d="M24 40a8 8 0 0 0 8 8" stroke="var(--accent-ink)" stroke-width="3.5" fill="none" stroke-linecap="round"/></svg>
-    <div><h1>${h < 18 ? "Bonjour" : "Bonsoir"} !</h1><p>Dragonne Créa · ${esc(S.settings.club)}</p></div>
+    <img class="logo" src="logo.jpg" alt="Dragonne Créa, résine UV et époxy">
+    <div><h1>${h < 18 ? "Bonjour" : "Bonsoir"} !</h1><p>Ventes au ${esc(S.settings.club)}</p></div>
   </div>
   <div class="today">
     <span>Aujourd'hui <b class="num">${eur(todayCash())}</b></span>
@@ -630,7 +639,7 @@ function openCheckout(){
     const nums = [];
     if(stockLines.length){
       const o = {id:uid(), num:S.settings.nextNum++, type:"vente", date:now, client, statut:"livree",
-        lignes:stockLines.map(l => ({nom:l.nom, prix:l.prix, qte:l.qte, perso:""})), total:t.stock,
+        lignes:stockLines.map(l => ({artId:l.artId, nom:l.nom, prix:l.prix, qte:l.qte, perso:""})), total:t.stock,
         paiements:[{date:now, montant:t.stock, nature:"vente"}]};
       await DB.put("orders", o); nums.push(o.num);
       for(const l of stockLines){ const a = art(l.artId); if(a){ a.stock = Math.max(0, a.stock - l.qte); await DB.put("articles", a); } }
@@ -638,7 +647,7 @@ function openCheckout(){
     if(cmdLines.length){
       const o = {id:uid(), num:S.settings.nextNum++, type:"commande", date:now, client, statut:"a_faire",
         livraison:$("#coLiv").value, note:$("#coNote").value.trim(),
-        lignes:cmdLines.map(l => ({nom:l.nom, prix:l.prix, qte:l.qte, perso:(l.perso||"").trim()})), total:t.cmd,
+        lignes:cmdLines.map(l => ({artId:l.artId, nom:l.nom, prix:l.prix, qte:l.qte, perso:(l.perso||"").trim()})), total:t.cmd,
         paiements: ac > 0 ? [{date:now, montant:ac, nature:"acompte"}] : []};
       await DB.put("orders", o); nums.push(o.num);
     }
@@ -662,35 +671,54 @@ function renderCommandes(){
     ventes: o.type==="vente", toutes: true })[S.filter]);
   if(q) list = list.filter(o => [o.client.nom, o.client.equipe, o.client.tel, "n°"+o.num, ...o.lignes.map(l => l.nom+" "+l.perso)].join(" ").toLowerCase().includes(q));
   if(S.filter === "ouvertes" || S.filter === "pretes") list.sort((a,b) => (a.livraison||"").localeCompare(b.livraison||""));
+  const sel = S.sel;
+  const nSel = sel ? sel.size : 0;
+  const selPaid = sel ? r2([...sel].reduce((t,id) => { const o = S.orders.find(x => x.id === id); return t + (o ? paid(o) : 0); }, 0)) : 0;
   $("#main").innerHTML = `
-  <div class="head"><div><h1>Commandes</h1><p>Suivi des pièces à fabriquer et des soldes à encaisser</p></div></div>
+  <div class="head"><div><h1>${sel ? "Annuler des ventes" : "Commandes"}</h1><p>${sel ? "Touchez les ventes ou commandes à annuler, puis validez en bas" : "Suivi des pièces à fabriquer et des soldes à encaisser"}</p></div>
+    ${sel ? "" : `<button class="btn danger" id="selStart">Annuler des ventes</button>`}</div>
   <div class="toolbar">
     <div class="chips" style="margin:0">${Object.entries(F).map(([k,v]) => `<button class="chip" data-f="${k}" aria-pressed="${k===S.filter}">${v}</button>`).join("")}</div>
     <input type="search" id="oq" placeholder="Rechercher un nom, une équipe, un n°…" value="${esc(S.q)}">
   </div>
-  ${list.length ? `<div class="orders">${list.map(orderHTML).join("")}</div>` : `<div class="panel"><p class="muted">Rien dans cette liste pour l'instant.</p></div>`}`;
+  ${list.length ? `<div class="orders">${list.map(orderHTML).join("")}</div>` : `<div class="panel"><p class="muted">Rien dans cette liste pour l'instant.</p></div>`}
+  ${sel ? `<div class="selbar"><span><b class="num">${nSel}</b> sélectionnée${nSel>1?"s":""}${selPaid ? ` · <span class="num">${eur(selPaid)}</span> encaissés` : ""}</span>
+    <span class="acts"><button class="btn ghost" id="selStop">Retour</button><button class="btn danger" id="selGo" ${nSel ? "" : "disabled"}>Annuler ${nSel > 1 ? `les ${nSel}` : "la sélection"}</button></span></div>` : ""}`;
   $("#main").querySelectorAll("[data-f]").forEach(b => b.onclick = () => { S.filter = b.dataset.f; renderCommandes(); });
   const oq = $("#oq"); oq.oninput = () => { S.q = oq.value; const pos = oq.selectionStart; renderCommandes(); const n = $("#oq"); n.focus(); n.setSelectionRange(pos,pos); };
   $("#main").querySelectorAll("[data-st]").forEach(b => b.onclick = () => setStatus(b.dataset.id, b.dataset.st));
   $("#main").querySelectorAll("[data-solde]").forEach(b => b.onclick = () => encaisserSolde(b.dataset.solde));
-  $("#main").querySelectorAll("[data-cancel]").forEach(b => b.onclick = () => annuler(b.dataset.cancel));
+  $("#main").querySelectorAll("[data-cancel]").forEach(b => b.onclick = () => cancelOrders([b.dataset.cancel]));
+  const ss = $("#selStart"); if(ss) ss.onclick = () => { S.sel = new Set(); if(S.filter === "ouvertes") S.filter = "toutes"; renderCommandes(); };
+  if(sel){
+    $("#main").querySelectorAll("[data-pick]").forEach(c => {
+      const flip = () => { const id = c.dataset.pick; sel.has(id) ? sel.delete(id) : sel.add(id); renderCommandes(); };
+      c.onclick = flip; c.onkeydown = e => { if(e.key === "Enter" || e.key === " "){ e.preventDefault(); flip(); } };
+    });
+    $("#selStop").onclick = () => { S.sel = null; renderCommandes(); };
+    $("#selGo").onclick = () => cancelOrders([...sel]);
+  }
 }
 function orderHTML(o){
   const d = due(o), late = o.type==="commande" && !["livree","annulee"].includes(o.statut) && o.livraison && o.livraison < todayISO();
   const next = {a_faire:"en_cours", en_cours:"prete", prete:"livree"}[o.statut];
   const nextLbl = {en_cours:"Commencer", prete:"Marquer prête", livree:"Remettre au client"}[next];
-  return `<article class="order" data-st="${o.type==="vente" ? "livree" : o.statut}">
-    <div class="top"><div><h3>${esc(o.client.nom || "Client de passage")} <span class="muted num" style="font-weight:600">n° ${o.num}</span></h3>
+  const off = o.statut === "annulee";
+  const pickable = S.sel && !off, on = pickable && S.sel.has(o.id);
+  const pill = off ? `<span class="pill annulee">Annulée</span>` : `<span class="pill ${o.type==="vente" ? "vente" : o.statut}">${o.type==="vente" ? "Vente directe" : STATUTS[o.statut]}</span>`;
+  return `<article class="order${pickable ? " pick" : ""}${on ? " on" : ""}${S.sel && off ? " off" : ""}" data-st="${off ? "annulee" : o.type==="vente" ? "livree" : o.statut}"
+      ${pickable ? `data-pick="${o.id}" role="checkbox" aria-checked="${on}" tabindex="0"` : ""}>
+    <div class="top">${pickable ? `<span class="check" aria-hidden="true">${on ? "✓" : ""}</span>` : ""}<div style="flex:1;min-width:0"><h3>${esc(o.client.nom || "Client de passage")} <span class="muted num" style="font-weight:600">n° ${o.num}</span></h3>
       <div class="meta">${o.client.equipe ? `<span>${esc(o.client.equipe)}</span>` : ""}${o.client.tel ? `<a href="tel:${esc(o.client.tel.replace(/\s/g,""))}">${esc(o.client.tel)}</a>` : ""}<span>${frDate(o.date)} ${frTime(o.date)}</span></div></div>
-      <span class="pill ${o.type==="vente" ? "vente" : o.statut}">${o.type==="vente" ? "Vente directe" : STATUTS[o.statut]}</span></div>
+      ${pill}</div>
     <ul>${o.lignes.map(l => `<li><span>${l.qte > 1 ? l.qte+" × " : ""}${esc(l.nom)}${l.perso ? `<em>${esc(l.perso)}</em>` : ""}</span><span class="num">${eur(l.prix*l.qte)}</span></li>`).join("")}</ul>
     ${o.note ? `<div class="muted" style="font-size:14px">Note : ${esc(o.note)}</div>` : ""}
-    <div class="money num"><span>Total <b>${eur(o.total)}</b></span><span>Payé <b>${eur(paid(o))}</b></span>${d > 0 ? `<span class="due">Reste ${eur(d)}</span>` : (o.statut==="annulee" ? "" : `<span style="color:var(--ok);font-weight:700">Soldée</span>`)}</div>
-    ${o.type==="commande" && o.livraison && o.statut !== "annulee" ? `<div class="meta"><span ${late ? 'style="color:var(--danger);font-weight:700"' : ""}>Livraison prévue ${frDate(o.livraison)}${late ? " · en retard" : ""}</span></div>` : ""}
-    ${o.type==="commande" && !["livree","annulee"].includes(o.statut) ? `<div class="acts">
-      ${next ? `<button class="btn small primary" data-st="${next}" data-id="${o.id}">${nextLbl}</button>` : ""}
-      ${d > 0 ? `<button class="btn small ghost" data-solde="${o.id}">Encaisser ${eur(d)}</button>` : ""}
-      <button class="btn small danger" data-cancel="${o.id}">Annuler</button></div>` : ""}
+    <div class="money num"><span>Total <b>${eur(o.total)}</b></span><span>Payé <b>${eur(paid(o))}</b></span>${d > 0 ? `<span class="due">Reste ${eur(d)}</span>` : (off ? (o.annuleLe ? `<span class="muted">Annulée le ${frDate(o.annuleLe)}</span>` : "") : `<span style="color:var(--ok);font-weight:700">Soldée</span>`)}</div>
+    ${o.type==="commande" && o.livraison && !off && o.statut !== "livree" ? `<div class="meta"><span ${late ? 'style="color:var(--danger);font-weight:700"' : ""}>Livraison prévue ${frDate(o.livraison)}${late ? " · en retard" : ""}</span></div>` : ""}
+    ${!S.sel && !off ? `<div class="acts">
+      ${o.type==="commande" && next ? `<button class="btn small primary" data-st="${next}" data-id="${o.id}">${nextLbl}</button>` : ""}
+      ${o.type==="commande" && d > 0 ? `<button class="btn small ghost" data-solde="${o.id}">Encaisser ${eur(d)}</button>` : ""}
+      <button class="btn small danger" data-cancel="${o.id}">${o.type==="vente" ? "Annuler la vente" : "Annuler"}</button></div>` : ""}
   </article>`;
 }
 async function setStatus(id, st){
@@ -708,11 +736,39 @@ async function encaisserSolde(id){
   o.paiements.push({date:new Date().toISOString(), montant:due(o), nature:"solde"});
   await DB.put("orders", o); await reload(); renderCommandes(); toast("Solde encaissé");
 }
-async function annuler(id){
-  const o = S.orders.find(x => x.id === id);
-  const p = paid(o);
-  if(!(await ask("Annuler la commande ?", `La commande n° ${o.num} passera en « Annulée ».${p ? ` L'acompte de ${eur(p)} reste enregistré : s'il est rendu au client, notez-le à part.` : ""}`, "Annuler la commande", true))) return;
-  o.statut = "annulee"; await DB.put("orders", o); await reload(); renderCommandes();
+/* Annulation d'une ou plusieurs ventes / commandes, avec remboursement et remise en stock */
+function cancelOrders(ids){
+  const list = ids.map(id => S.orders.find(o => o.id === id)).filter(o => o && o.statut !== "annulee");
+  if(!list.length) return;
+  const toRefund = r2(list.reduce((t,o) => t + Math.max(0, paid(o)), 0));
+  const restock = list.filter(o => o.type === "vente").reduce((t,o) => t + o.lignes.reduce((u,l) => u + l.qte, 0), 0);
+  const one = list.length === 1;
+  openDlg(`<header><h2>${one ? (list[0].type === "vente" ? `Annuler la vente n° ${list[0].num} ?` : `Annuler la commande n° ${list[0].num} ?`) : `Annuler ${list.length} ventes ?`}</h2></header>
+    <div class="body">
+      <ul style="margin:0;padding-left:18px;display:flex;flex-direction:column;gap:4px">${list.map(o => `<li>n° ${o.num} · ${esc(o.client.nom || "Client de passage")} · <span class="num">${eur(o.total)}</span>${paid(o) ? ` <span class="muted num">(payé ${eur(paid(o))})</span>` : ""}</li>`).join("")}</ul>
+      ${toRefund ? `<label class="refund"><input type="checkbox" id="cxRefund" checked> <span><b>Rendre <span class="num">${eur(toRefund)}</span> au client</b><br><span class="muted">Le remboursement est déduit des espèces du jour dans le Bilan.</span></span></label>` : ""}
+      ${restock ? `<p class="muted" style="margin:0">${restock} article${restock>1?"s":""} en stock ${restock>1?"reviennent":"revient"} dans le catalogue.</p>` : ""}
+    </div>
+    <footer><button class="btn ghost" id="cxNo" type="button">Retour</button><button class="btn danger" id="cxYes" type="button">${one ? "Confirmer l'annulation" : `Annuler les ${list.length}`}</button></footer>`);
+  $("#cxNo").onclick = closeDlg;
+  $("#cxYes").onclick = async () => {
+    const refund = !!($("#cxRefund") && $("#cxRefund").checked);
+    const now = new Date().toISOString();
+    for(const o of list){
+      const p = paid(o);
+      if(refund && p > 0) o.paiements.push({date:now, montant:-p, nature:"remboursement"});
+      if(o.type === "vente"){
+        for(const l of o.lignes){
+          const a = (l.artId && art(l.artId)) || S.articles.find(x => x.nom === l.nom && x.mode === "stock");
+          if(a && a.mode === "stock"){ a.stock += l.qte; await DB.put("articles", a); }
+        }
+      }
+      o.statut = "annulee"; o.annuleLe = now;
+      await DB.put("orders", o);
+    }
+    S.sel = null; closeDlg(); await reload(); render();
+    toast(one ? `n° ${list[0].num} annulée` : `${list.length} ventes annulées`);
+  };
 }
 
 /* ---------- Catalogue ---------- */
@@ -823,11 +879,12 @@ function renderBilan(){
     <div class="stat"><small>Ventes directes</small><b class="num">${eur(sum("vente"))}</b></div>
     <div class="stat"><small>Acomptes</small><b class="num">${eur(sum("acompte"))}</b></div>
     <div class="stat"><small>Soldes</small><b class="num">${eur(sum("solde"))}</b></div>
+    ${sum("remboursement") ? `<div class="stat"><small>Remboursements</small><b class="num" style="color:var(--danger)">${eur(sum("remboursement"))}</b></div>` : ""}
     <div class="stat"><small>Reste dû · ${open.length} cde${open.length>1?"s":""}</small><b class="num" style="color:var(--warn)">${eur(resteDu)}</b></div>
   </div>
   <section class="panel"><h2>Encaissements du ${frDate(day)}</h2>
     ${pays.length ? `<div class="tbl"><table><thead><tr><th>Heure</th><th>N°</th><th>Client</th><th>Nature</th><th class="r">Montant</th></tr></thead><tbody>
-      ${pays.map(p => `<tr><td class="num">${frTime(p.date)}</td><td class="num">${p.o.num}</td><td>${esc(p.o.client.nom || "Client de passage")}</td><td>${{vente:"Vente directe",acompte:"Acompte",solde:"Solde"}[p.nature]}</td><td class="r num">${eur(p.montant)}</td></tr>`).join("")}
+      ${pays.map(p => `<tr><td class="num">${frTime(p.date)}</td><td class="num">${p.o.num}</td><td>${esc(p.o.client.nom || "Client de passage")}</td><td>${{vente:"Vente directe",acompte:"Acompte",solde:"Solde",remboursement:"Remboursement (annulation)"}[p.nature] || p.nature}</td><td class="r num">${eur(p.montant)}</td></tr>`).join("")}
       </tbody></table></div>` : `<p class="muted">Aucun encaissement ce jour-là.</p>`}
   </section>
   <section class="panel"><h2>Exporter pour Excel</h2>
@@ -884,7 +941,7 @@ function exportCSV(from, to){
   S.orders.filter(o => { const d = dayOf(o.date); return (!from || d >= from) && (!to || d <= to); })
     .sort((a,b) => a.date.localeCompare(b.date))
     .forEach(o => o.lignes.forEach(l => rows.push([o.num, new Date(o.date).toLocaleString("fr-FR"), o.type==="vente"?"Vente directe":"Commande", o.client.nom, o.client.tel, o.client.equipe,
-      l.nom, l.perso, l.qte, fmt(l.prix), fmt(l.prix*l.qte), fmt(o.total), fmt(paid(o)), fmt(due(o)), o.type==="vente" ? "Payée" : STATUTS[o.statut], o.livraison || ""])));
+      l.nom, l.perso, l.qte, fmt(l.prix), fmt(l.prix*l.qte), fmt(o.total), fmt(paid(o)), fmt(due(o)), o.statut === "annulee" ? "Annulée" : o.type==="vente" ? "Payée" : STATUTS[o.statut], o.livraison || ""])));
   if(rows.length === 1) return toast("Aucune vente sur cette période");
   const csv = "﻿" + rows.map(r => r.map(v => `"${String(v ?? "").replace(/"/g,'""')}"`).join(";")).join("\r\n");
   download(`dragonne-club_${from}_${to}.csv`, csv, "text/csv;charset=utf-8").then(ok => ok && !IS_APP && toast("Export téléchargé"));

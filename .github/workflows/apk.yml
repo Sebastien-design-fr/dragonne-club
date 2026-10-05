@@ -45,8 +45,8 @@ jobs:
       - name: Icône et écran de démarrage
         run: >
           npx --yes @capacitor/assets generate --android
-          --iconBackgroundColor '#4B3AA8' --iconBackgroundColorDark '#4B3AA8'
-          --splashBackgroundColor '#F2F2F7' --splashBackgroundColorDark '#13121C'
+          --iconBackgroundColor '#FFFFFF' --iconBackgroundColorDark '#FFFFFF'
+          --splashBackgroundColor '#FFFFFF' --splashBackgroundColorDark '#FFFFFF'
 
       - name: Synchroniser
         run: npx cap sync android

@@ -3,6 +3,6 @@
   "appName": "Dragonne Club",
   "webDir": "www",
   "android": {
-    "backgroundColor": "#F2F2F7"
+    "backgroundColor": "#FFFFFF"
   }
 }
