@@ -1,0 +1,15 @@
+{
+  "name": "dragonne-club",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Dragonne Créa – appli de vente et de commandes au club de rugby (Android)",
+  "dependencies": {
+    "@capacitor/android": "latest",
+    "@capacitor/cli": "latest",
+    "@capacitor/core": "latest",
+    "@capacitor/filesystem": "latest",
+    "@capacitor/share": "latest",
+    "@fontsource/atkinson-hyperlegible": "latest",
+    "@fontsource/bricolage-grotesque": "latest"
+  }
+}

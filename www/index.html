@@ -1,0 +1,731 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#4B3AA8">
+<title>Dragonne Créa Club</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<!--CAPACITOR-->
+<style>
+/* Polices embarquées dans l'appli (aucun accès réseau nécessaire) */
+@font-face{font-family:"Atkinson Hyperlegible";font-weight:400;font-display:swap;src:url(fonts/atkinson-hyperlegible-latin-400-normal.woff2) format("woff2")}
+@font-face{font-family:"Atkinson Hyperlegible";font-weight:700;font-display:swap;src:url(fonts/atkinson-hyperlegible-latin-700-normal.woff2) format("woff2")}
+@font-face{font-family:"Bricolage Grotesque";font-weight:600;font-display:swap;src:url(fonts/bricolage-grotesque-latin-600-normal.woff2) format("woff2")}
+@font-face{font-family:"Bricolage Grotesque";font-weight:800;font-display:swap;src:url(fonts/bricolage-grotesque-latin-800-normal.woff2) format("woff2")}
+/* Layout : rail de navigation à gauche (tablette), barre en bas (téléphone) ; vente = catalogue + panier côte à côte */
+:root{
+  --bg:#F2F2F7; --surface:#FFFFFF; --sunk:#E9E8F1; --ink:#1C1B2E; --muted:#66637D; --line:#DCDAE7;
+  --accent:#4B3AA8; --accent-ink:#FFFFFF; --accent-soft:#E7E3FA;
+  --resin:#B86E0A; --resin-soft:#FBEBD3;
+  --ok:#2C7A4B; --ok-soft:#DDF1E4; --warn:#A5501A; --danger:#B3261E; --danger-soft:#FBE3E1;
+  --f-display:"Bricolage Grotesque", "Trebuchet MS", system-ui, sans-serif;
+  --f-body:"Atkinson Hyperlegible", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --r:14px; color-scheme:light;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg:#13121C; --surface:#1D1B2B; --sunk:#262438; --ink:#ECEAF6; --muted:#A3A0BA; --line:#353249;
+  --accent:#9A8BF0; --accent-ink:#13121C; --accent-soft:#2D2850;
+  --resin:#EDA94B; --resin-soft:#3A2A14; --ok:#63C08B; --ok-soft:#183324; --warn:#E59158; --danger:#F07A72; --danger-soft:#3E1C1A;
+  color-scheme:dark; } }
+:root[data-theme="dark"]{
+  --bg:#13121C; --surface:#1D1B2B; --sunk:#262438; --ink:#ECEAF6; --muted:#A3A0BA; --line:#353249;
+  --accent:#9A8BF0; --accent-ink:#13121C; --accent-soft:#2D2850;
+  --resin:#EDA94B; --resin-soft:#3A2A14; --ok:#63C08B; --ok-soft:#183324; --warn:#E59158; --danger:#F07A72; --danger-soft:#3E1C1A;
+  color-scheme:dark; }
+
+*{box-sizing:border-box}
+html,body{height:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.45 var(--f-body);-webkit-tap-highlight-color:transparent}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+[hidden]{display:none!important}
+.num{font-variant-numeric:tabular-nums}
+h1,h2,h3{font-family:var(--f-display);font-weight:800;margin:0;text-wrap:balance;letter-spacing:-.01em}
+
+.app{display:grid;grid-template-columns:104px 1fr;height:100%;padding-top:env(safe-area-inset-top,0px)}
+.rail{background:var(--surface);border-right:1px solid var(--line);display:flex;flex-direction:column;align-items:stretch;gap:6px;padding:14px 10px;padding-bottom:calc(14px + env(safe-area-inset-bottom,0px))}
+.brand{display:flex;flex-direction:column;align-items:center;gap:2px;margin-bottom:14px}
+.brand svg{width:44px;height:44px}
+.brand small{font:700 10px/1.1 var(--f-display);letter-spacing:.06em;text-transform:uppercase;color:var(--muted);text-align:center}
+.nav{border:0;background:none;border-radius:12px;padding:10px 4px;display:flex;flex-direction:column;align-items:center;gap:4px;color:var(--muted);font-size:13px;font-weight:700;position:relative}
+.nav svg{width:26px;height:26px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.nav[aria-current="page"]{background:var(--accent-soft);color:var(--accent)}
+.nav .badge{position:absolute;top:4px;right:14px;background:var(--resin);color:#fff;border-radius:99px;font-size:11px;min-width:20px;padding:1px 6px}
+main{overflow:auto;min-width:0;padding-inline:20px;padding-block:20px calc(24px + env(safe-area-inset-bottom,0px))}
+
+.head{display:flex;align-items:end;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:16px}
+.head h1{font-size:28px}
+.head p{margin:2px 0 0;color:var(--muted)}
+.btn{border:0;border-radius:12px;padding:12px 18px;min-height:48px;font-weight:700;background:var(--sunk);color:var(--ink);display:inline-flex;align-items:center;justify-content:center;gap:8px}
+.btn.primary{background:var(--accent);color:var(--accent-ink)}
+.btn.ok{background:var(--ok);color:#fff}
+.btn.ghost{background:transparent;border:1px solid var(--line)}
+.btn.danger{background:var(--danger-soft);color:var(--danger)}
+.btn.small{min-height:38px;padding:7px 12px;font-size:14px;border-radius:10px}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.chips{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}
+.chip{border:1px solid var(--line);background:var(--surface);border-radius:99px;padding:8px 14px;font-weight:700;font-size:14px;min-height:40px}
+.chip[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.tag{display:inline-block;border-radius:6px;padding:2px 8px;font-size:12px;font-weight:700;letter-spacing:.02em}
+.tag.stock{background:var(--ok-soft);color:var(--ok)}
+.tag.cmd{background:var(--resin-soft);color:var(--resin)}
+.tag.ex{background:var(--sunk);color:var(--muted)}
+.tag.out{background:var(--danger-soft);color:var(--danger)}
+
+/* Vente */
+.sale{display:grid;grid-template-columns:minmax(0,1fr) 360px;gap:20px;align-items:start}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:14px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);overflow:hidden;text-align:left;padding:0;display:flex;flex-direction:column;position:relative}
+.card:active{transform:scale(.98)}
+.card .ph{aspect-ratio:1/1;max-width:100%;background:var(--sunk);display:block;width:100%;object-fit:cover}
+.card .bd{padding:10px 12px 12px;display:flex;flex-direction:column;gap:6px;flex:1}
+.card .nm{font-weight:700;line-height:1.25}
+.card .pr{font:800 20px/1 var(--f-display);margin-top:auto}
+.card .incart{position:absolute;top:8px;right:8px;background:var(--accent);color:var(--accent-ink);border-radius:99px;min-width:30px;height:30px;display:grid;place-items:center;font-weight:700;padding:0 8px}
+.card.dim{opacity:.5}
+.cart{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);position:sticky;top:0;display:flex;flex-direction:column;max-height:calc(100vh - 40px)}
+.cart header{padding:16px 16px 10px;display:flex;justify-content:space-between;align-items:center}
+.cart h2{font-size:20px}
+.lines{overflow:auto;padding:0 16px;display:flex;flex-direction:column;gap:12px}
+.line{border-top:1px solid var(--line);padding-top:12px;display:grid;grid-template-columns:1fr auto;gap:6px 10px}
+.line .t{font-weight:700;min-width:0}
+.line .p{text-align:right}
+.qty{display:flex;align-items:center;gap:6px}
+.qty button{width:38px;height:38px;border-radius:10px;border:1px solid var(--line);background:var(--bg);font-size:20px;line-height:1}
+.qty span{min-width:22px;text-align:center;font-weight:700}
+.line input{grid-column:1/-1}
+.empty{color:var(--muted);padding:18px 16px;text-align:center}
+.tot{padding:14px 16px 16px;border-top:1px solid var(--line);display:flex;flex-direction:column;gap:6px}
+.row{display:flex;justify-content:space-between;gap:10px}
+.row.big{font:800 24px/1.2 var(--f-display)}
+.muted{color:var(--muted)}
+
+/* Formulaires */
+label.f{display:flex;flex-direction:column;gap:5px;font-weight:700;font-size:14px}
+label.f span.h{font-weight:400;color:var(--muted)}
+input[type=text],input[type=tel],input[type=number],input[type=date],input[type=search],select,textarea{width:100%;border:1px solid var(--line);background:var(--bg);border-radius:10px;padding:11px 12px;min-height:46px}
+.fgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px}
+.seg{display:flex;border:1px solid var(--line);border-radius:12px;overflow:hidden}
+.seg button{flex:1;border:0;background:var(--surface);padding:11px 8px;font-weight:700;min-height:46px;font-size:14px}
+.seg button+button{border-left:1px solid var(--line)}
+.seg button[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink)}
+fieldset{border:0;padding:0;margin:0;display:flex;flex-direction:column;gap:12px}
+legend{font:800 17px/1.2 var(--f-display);margin-bottom:10px}
+
+/* Dialogues */
+dialog{border:0;border-radius:18px;padding:0;background:var(--surface);color:var(--ink);width:min(640px,calc(100vw - 32px));max-height:calc(100vh - 32px)}
+dialog::backdrop{background:rgba(12,10,30,.55)}
+.dlg{display:flex;flex-direction:column;max-height:calc(100vh - 32px)}
+.dlg>header{padding:18px 20px 8px}
+.dlg>header h2{font-size:22px}
+.dlg>.body{padding:8px 20px 16px;overflow:auto;display:flex;flex-direction:column;gap:18px}
+.dlg>footer{padding:14px 20px;border-top:1px solid var(--line);display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap}
+.paybox{background:var(--sunk);border-radius:12px;padding:14px;display:flex;flex-direction:column;gap:8px}
+.change{font:800 22px/1.2 var(--f-display);color:var(--ok)}
+.change.neg{color:var(--danger)}
+
+/* Commandes */
+.toolbar{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:14px}
+.toolbar input{max-width:320px}
+.orders{display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:14px}
+.order{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:14px 16px;display:flex;flex-direction:column;gap:10px;border-left-width:6px}
+.order[data-st="a_faire"]{border-left-color:var(--resin)}
+.order[data-st="en_cours"]{border-left-color:var(--accent)}
+.order[data-st="prete"]{border-left-color:var(--ok)}
+.order[data-st="livree"],.order[data-st="annulee"]{border-left-color:var(--line)}
+.order .top{display:flex;justify-content:space-between;gap:10px;align-items:start}
+.order h3{font-size:18px}
+.order ul{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:4px}
+.order li{display:flex;justify-content:space-between;gap:10px}
+.order li em{display:block;color:var(--muted);font-style:normal;font-size:14px}
+.pill{border-radius:99px;padding:4px 10px;font-size:13px;font-weight:700;white-space:nowrap}
+.pill.a_faire{background:var(--resin-soft);color:var(--resin)}
+.pill.en_cours{background:var(--accent-soft);color:var(--accent)}
+.pill.prete{background:var(--ok-soft);color:var(--ok)}
+.pill.livree,.pill.annulee,.pill.vente{background:var(--sunk);color:var(--muted)}
+.money{display:flex;gap:14px;flex-wrap:wrap;font-size:14px}
+.money b{font-size:16px}
+.due{color:var(--warn);font-weight:700}
+.acts{display:flex;gap:8px;flex-wrap:wrap}
+.meta{font-size:14px;color:var(--muted);display:flex;gap:4px 14px;flex-wrap:wrap}
+.meta a{color:var(--accent);font-weight:700}
+
+/* Catalogue */
+.list{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);overflow:hidden}
+.item{display:grid;grid-template-columns:64px minmax(0,1fr) auto;gap:14px;align-items:center;padding:10px 14px;border-top:1px solid var(--line)}
+.item:first-child{border-top:0}
+.item img{width:64px;height:64px;border-radius:10px;object-fit:cover;background:var(--sunk)}
+.item .nm{font-weight:700}
+.photos{display:flex;gap:10px;flex-wrap:wrap}
+.photos figure{margin:0;position:relative}
+.photos img{width:96px;height:96px;object-fit:cover;border-radius:10px;display:block}
+.photos figure button{position:absolute;top:4px;right:4px;width:30px;height:30px;border-radius:99px;border:0;background:rgba(0,0,0,.6);color:#fff;font-size:16px}
+.addph{width:96px;height:96px;border:2px dashed var(--line);border-radius:10px;display:grid;place-items:center;color:var(--muted);font-weight:700;font-size:13px;text-align:center;cursor:pointer;background:var(--bg)}
+
+/* Bilan */
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px;margin-bottom:20px}
+.stat{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:14px 16px}
+.stat small{display:block;color:var(--muted);font-weight:700;font-size:12px;letter-spacing:.06em;text-transform:uppercase}
+.stat b{font:800 28px/1.2 var(--f-display)}
+.stat.key{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.stat.key small{color:inherit;opacity:.8}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:16px;margin-bottom:18px;display:flex;flex-direction:column;gap:14px}
+.panel h2{font-size:19px}
+.tbl{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:15px}
+th,td{text-align:left;padding:8px 6px;border-bottom:1px solid var(--line)}
+th{font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+td.r,th.r{text-align:right}
+
+.toast{position:fixed;left:50%;bottom:calc(24px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:12px 18px;border-radius:12px;font-weight:700;z-index:50;max-width:calc(100vw - 32px)}
+.cartfab{display:none}
+
+@media (max-width:900px){ .sale{grid-template-columns:1fr} .cart{position:static;max-height:none} }
+@media (max-width:640px){
+  .app{grid-template-columns:1fr;grid-template-rows:1fr auto}
+  .rail{flex-direction:row;order:2;border-right:0;border-top:1px solid var(--line);padding:6px 8px calc(6px + env(safe-area-inset-bottom,0px));justify-content:space-around}
+  .brand{display:none}
+  .nav{flex:1;font-size:12px;padding:6px 2px}
+  main{padding-inline:16px}
+  .grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .orders{grid-template-columns:1fr}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+</head>
+<body>
+<div class="app">
+  <nav class="rail" aria-label="Sections">
+    <div class="brand" aria-hidden="true">
+      <svg viewBox="0 0 64 64"><path d="M32 6C32 6 14 28 14 40a18 18 0 0 0 36 0C50 28 32 6 32 6Z" fill="var(--accent)"/><path d="M24 40a8 8 0 0 0 8 8" stroke="var(--accent-ink)" stroke-width="3.5" fill="none" stroke-linecap="round"/></svg>
+      <small>Dragonne<br>Créa</small>
+    </div>
+    <button class="nav" data-view="vente"><svg viewBox="0 0 24 24"><path d="M4 7h16l-1.5 11a2 2 0 0 1-2 1.7H7.5a2 2 0 0 1-2-1.7Z"/><path d="M9 7a3 3 0 0 1 6 0"/></svg>Vente</button>
+    <button class="nav" data-view="commandes"><svg viewBox="0 0 24 24"><rect x="5" y="4" width="14" height="17" rx="2"/><path d="M9 9h6M9 13h6M9 17h3"/></svg>Commandes<span class="badge num" id="badge" hidden></span></button>
+    <button class="nav" data-view="catalogue"><svg viewBox="0 0 24 24"><rect x="4" y="4" width="7" height="7" rx="1.5"/><rect x="13" y="4" width="7" height="7" rx="1.5"/><rect x="4" y="13" width="7" height="7" rx="1.5"/><rect x="13" y="13" width="7" height="7" rx="1.5"/></svg>Catalogue</button>
+    <button class="nav" data-view="bilan"><svg viewBox="0 0 24 24"><path d="M5 20V10M12 20V4M19 20v-7"/></svg>Bilan</button>
+  </nav>
+  <main id="main"></main>
+</div>
+
+<dialog id="dlg"><div class="dlg" id="dlgInner"></div></dialog>
+<input type="file" id="fileIn" accept="image/*" hidden>
+<input type="file" id="jsonIn" accept="application/json,.json" hidden>
+
+<script>
+"use strict";
+/* ---------- Utilitaires ---------- */
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const r2 = n => Math.round((+n || 0) * 100) / 100;
+const eur = n => r2(n).toLocaleString("fr-FR", {style:"currency", currency:"EUR"});
+const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+const todayISO = () => { const d = new Date(); d.setMinutes(d.getMinutes() - d.getTimezoneOffset()); return d.toISOString().slice(0,10); };
+const addDays = (iso, n) => { const d = new Date(iso + "T12:00:00"); d.setDate(d.getDate() + n); return d.toISOString().slice(0,10); };
+const dayOf = iso => { const d = new Date(iso); d.setMinutes(d.getMinutes() - d.getTimezoneOffset()); return d.toISOString().slice(0,10); };
+const frDate = iso => iso ? new Date(iso.length === 10 ? iso + "T12:00:00" : iso).toLocaleDateString("fr-FR", {weekday:"short", day:"numeric", month:"short"}) : "";
+const frTime = iso => new Date(iso).toLocaleTimeString("fr-FR", {hour:"2-digit", minute:"2-digit"});
+const parseNum = v => r2(String(v).replace(",", ".").replace(/[^\d.]/g, ""));
+
+function toast(msg){
+  const t = document.createElement("div"); t.className = "toast"; t.textContent = msg;
+  document.body.appendChild(t); setTimeout(() => t.remove(), 2600);
+}
+
+/* ---------- Stockage local (IndexedDB, rien ne sort de la tablette) ---------- */
+const DB = {
+  db:null,
+  open(){ return new Promise((res, rej) => {
+    const r = indexedDB.open("dragonne-club", 1);
+    r.onupgradeneeded = () => { const d = r.result;
+      if(!d.objectStoreNames.contains("articles")) d.createObjectStore("articles", {keyPath:"id"});
+      if(!d.objectStoreNames.contains("orders")) d.createObjectStore("orders", {keyPath:"id"});
+      if(!d.objectStoreNames.contains("kv")) d.createObjectStore("kv", {keyPath:"k"}); };
+    r.onsuccess = () => { this.db = r.result; res(); };
+    r.onerror = () => rej(r.error);
+  });},
+  tx(store, mode, fn){ return new Promise((res, rej) => {
+    const t = this.db.transaction(store, mode); const out = fn(t.objectStore(store));
+    t.oncomplete = () => res(out && out.result); t.onerror = () => rej(t.error);
+  });},
+  all(s){ return this.tx(s, "readonly", st => st.getAll()); },
+  put(s, v){ return this.tx(s, "readwrite", st => { st.put(v); }); },
+  del(s, id){ return this.tx(s, "readwrite", st => { st.delete(id); }); },
+  clear(s){ return this.tx(s, "readwrite", st => { st.clear(); }); }
+};
+
+const S = { articles:[], orders:[], settings:null, cart:[], view:"vente", cat:"Tout", filter:"ouvertes", q:"", bilanDay:todayISO() };
+const STATUTS = { a_faire:"À fabriquer", en_cours:"En cours", prete:"Prête", livree:"Livrée", annulee:"Annulée" };
+const saveSettings = () => DB.put("kv", S.settings);
+
+/* ---------- Exemples (dessinés, à supprimer quand le vrai catalogue est saisi) ---------- */
+function samplePhoto(label, hue, shape){
+  const c = document.createElement("canvas"); c.width = c.height = 480; const g = c.getContext("2d");
+  const grd = g.createLinearGradient(0,0,480,480);
+  grd.addColorStop(0, `hsl(${hue} 55% 88%)`); grd.addColorStop(1, `hsl(${hue+30} 50% 74%)`);
+  g.fillStyle = grd; g.fillRect(0,0,480,480);
+  g.fillStyle = `hsla(${hue+190} 70% 45% / .85)`; g.strokeStyle = "rgba(255,255,255,.85)"; g.lineWidth = 8;
+  g.beginPath();
+  if(shape === "ballon"){ g.ellipse(240,220,150,95,-0.5,0,7); g.fill(); g.beginPath(); g.moveTo(150,280); g.lineTo(330,160); g.stroke(); }
+  else if(shape === "rond"){ g.arc(240,220,130,0,7); g.fill(); g.stroke(); }
+  else if(shape === "goutte"){ g.moveTo(240,60); g.bezierCurveTo(330,190,360,240,360,280); g.arc(240,280,120,0,Math.PI); g.bezierCurveTo(120,240,150,190,240,60); g.fill(); }
+  else { g.roundRect ? g.roundRect(100,110,280,220,30) : g.rect(100,110,280,220); g.fill(); g.stroke(); }
+  g.fillStyle = "rgba(20,18,40,.75)"; g.font = "bold 34px sans-serif"; g.textAlign = "center"; g.fillText(label, 240, 430);
+  return c.toDataURL("image/jpeg", .8);
+}
+async function seed(){
+  const ex = [
+    ["Porte-clés ballon", "Porte-clés", 6, "stock", 20, 0, "ballon", 250],
+    ["Porte-clés prénom + n°", "Porte-clés", 8, "commande", 0, 7, "goutte", 270],
+    ["Médaille joueur personnalisée", "Souvenirs", 12, "commande", 0, 10, "rond", 40],
+    ["Dessous de verre logo (lot de 4)", "Maison", 18, "stock", 6, 0, "rond", 200],
+    ["Plateau de service logo club", "Maison", 45, "commande", 0, 21, "carre", 160],
+    ["Plaque de vestiaire prénom", "Souvenirs", 25, "commande", 0, 14, "carre", 300],
+    ["Magnet couleurs du club", "Petits prix", 4, "stock", 30, 0, "goutte", 120],
+    ["Trophée fin de saison", "Souvenirs", 35, "commande", 0, 21, "goutte", 20]
+  ];
+  for(const [nom, cat, prix, mode, stock, delai, shape, hue] of ex){
+    await DB.put("articles", {id:uid(), nom, cat, prix, mode, stock, delai, photos:[samplePhoto("Exemple", hue, shape)], exemple:true, actif:true, cree:new Date().toISOString()});
+  }
+}
+
+/* ---------- Démarrage ---------- */
+async function boot(){
+  await DB.open();
+  const kv = await DB.all("kv");
+  S.settings = kv.find(x => x.k === "settings") || {k:"settings", club:"Club de rugby", acomptePct:30, nextNum:1, seeded:false};
+  if(!S.settings.seeded){ await seed(); S.settings.seeded = true; await saveSettings(); }
+  await reload();
+  try { navigator.storage && navigator.storage.persist && navigator.storage.persist(); } catch(e){}
+  go("vente");
+}
+async function reload(){
+  S.articles = (await DB.all("articles")).sort((a,b) => a.cat.localeCompare(b.cat) || a.nom.localeCompare(b.nom));
+  S.orders = (await DB.all("orders")).sort((a,b) => b.date.localeCompare(a.date));
+  const open = S.orders.filter(o => o.type === "commande" && !["livree","annulee"].includes(o.statut)).length;
+  const b = $("#badge"); b.hidden = !open; b.textContent = open;
+}
+function go(v){
+  S.view = v;
+  document.querySelectorAll(".nav").forEach(n => n.dataset.view === v ? n.setAttribute("aria-current","page") : n.removeAttribute("aria-current"));
+  render(); $("#main").scrollTop = 0;
+}
+document.querySelectorAll(".nav").forEach(n => n.addEventListener("click", () => go(n.dataset.view)));
+function render(){ ({vente:renderVente, commandes:renderCommandes, catalogue:renderCatalogue, bilan:renderBilan})[S.view](); }
+
+const art = id => S.articles.find(a => a.id === id);
+const inCart = id => S.cart.filter(l => l.artId === id).reduce((s,l) => s + l.qte, 0);
+const modeTag = a => a.mode === "stock"
+  ? (a.stock > 0 ? `<span class="tag stock num">${a.stock} en stock</span>` : `<span class="tag out">Épuisé</span>`)
+  : `<span class="tag cmd num">Sur commande · ${a.delai} j</span>`;
+
+/* ---------- Vente ---------- */
+function renderVente(){
+  const actifs = S.articles.filter(a => a.actif);
+  const cats = ["Tout", ...new Set(actifs.map(a => a.cat))];
+  if(!cats.includes(S.cat)) S.cat = "Tout";
+  const list = actifs.filter(a => S.cat === "Tout" || a.cat === S.cat);
+  $("#main").innerHTML = `
+  <div class="head"><div><h1>Vente</h1><p>${esc(S.settings.club)} · touchez un article pour l'ajouter</p></div></div>
+  <div class="sale">
+    <section>
+      <div class="chips">${cats.map(c => `<button class="chip" data-cat="${esc(c)}" aria-pressed="${c===S.cat}">${esc(c)}</button>`).join("")}</div>
+      ${list.length ? `<div class="grid">${list.map(a => {
+        const n = inCart(a.id), out = a.mode === "stock" && a.stock - n <= 0;
+        return `<button class="card${a.mode==="stock" && a.stock<=0 ? " dim":""}" data-add="${a.id}">
+          ${a.photos[0] ? `<img class="ph" src="${a.photos[0]}" alt="">` : `<span class="ph"></span>`}
+          ${n ? `<span class="incart num">${n}</span>` : ""}
+          <span class="bd"><span class="nm">${esc(a.nom)}</span><span>${modeTag(a)} ${a.exemple ? '<span class="tag ex">Exemple</span>' : ""}</span>
+          <span class="pr num">${eur(a.prix)}</span></span></button>`; }).join("")}</div>`
+      : `<div class="panel"><p class="muted">Aucun article dans cette catégorie. Ajoutez-en depuis l'onglet Catalogue.</p></div>`}
+    </section>
+    <aside class="cart" aria-label="Panier">${cartHTML()}</aside>
+  </div>`;
+  $("#main").querySelectorAll("[data-cat]").forEach(b => b.onclick = () => { S.cat = b.dataset.cat; renderVente(); });
+  $("#main").querySelectorAll("[data-add]").forEach(b => b.onclick = () => addToCart(b.dataset.add));
+  bindCart();
+}
+function cartTotals(){
+  const stock = r2(S.cart.filter(l => l.mode === "stock").reduce((s,l) => s + l.prix*l.qte, 0));
+  const cmd = r2(S.cart.filter(l => l.mode === "commande").reduce((s,l) => s + l.prix*l.qte, 0));
+  return {stock, cmd, total:r2(stock+cmd)};
+}
+function cartHTML(){
+  if(!S.cart.length) return `<header><h2>Panier</h2></header><p class="empty">Le panier est vide.</p>`;
+  const t = cartTotals();
+  return `<header><h2>Panier</h2><button class="btn small ghost" id="clearCart">Vider</button></header>
+  <div class="lines">${S.cart.map((l,i) => `
+    <div class="line">
+      <div class="t">${esc(l.nom)}<div>${l.mode==="commande" ? '<span class="tag cmd">Sur commande</span>' : '<span class="tag stock">À emporter</span>'}</div></div>
+      <div class="p num"><b>${eur(l.prix*l.qte)}</b><div class="muted">${eur(l.prix)} / u</div></div>
+      <div class="qty"><button data-dec="${i}" aria-label="Retirer un">−</button><span class="num">${l.qte}</span><button data-inc="${i}" aria-label="Ajouter un">+</button></div>
+      <div></div>
+      ${l.mode==="commande" ? `<input type="text" id="perso-${i}" data-perso="${i}" placeholder="Personnalisation (prénom, numéro, couleurs…)" value="${esc(l.perso)}">` : ""}
+    </div>`).join("")}</div>
+  <div class="tot">
+    ${t.stock && t.cmd ? `<div class="row muted"><span>À emporter</span><span class="num">${eur(t.stock)}</span></div><div class="row muted"><span>Sur commande</span><span class="num">${eur(t.cmd)}</span></div>` : ""}
+    <div class="row big"><span>Total</span><span class="num">${eur(t.total)}</span></div>
+    <button class="btn primary" id="checkout">${t.cmd ? "Prendre la commande" : "Encaisser"}</button>
+  </div>`;
+}
+function bindCart(){
+  const box = document.querySelector(".cart"); if(!box) return;
+  box.querySelectorAll("[data-inc]").forEach(b => b.onclick = () => { const l = S.cart[b.dataset.inc]; if(l.mode === "stock" && inCart(l.artId) >= art(l.artId).stock) return toast("Plus de stock pour cet article"); l.qte++; renderVente(); });
+  box.querySelectorAll("[data-dec]").forEach(b => b.onclick = () => { const i = +b.dataset.dec; if(--S.cart[i].qte <= 0) S.cart.splice(i,1); renderVente(); });
+  box.querySelectorAll("[data-perso]").forEach(inp => inp.oninput = () => { S.cart[inp.dataset.perso].perso = inp.value; });
+  const c = $("#clearCart"); if(c) c.onclick = async () => { if(await ask("Vider le panier ?", "Les articles ajoutés seront retirés.", "Vider")) { S.cart = []; renderVente(); } };
+  const k = $("#checkout"); if(k) k.onclick = openCheckout;
+}
+function addToCart(id){
+  const a = art(id);
+  if(a.mode === "stock" && inCart(id) >= a.stock) return toast(a.stock ? "Plus de stock pour cet article" : "Article épuisé");
+  // Les articles sur commande gardent une ligne par pièce personnalisée
+  const l = a.mode === "stock" ? S.cart.find(x => x.artId === id) : null;
+  if(l) l.qte++; else S.cart.push({artId:id, nom:a.nom, prix:a.prix, mode:a.mode, qte:1, perso:"", delai:a.delai||0});
+  renderVente();
+}
+
+/* ---------- Encaissement / prise de commande ---------- */
+function openCheckout(){
+  const t = cartTotals(), hasCmd = t.cmd > 0;
+  const maxDelai = Math.max(0, ...S.cart.filter(l => l.mode === "commande").map(l => l.delai));
+  const acompte0 = hasCmd ? Math.ceil(t.cmd * S.settings.acomptePct / 100) : 0;
+  openDlg(`
+  <header><h2>${hasCmd ? "Nouvelle commande" : "Encaisser la vente"}</h2></header>
+  <form class="body" id="coForm" novalidate>
+    <fieldset><legend>Client${hasCmd ? "" : ' <span class="muted" style="font:400 14px var(--f-body)">(facultatif)</span>'}</legend>
+      <div class="fgrid">
+        <label class="f">Nom${hasCmd ? " *" : ""}<input type="text" id="coNom" autocomplete="off" ${hasCmd ? "required" : ""}></label>
+        <label class="f">Téléphone<input type="tel" id="coTel" autocomplete="off" inputmode="tel"></label>
+        <label class="f">Équipe / catégorie <span class="h">ex. U12, Seniors, Parent</span><input type="text" id="coEq" autocomplete="off"></label>
+      </div>
+    </fieldset>
+    ${hasCmd ? `<fieldset><legend>Commande</legend>
+      <div class="fgrid">
+        <label class="f">Livraison prévue<input type="date" id="coLiv" value="${addDays(todayISO(), maxDelai)}"></label>
+        <label class="f">Acompte en espèces <span class="h">suggéré ${S.settings.acomptePct} %</span><input type="text" inputmode="decimal" id="coAc" value="${acompte0}"></label>
+      </div>
+      <label class="f">Note <span class="h">couleurs, délai particulier…</span><textarea id="coNote" rows="2"></textarea></label>
+    </fieldset>` : ""}
+    <div class="paybox">
+      ${t.stock ? `<div class="row"><span>Articles à emporter</span><b class="num">${eur(t.stock)}</b></div>` : ""}
+      ${hasCmd ? `<div class="row"><span>Acompte sur commande</span><b class="num" id="coAcOut"></b></div>` : ""}
+      <div class="row big"><span>À encaisser</span><span class="num" id="coNow"></span></div>
+      ${hasCmd ? `<div class="row due"><span>Reste dû à la livraison</span><span class="num" id="coRest"></span></div>` : ""}
+      <label class="f">Espèces reçues<input type="text" inputmode="decimal" id="coRecu" placeholder="Pour calculer la monnaie"></label>
+      <div class="row"><span>Monnaie à rendre</span><span class="change num" id="coChange">—</span></div>
+    </div>
+  </form>
+  <footer><button class="btn ghost" id="coCancel" type="button">Retour</button><button class="btn ok" id="coOk" type="button">${hasCmd ? "Valider la commande" : "Valider la vente"}</button></footer>`);
+  const upd = () => {
+    const ac = hasCmd ? Math.min(parseNum($("#coAc").value), t.cmd) : 0;
+    const now = r2(t.stock + ac);
+    if(hasCmd){ $("#coAcOut").textContent = eur(ac); $("#coRest").textContent = eur(t.cmd - ac); }
+    $("#coNow").textContent = eur(now);
+    const recu = $("#coRecu").value.trim();
+    const ch = $("#coChange");
+    if(!recu){ ch.textContent = "—"; ch.classList.remove("neg"); }
+    else { const d = r2(parseNum(recu) - now); ch.textContent = d < 0 ? `Manque ${eur(-d)}` : eur(d); ch.classList.toggle("neg", d < 0); }
+    return {ac, now};
+  };
+  ["#coAc","#coRecu"].forEach(s => { const e = $(s); if(e) e.oninput = upd; });
+  upd();
+  $("#coCancel").onclick = closeDlg;
+  $("#coOk").onclick = async () => {
+    const nom = $("#coNom").value.trim();
+    if(hasCmd && !nom){ $("#coNom").focus(); return toast("Indiquez le nom du client"); }
+    const {ac} = upd();
+    const client = {nom, tel:$("#coTel").value.trim(), equipe:$("#coEq").value.trim()};
+    const now = new Date().toISOString();
+    const stockLines = S.cart.filter(l => l.mode === "stock"), cmdLines = S.cart.filter(l => l.mode === "commande");
+    const nums = [];
+    if(stockLines.length){
+      const o = {id:uid(), num:S.settings.nextNum++, type:"vente", date:now, client, statut:"livree",
+        lignes:stockLines.map(l => ({nom:l.nom, prix:l.prix, qte:l.qte, perso:""})), total:t.stock,
+        paiements:[{date:now, montant:t.stock, nature:"vente"}]};
+      await DB.put("orders", o); nums.push(o.num);
+      for(const l of stockLines){ const a = art(l.artId); if(a){ a.stock = Math.max(0, a.stock - l.qte); await DB.put("articles", a); } }
+    }
+    if(cmdLines.length){
+      const o = {id:uid(), num:S.settings.nextNum++, type:"commande", date:now, client, statut:"a_faire",
+        livraison:$("#coLiv").value, note:$("#coNote").value.trim(),
+        lignes:cmdLines.map(l => ({nom:l.nom, prix:l.prix, qte:l.qte, perso:(l.perso||"").trim()})), total:t.cmd,
+        paiements: ac > 0 ? [{date:now, montant:ac, nature:"acompte"}] : []};
+      await DB.put("orders", o); nums.push(o.num);
+    }
+    await saveSettings();
+    S.cart = []; closeDlg(); await reload(); renderVente();
+    toast(cmdLines.length ? `Commande n° ${nums[nums.length-1]} enregistrée` : `Vente n° ${nums[0]} enregistrée`);
+  };
+  setTimeout(() => { const n = $("#coNom"); if(n && hasCmd) n.focus(); }, 50);
+}
+
+/* ---------- Commandes ---------- */
+const paid = o => r2(o.paiements.reduce((s,p) => s + p.montant, 0));
+const due = o => o.statut === "annulee" ? 0 : r2(o.total - paid(o));
+function renderCommandes(){
+  const F = {ouvertes:"En cours", pretes:"Prêtes", livrees:"Livrées", ventes:"Ventes directes", toutes:"Tout"};
+  const q = S.q.toLowerCase();
+  let list = S.orders.filter(o => ({
+    ouvertes: o.type==="commande" && ["a_faire","en_cours"].includes(o.statut),
+    pretes: o.type==="commande" && o.statut==="prete",
+    livrees: o.type==="commande" && ["livree","annulee"].includes(o.statut),
+    ventes: o.type==="vente", toutes: true })[S.filter]);
+  if(q) list = list.filter(o => [o.client.nom, o.client.equipe, o.client.tel, "n°"+o.num, ...o.lignes.map(l => l.nom+" "+l.perso)].join(" ").toLowerCase().includes(q));
+  if(S.filter === "ouvertes" || S.filter === "pretes") list.sort((a,b) => (a.livraison||"").localeCompare(b.livraison||""));
+  $("#main").innerHTML = `
+  <div class="head"><div><h1>Commandes</h1><p>Suivi des pièces à fabriquer et des soldes à encaisser</p></div></div>
+  <div class="toolbar">
+    <div class="chips" style="margin:0">${Object.entries(F).map(([k,v]) => `<button class="chip" data-f="${k}" aria-pressed="${k===S.filter}">${v}</button>`).join("")}</div>
+    <input type="search" id="oq" placeholder="Rechercher un nom, une équipe, un n°…" value="${esc(S.q)}">
+  </div>
+  ${list.length ? `<div class="orders">${list.map(orderHTML).join("")}</div>` : `<div class="panel"><p class="muted">Rien dans cette liste pour l'instant.</p></div>`}`;
+  $("#main").querySelectorAll("[data-f]").forEach(b => b.onclick = () => { S.filter = b.dataset.f; renderCommandes(); });
+  const oq = $("#oq"); oq.oninput = () => { S.q = oq.value; const pos = oq.selectionStart; renderCommandes(); const n = $("#oq"); n.focus(); n.setSelectionRange(pos,pos); };
+  $("#main").querySelectorAll("[data-st]").forEach(b => b.onclick = () => setStatus(b.dataset.id, b.dataset.st));
+  $("#main").querySelectorAll("[data-solde]").forEach(b => b.onclick = () => encaisserSolde(b.dataset.solde));
+  $("#main").querySelectorAll("[data-cancel]").forEach(b => b.onclick = () => annuler(b.dataset.cancel));
+}
+function orderHTML(o){
+  const d = due(o), late = o.type==="commande" && !["livree","annulee"].includes(o.statut) && o.livraison && o.livraison < todayISO();
+  const next = {a_faire:"en_cours", en_cours:"prete", prete:"livree"}[o.statut];
+  const nextLbl = {en_cours:"Commencer", prete:"Marquer prête", livree:"Remettre au client"}[next];
+  return `<article class="order" data-st="${o.type==="vente" ? "livree" : o.statut}">
+    <div class="top"><div><h3>${esc(o.client.nom || "Client de passage")} <span class="muted num" style="font-weight:600">n° ${o.num}</span></h3>
+      <div class="meta">${o.client.equipe ? `<span>${esc(o.client.equipe)}</span>` : ""}${o.client.tel ? `<a href="tel:${esc(o.client.tel.replace(/\s/g,""))}">${esc(o.client.tel)}</a>` : ""}<span>${frDate(o.date)} ${frTime(o.date)}</span></div></div>
+      <span class="pill ${o.type==="vente" ? "vente" : o.statut}">${o.type==="vente" ? "Vente directe" : STATUTS[o.statut]}</span></div>
+    <ul>${o.lignes.map(l => `<li><span>${l.qte > 1 ? l.qte+" × " : ""}${esc(l.nom)}${l.perso ? `<em>${esc(l.perso)}</em>` : ""}</span><span class="num">${eur(l.prix*l.qte)}</span></li>`).join("")}</ul>
+    ${o.note ? `<div class="muted" style="font-size:14px">Note : ${esc(o.note)}</div>` : ""}
+    <div class="money num"><span>Total <b>${eur(o.total)}</b></span><span>Payé <b>${eur(paid(o))}</b></span>${d > 0 ? `<span class="due">Reste ${eur(d)}</span>` : (o.statut==="annulee" ? "" : `<span style="color:var(--ok);font-weight:700">Soldée</span>`)}</div>
+    ${o.type==="commande" && o.livraison && o.statut !== "annulee" ? `<div class="meta"><span ${late ? 'style="color:var(--danger);font-weight:700"' : ""}>Livraison prévue ${frDate(o.livraison)}${late ? " · en retard" : ""}</span></div>` : ""}
+    ${o.type==="commande" && !["livree","annulee"].includes(o.statut) ? `<div class="acts">
+      ${next ? `<button class="btn small primary" data-st="${next}" data-id="${o.id}">${nextLbl}</button>` : ""}
+      ${d > 0 ? `<button class="btn small ghost" data-solde="${o.id}">Encaisser ${eur(d)}</button>` : ""}
+      <button class="btn small danger" data-cancel="${o.id}">Annuler</button></div>` : ""}
+  </article>`;
+}
+async function setStatus(id, st){
+  const o = S.orders.find(x => x.id === id);
+  if(st === "livree" && due(o) > 0){
+    if(!(await ask("Encaisser le solde ?", `Il reste ${eur(due(o))} à payer sur la commande n° ${o.num}. Encaisser maintenant en espèces et remettre la commande ?`, "Encaisser et remettre"))) return;
+    o.paiements.push({date:new Date().toISOString(), montant:due(o), nature:"solde"});
+  }
+  o.statut = st; await DB.put("orders", o); await reload(); renderCommandes();
+  toast(`Commande n° ${o.num} : ${STATUTS[st].toLowerCase()}`);
+}
+async function encaisserSolde(id){
+  const o = S.orders.find(x => x.id === id);
+  if(!(await ask("Encaisser le solde", `Encaisser ${eur(due(o))} en espèces pour la commande n° ${o.num} (${esc(o.client.nom)}) ?`, "Encaisser"))) return;
+  o.paiements.push({date:new Date().toISOString(), montant:due(o), nature:"solde"});
+  await DB.put("orders", o); await reload(); renderCommandes(); toast("Solde encaissé");
+}
+async function annuler(id){
+  const o = S.orders.find(x => x.id === id);
+  const p = paid(o);
+  if(!(await ask("Annuler la commande ?", `La commande n° ${o.num} passera en « Annulée ».${p ? ` L'acompte de ${eur(p)} reste enregistré : s'il est rendu au client, notez-le à part.` : ""}`, "Annuler la commande", true))) return;
+  o.statut = "annulee"; await DB.put("orders", o); await reload(); renderCommandes();
+}
+
+/* ---------- Catalogue ---------- */
+function renderCatalogue(){
+  const nEx = S.articles.filter(a => a.exemple).length;
+  $("#main").innerHTML = `
+  <div class="head"><div><h1>Catalogue</h1><p>${S.articles.length} article${S.articles.length>1?"s":""} · les articles masqués n'apparaissent pas à la vente</p></div>
+    <div class="acts">${nEx ? `<button class="btn ghost" id="delEx">Supprimer les ${nEx} exemples</button>` : ""}<button class="btn primary" id="newArt">Ajouter un article</button></div></div>
+  ${S.articles.length ? `<div class="list">${S.articles.map(a => `
+    <div class="item"><img src="${a.photos[0] || ""}" alt="">
+      <div style="min-width:0"><div class="nm">${esc(a.nom)}</div>
+        <div class="meta"><span>${esc(a.cat)}</span><b class="num" style="color:var(--ink)">${eur(a.prix)}</b>${modeTag(a)}${a.exemple ? '<span class="tag ex">Exemple</span>' : ""}${a.actif ? "" : '<span class="tag ex">Masqué</span>'}</div></div>
+      <button class="btn small ghost" data-edit="${a.id}">Modifier</button></div>`).join("")}</div>`
+  : `<div class="panel"><p class="muted">Le catalogue est vide. Ajoutez le premier article avec sa photo et son prix.</p></div>`}`;
+  $("#newArt").onclick = () => editArticle(null);
+  $("#main").querySelectorAll("[data-edit]").forEach(b => b.onclick = () => editArticle(b.dataset.edit));
+  const de = $("#delEx"); if(de) de.onclick = async () => {
+    if(!(await ask("Supprimer les exemples ?", "Les articles marqués « Exemple » seront retirés du catalogue. Vos propres articles ne sont pas touchés.", "Supprimer", true))) return;
+    for(const a of S.articles.filter(a => a.exemple)) await DB.del("articles", a.id);
+    await reload(); renderCatalogue(); toast("Exemples supprimés");
+  };
+}
+function editArticle(id){
+  const a0 = id ? art(id) : null;
+  const a = a0 ? JSON.parse(JSON.stringify(a0)) : {id:uid(), nom:"", cat:"", prix:"", mode:"stock", stock:1, delai:7, photos:[], exemple:false, actif:true, cree:new Date().toISOString()};
+  const cats = [...new Set(S.articles.map(x => x.cat))];
+  const draw = () => {
+    openDlg(`
+    <header><h2>${a0 ? "Modifier l'article" : "Nouvel article"}</h2></header>
+    <div class="body">
+      <div class="photos" id="phs">${a.photos.map((p,i) => `<figure><img src="${p}" alt="Photo ${i+1}"><button type="button" data-rm="${i}" aria-label="Retirer la photo">×</button></figure>`).join("")}
+        ${a.photos.length < 3 ? `<label class="addph" for="fileIn">+ Photo<br>${a.photos.length}/3</label>` : ""}</div>
+      <div class="fgrid">
+        <label class="f">Nom de l'article *<input type="text" id="aNom" value="${esc(a.nom)}"></label>
+        <label class="f">Catégorie *<input type="text" id="aCat" list="catList" value="${esc(a.cat)}" placeholder="ex. Porte-clés"><datalist id="catList">${cats.map(c => `<option value="${esc(c)}">`).join("")}</datalist></label>
+        <label class="f">Prix (€) *<input type="text" inputmode="decimal" id="aPrix" value="${a.prix === "" ? "" : String(a.prix).replace(".",",")}"></label>
+      </div>
+      <div class="f" style="display:flex;flex-direction:column;gap:6px;font-weight:700;font-size:14px">Disponibilité
+        <div class="seg"><button type="button" data-mode="stock" aria-pressed="${a.mode==="stock"}">En stock, à emporter</button><button type="button" data-mode="commande" aria-pressed="${a.mode==="commande"}">Fabriqué sur commande</button></div></div>
+      <div class="fgrid">
+        ${a.mode === "stock" ? `<label class="f">Quantité en stock<input type="number" min="0" inputmode="numeric" id="aStock" value="${a.stock}"></label>`
+          : `<label class="f">Délai de fabrication (jours)<input type="number" min="0" inputmode="numeric" id="aDelai" value="${a.delai}"></label>`}
+        <label class="f">Visible à la vente<div class="seg"><button type="button" data-act="1" aria-pressed="${a.actif}">Oui</button><button type="button" data-act="0" aria-pressed="${!a.actif}">Masqué</button></div></label>
+      </div>
+    </div>
+    <footer>${a0 ? `<button class="btn danger" id="aDel" type="button" style="margin-right:auto">Supprimer</button>` : ""}<button class="btn ghost" id="aCancel" type="button">Annuler</button><button class="btn primary" id="aOk" type="button">Enregistrer</button></footer>`);
+    const keep = () => { a.nom = $("#aNom").value; a.cat = $("#aCat").value; a.prix = $("#aPrix").value;
+      if($("#aStock")) a.stock = Math.max(0, parseInt($("#aStock").value)||0); if($("#aDelai")) a.delai = Math.max(0, parseInt($("#aDelai").value)||0); };
+    document.querySelectorAll("[data-mode]").forEach(b => b.onclick = () => { keep(); a.mode = b.dataset.mode; draw(); });
+    document.querySelectorAll("[data-act]").forEach(b => b.onclick = () => { keep(); a.actif = b.dataset.act === "1"; draw(); });
+    document.querySelectorAll("[data-rm]").forEach(b => b.onclick = () => { keep(); a.photos.splice(+b.dataset.rm, 1); draw(); });
+    $("#fileIn").onchange = async e => { const f = e.target.files[0]; e.target.value = ""; if(!f) return; keep();
+      try { a.photos.push(await resizeImage(f)); draw(); } catch(err){ toast("Photo illisible, essayez une autre image"); } };
+    $("#aCancel").onclick = closeDlg;
+    const del = $("#aDel"); if(del) del.onclick = async () => {
+      if(!(await ask("Supprimer l'article ?", `« ${esc(a.nom)} » sera retiré du catalogue. Les commandes déjà prises ne sont pas modifiées.`, "Supprimer", true))) return draw();
+      await DB.del("articles", a.id); await reload(); renderCatalogue(); toast("Article supprimé"); };
+    $("#aOk").onclick = async () => {
+      keep(); a.nom = a.nom.trim(); a.cat = a.cat.trim(); const p = parseNum(a.prix);
+      if(!a.nom) return toast("Indiquez le nom de l'article");
+      if(!a.cat) return toast("Indiquez une catégorie");
+      if(!(p > 0)) return toast("Indiquez un prix");
+      a.prix = p; if(a0 && a0.exemple) a.exemple = false;
+      await DB.put("articles", a); closeDlg(); await reload(); renderCatalogue(); toast("Article enregistré");
+    };
+  };
+  draw();
+}
+function resizeImage(file){
+  return new Promise((res, rej) => {
+    const url = URL.createObjectURL(file), img = new Image();
+    img.onload = () => { const max = 900, k = Math.min(1, max / Math.max(img.width, img.height));
+      const c = document.createElement("canvas"); c.width = Math.round(img.width*k); c.height = Math.round(img.height*k);
+      c.getContext("2d").drawImage(img, 0, 0, c.width, c.height); URL.revokeObjectURL(url); res(c.toDataURL("image/jpeg", .82)); };
+    img.onerror = () => { URL.revokeObjectURL(url); rej(); };
+    img.src = url;
+  });
+}
+
+/* ---------- Bilan, export, sauvegarde ---------- */
+function renderBilan(){
+  const day = S.bilanDay;
+  const pays = [];
+  S.orders.forEach(o => o.paiements.forEach(p => { if(dayOf(p.date) === day) pays.push({...p, o}); }));
+  pays.sort((a,b) => a.date.localeCompare(b.date));
+  const sum = n => r2(pays.filter(p => !n || p.nature === n).reduce((s,p) => s + p.montant, 0));
+  const open = S.orders.filter(o => o.type==="commande" && !["livree","annulee"].includes(o.statut));
+  const resteDu = r2(open.reduce((s,o) => s + due(o), 0));
+  const first = S.orders.length ? dayOf(S.orders[S.orders.length-1].date) : todayISO();
+  $("#main").innerHTML = `
+  <div class="head"><div><h1>Bilan</h1><p>Espèces encaissées et commandes en attente</p></div>
+    <label class="f" style="min-width:200px">Journée<input type="date" id="bDay" value="${day}"></label></div>
+  <div class="stats">
+    <div class="stat key"><small>Espèces encaissées</small><b class="num">${eur(sum())}</b></div>
+    <div class="stat"><small>Ventes directes</small><b class="num">${eur(sum("vente"))}</b></div>
+    <div class="stat"><small>Acomptes</small><b class="num">${eur(sum("acompte"))}</b></div>
+    <div class="stat"><small>Soldes</small><b class="num">${eur(sum("solde"))}</b></div>
+    <div class="stat"><small>Reste dû · ${open.length} cde${open.length>1?"s":""}</small><b class="num" style="color:var(--warn)">${eur(resteDu)}</b></div>
+  </div>
+  <section class="panel"><h2>Encaissements du ${frDate(day)}</h2>
+    ${pays.length ? `<div class="tbl"><table><thead><tr><th>Heure</th><th>N°</th><th>Client</th><th>Nature</th><th class="r">Montant</th></tr></thead><tbody>
+      ${pays.map(p => `<tr><td class="num">${frTime(p.date)}</td><td class="num">${p.o.num}</td><td>${esc(p.o.client.nom || "Client de passage")}</td><td>${{vente:"Vente directe",acompte:"Acompte",solde:"Solde"}[p.nature]}</td><td class="r num">${eur(p.montant)}</td></tr>`).join("")}
+      </tbody></table></div>` : `<p class="muted">Aucun encaissement ce jour-là.</p>`}
+  </section>
+  <section class="panel"><h2>Exporter pour Excel</h2>
+    <div class="fgrid"><label class="f">Du<input type="date" id="exFrom" value="${first}"></label><label class="f">Au<input type="date" id="exTo" value="${todayISO()}"></label></div>
+    <div class="acts"><button class="btn primary" id="exCsv">Télécharger les ventes et commandes (CSV)</button></div>
+  </section>
+  <section class="panel"><h2>Sauvegarde</h2>
+    <p class="muted" style="margin:0">Les données restent uniquement sur cette tablette. Faites une sauvegarde régulière et gardez le fichier ailleurs (téléphone, ordinateur) : elle permet de tout retrouver sur un nouvel appareil.</p>
+    <div class="acts"><button class="btn" id="bkOut">Créer une sauvegarde</button><button class="btn ghost" id="bkIn">Restaurer une sauvegarde</button></div>
+  </section>
+  <section class="panel"><h2>Réglages</h2>
+    <div class="fgrid"><label class="f">Nom du club<input type="text" id="stClub" value="${esc(S.settings.club)}"></label>
+      <label class="f">Acompte suggéré (%)<input type="number" min="0" max="100" id="stPct" value="${S.settings.acomptePct}"></label></div>
+  </section>`;
+  $("#bDay").onchange = e => { S.bilanDay = e.target.value || todayISO(); renderBilan(); };
+  $("#exCsv").onclick = () => exportCSV($("#exFrom").value, $("#exTo").value);
+  $("#bkOut").onclick = backup;
+  $("#bkIn").onclick = () => $("#jsonIn").click();
+  $("#stClub").onchange = e => { S.settings.club = e.target.value.trim() || "Club"; saveSettings(); toast("Réglage enregistré"); };
+  $("#stPct").onchange = e => { S.settings.acomptePct = Math.min(100, Math.max(0, parseInt(e.target.value)||0)); saveSettings(); toast("Réglage enregistré"); };
+}
+const IS_APP = !!(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform());
+/* Dans l'appli Android : le fichier est créé puis proposé via le menu Partager (Drive, mail, WhatsApp…) */
+async function download(name, content, type){
+  if(IS_APP){
+    try {
+      const reg = (window.capacitorExports && window.capacitorExports.registerPlugin) || window.Capacitor.registerPlugin;
+      const FS = reg("Filesystem"), Share = reg("Share");
+      const w = await FS.writeFile({path:name, data:content, directory:"CACHE", encoding:"utf8"});
+      await Share.share({title:name, url:w.uri, dialogTitle:"Enregistrer ou envoyer le fichier"});
+      return true;
+    } catch(err){
+      if(/cancel/i.test(String(err && (err.message || err)))) return false;
+      showText(name, content); return false;
+    }
+  }
+  const blob = new Blob([content], {type}), a = document.createElement("a");
+  a.href = URL.createObjectURL(blob); a.download = name; document.body.appendChild(a); a.click();
+  setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
+  return true;
+}
+/* Solution de secours : afficher le contenu pour le copier */
+function showText(name, content){
+  openDlg(`<header><h2>${esc(name)}</h2></header><div class="body"><p class="muted" style="margin:0">Le partage du fichier n'a pas fonctionné. Copiez le contenu ci-dessous et collez-le dans un mail ou une note.</p>
+    <textarea id="txtOut" rows="10" readonly>${esc(content)}</textarea></div>
+    <footer><button class="btn ghost" id="txtClose" type="button">Fermer</button><button class="btn primary" id="txtCopy" type="button">Copier</button></footer>`);
+  $("#txtClose").onclick = closeDlg;
+  $("#txtCopy").onclick = async () => { const t = $("#txtOut"); t.select();
+    try { await navigator.clipboard.writeText(t.value); toast("Copié"); } catch(e){ document.execCommand("copy"); toast("Copié"); } };
+}
+function exportCSV(from, to){
+  const rows = [["N°","Date","Type","Client","Téléphone","Équipe","Article","Personnalisation","Qté","Prix unitaire","Montant ligne","Total commande","Payé","Reste dû","Statut","Livraison prévue"]];
+  const fmt = n => String(r2(n)).replace(".", ",");
+  S.orders.filter(o => { const d = dayOf(o.date); return (!from || d >= from) && (!to || d <= to); })
+    .sort((a,b) => a.date.localeCompare(b.date))
+    .forEach(o => o.lignes.forEach(l => rows.push([o.num, new Date(o.date).toLocaleString("fr-FR"), o.type==="vente"?"Vente directe":"Commande", o.client.nom, o.client.tel, o.client.equipe,
+      l.nom, l.perso, l.qte, fmt(l.prix), fmt(l.prix*l.qte), fmt(o.total), fmt(paid(o)), fmt(due(o)), o.type==="vente" ? "Payée" : STATUTS[o.statut], o.livraison || ""])));
+  if(rows.length === 1) return toast("Aucune vente sur cette période");
+  const csv = "﻿" + rows.map(r => r.map(v => `"${String(v ?? "").replace(/"/g,'""')}"`).join(";")).join("\r\n");
+  download(`dragonne-club_${from}_${to}.csv`, csv, "text/csv;charset=utf-8").then(ok => ok && !IS_APP && toast("Export téléchargé"));
+}
+function backup(){
+  const data = {app:"dragonne-club", version:1, date:new Date().toISOString(), settings:S.settings, articles:S.articles, orders:S.orders};
+  download(`sauvegarde-dragonne-club_${todayISO()}.json`, JSON.stringify(data), "application/json").then(ok => ok && !IS_APP && toast("Sauvegarde téléchargée"));
+}
+$("#jsonIn").onchange = async e => {
+  const f = e.target.files[0]; e.target.value = ""; if(!f) return;
+  try {
+    const d = JSON.parse(await f.text());
+    if(d.app !== "dragonne-club" || !Array.isArray(d.articles) || !Array.isArray(d.orders)) throw 0;
+    if(!(await ask("Restaurer cette sauvegarde ?", `Sauvegarde du ${frDate(d.date)} : ${d.articles.length} articles, ${d.orders.length} ventes et commandes. Les données actuelles de la tablette seront remplacées.`, "Restaurer", true))) return;
+    await DB.clear("articles"); await DB.clear("orders");
+    for(const a of d.articles) await DB.put("articles", a);
+    for(const o of d.orders) await DB.put("orders", o);
+    S.settings = {...d.settings, k:"settings", seeded:true}; await saveSettings();
+    await reload(); renderBilan(); toast("Sauvegarde restaurée");
+  } catch(err){ toast("Ce fichier n'est pas une sauvegarde de l'appli"); }
+};
+
+/* ---------- Boîtes de dialogue ---------- */
+function openDlg(html){ $("#dlgInner").innerHTML = html; const d = $("#dlg"); if(!d.open) d.showModal(); }
+function closeDlg(){ const d = $("#dlg"); if(d.open) d.close(); }
+function ask(title, msg, okLabel, danger){
+  return new Promise(res => {
+    const prev = $("#dlg").open ? $("#dlgInner").innerHTML : null;
+    openDlg(`<header><h2>${esc(title)}</h2></header><div class="body"><p style="margin:0">${msg}</p></div>
+      <footer><button class="btn ghost" id="askNo" type="button">Retour</button><button class="btn ${danger ? "danger" : "primary"}" id="askYes" type="button">${esc(okLabel)}</button></footer>`);
+    const done = v => { closeDlg(); res(v); };
+    $("#askNo").onclick = () => done(false); $("#askYes").onclick = () => done(true);
+  });
+}
+$("#dlg").addEventListener("cancel", e => { /* bouton retour Android : ferme simplement */ });
+
+/* ---------- Hors ligne ---------- */
+if(!IS_APP && "serviceWorker" in navigator && location.protocol === "https:") navigator.serviceWorker.register("sw.js").catch(() => {});
+boot().catch(err => { $("#main").innerHTML = `<div class="panel"><h2>Démarrage impossible</h2><p>Le stockage de la tablette est inaccessible (navigation privée ?). Ouvrez l'appli dans Chrome en mode normal.</p></div>`; });
+</script>
+</body>
+</html>

@@ -1,0 +1,8 @@
+{
+  "appId": "fr.dragonnecrea.club",
+  "appName": "Dragonne Club",
+  "webDir": "www",
+  "android": {
+    "backgroundColor": "#F2F2F7"
+  }
+}
