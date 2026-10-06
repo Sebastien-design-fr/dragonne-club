@@ -332,6 +332,14 @@ dialog.full{width:100vw;max-width:100vw;height:100%;max-height:100%;border-radiu
 .mpill.m-especes{background:var(--ok-soft);color:var(--ok)}
 .mpill.m-cb{background:var(--accent-soft);color:var(--accent)}
 td.det{min-width:180px}
+.vhead{align-items:center}
+.duo{display:flex;align-items:center;gap:12px;background:#fff;border:1px solid var(--line);border-radius:18px;padding:8px 14px}
+.duo img{height:84px;width:auto;display:block}
+.duo span{font:800 20px var(--f-display);color:#9A98AE}
+.canal b{display:flex;align-items:center;gap:8px}
+.cl-logo{height:26px;width:auto;flex:none}
+.cl-logo.round{border-radius:99px;background:#fff}
+@media (max-width:640px){ .duo img{height:56px} .duo{padding:6px 10px} }
 .toast{position:fixed;left:50%;bottom:calc(24px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:12px 18px;border-radius:12px;font-weight:700;z-index:50;max-width:calc(100vw - 32px)}
 .cartfab{display:none}
 
@@ -449,7 +457,7 @@ function canalTabs(cur, opts = {}){
   const list = (opts.all ? [["tous", "Tout"]] : []).concat([["club", CLUB()], ["dc", "Dragonne Créa"]]);
   const sub = {tous:"Les deux circuits", club:"Prix club · encaissé par le club", dc:"Prix Dragonne Créa · encaissé directement"};
   return `<div class="canals${opts.compact ? " compact" : ""}" role="tablist" aria-label="Circuit de vente">${list.map(([k,l]) =>
-    `<button role="tab" class="canal c-${k}" data-canal="${k}" aria-selected="${k===cur}"><b>${esc(l)}</b>${opts.compact ? "" : `<small>${sub[k]}</small>`}</button>`).join("")}</div>`;
+    `<button role="tab" class="canal c-${k}" data-canal="${k}" aria-selected="${k===cur}"><b>${k === "club" ? `<img class="cl-logo" src="gto.png" alt="">` : k === "dc" ? `<img class="cl-logo round" src="emblem.png" alt="">` : ""}${esc(l)}</b>${opts.compact ? "" : `<small>${sub[k]}</small>`}</button>`).join("")}</div>`;
 }
 function bindCanals(fn){ $("#main").querySelectorAll("[data-canal]").forEach(b => b.onclick = () => fn(b.dataset.canal)); }
 async function setCanal(k){
@@ -691,7 +699,9 @@ function renderVente(){
   if(!cats.includes(S.cat)) S.cat = "Tout";
   const list = actifs.filter(a => S.cat === "Tout" || a.cat === S.cat);
   $("#main").innerHTML = `
-  <div class="head"><div><h1>Vente</h1><p>Touchez un article pour l'ajouter au panier</p></div></div>
+  <div class="head vhead"><div><h1>Vente</h1><p>Touchez un article pour l'ajouter au panier</p></div>
+    <div class="duo" aria-label="${canal === "club" ? `Dragonne Créa et ${esc(CLUB())}` : "Dragonne Créa"}">
+      <img src="logo.jpg" alt="Dragonne Créa">${canal === "club" ? `<span aria-hidden="true">×</span><img src="gto.png" alt="${esc(CLUB())}">` : ""}</div></div>
   ${canalTabs(canal, {compact:true})}
   <div class="sale">
     <section>

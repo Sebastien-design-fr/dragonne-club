@@ -1,6 +1,6 @@
 // Fait fonctionner l'appli sans réseau une fois ouverte une première fois.
 const CACHE = "dragonne-club-v1";
-const SHELL = ["./", "./index.html", "./manifest.webmanifest", "./icon-192.png", "./icon-512.png"];
+const SHELL = ["./", "./index.html", "./manifest.webmanifest", "./icon-192.png", "./icon-512.png", "./logo.jpg", "./emblem.png", "./gto.png"];
 
 self.addEventListener("install", e => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(SHELL)).then(() => self.skipWaiting()));
