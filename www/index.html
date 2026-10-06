@@ -316,6 +316,15 @@ dialog.full{width:100vw;max-width:100vw;height:100%;max-height:100%;border-radiu
 .paper .ptot .big{background:#2D3A8C;color:#fff;border-radius:8px;padding:8px 10px;font-weight:800;margin-top:4px}
 @media (max-width:900px){ .tile.half{grid-column:span 1} }
 @media (max-width:640px){ .nav-x{display:none} .paper .ph2{grid-template-columns:1fr} .canal{min-width:0} }
+.btn.danger.solid{background:var(--danger);color:#fff}
+.range{grid-template-columns:repeat(2,minmax(150px,1fr));gap:10px}
+.pick-table td{vertical-align:middle}
+.pick-table td.det{max-width:260px}
+.pick-table input[type=checkbox]{width:24px;height:24px;accent-color:var(--sea)}
+.pick-table tr.excl td{color:var(--muted);text-decoration:line-through}
+.pick-table tr.excl td:first-child,.pick-table tr.excl td:last-child{text-decoration:none}
+.icon-del{width:38px;height:38px;border-radius:10px;border:1px solid var(--line);background:var(--surface);color:var(--danger);display:inline-grid;place-items:center}
+.icon-del svg{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
 .toast{position:fixed;left:50%;bottom:calc(24px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:12px 18px;border-radius:12px;font-weight:700;z-index:50;max-width:calc(100vw - 32px)}
 .cartfab{display:none}
 
@@ -403,7 +412,7 @@ const DB = {
 };
 
 const S = { articles:[], orders:[], releves:[], settings:null, cart:[], cartCanal:null, view:"accueil", cat:"Tout",
-  filter:"ouvertes", ocanal:"tous", catView:null, q:"", bilanDay:todayISO(), sel:null, relAu:todayISO() };
+  filter:"ouvertes", ocanal:"tous", catView:null, q:"", bilanDay:todayISO(), sel:null, relDu:null, relAu:todayISO(), relExcl:new Set() };
 const MAXPH = 6;
 const STATUTS = { a_faire:"À fabriquer", en_cours:"En cours", prete:"Prête", livree:"Livrée", annulee:"Annulée" };
 const NATURES = { vente:"Vente", acompte:"Acompte", solde:"Solde", remboursement:"Annulation" };
@@ -543,10 +552,10 @@ function pay(o, montant, nature, date){
 }
 const releveOf = id => S.releves.find(r => r.id === id);
 /* Encaissements du club pas encore repris sur un relevé (jusqu'à une date incluse) */
-function pendingClub(au){
+function pendingClub(du, au){
   const rows = [];
   S.orders.forEach(o => { if(o.canal !== "club") return;
-    o.paiements.forEach(p => { if(!p.releve && (!au || dayOf(p.date) <= au)) rows.push({p, o}); }); });
+    o.paiements.forEach(p => { const d = dayOf(p.date); if(!p.releve && (!du || d >= du) && (!au || d <= au)) rows.push({p, o}); }); });
   return rows.sort((a,b) => a.p.date.localeCompare(b.p.date));
 }
 const detailOf = o => o.lignes.map(l => `${l.qte > 1 ? l.qte + " × " : ""}${l.nom}${l.perso ? " (" + l.perso + ")" : ""}`).join(", ");
@@ -836,8 +845,8 @@ function renderCommandes(){
   const nSel = sel ? sel.size : 0;
   const selPaid = sel ? r2([...sel].reduce((t,id) => { const o = S.orders.find(x => x.id === id); return t + (o ? paid(o) : 0); }, 0)) : 0;
   $("#main").innerHTML = `
-  <div class="head"><div><h1>${sel ? "Annuler des ventes" : "Commandes"}</h1><p>${sel ? "Touchez les ventes ou commandes à annuler, puis validez en bas" : "Suivi des pièces à fabriquer et des soldes à encaisser"}</p></div>
-    ${sel ? "" : `<button class="btn danger" id="selStart">Annuler des ventes</button>`}</div>
+  <div class="head"><div><h1>${sel ? "Sélection" : "Commandes"}</h1><p>${sel ? "Touchez les ventes à annuler ou à supprimer, puis choisissez en bas" : "Suivi des pièces à fabriquer et des soldes à encaisser"}</p></div>
+    ${sel ? "" : `<button class="btn ghost" id="selStart">Annuler ou supprimer des ventes</button>`}</div>
   ${canalTabs(S.ocanal, {all:true, compact:true})}
   <div class="toolbar">
     <div class="chips" style="margin:0">${Object.entries(F).map(([k,v]) => `<button class="chip" data-f="${k}" aria-pressed="${k===S.filter}">${v}</button>`).join("")}</div>
@@ -845,13 +854,14 @@ function renderCommandes(){
   </div>
   ${list.length ? `<div class="orders">${list.map(orderHTML).join("")}</div>` : `<div class="panel"><p class="muted">Rien dans cette liste pour l'instant.</p></div>`}
   ${sel ? `<div class="selbar"><span><b class="num">${nSel}</b> sélectionnée${nSel>1?"s":""}${selPaid ? ` · <span class="num">${eur(selPaid)}</span> encaissés` : ""}</span>
-    <span class="acts"><button class="btn ghost" id="selStop">Retour</button><button class="btn danger" id="selGo" ${nSel ? "" : "disabled"}>Annuler ${nSel > 1 ? `les ${nSel}` : "la sélection"}</button></span></div>` : ""}`;
+    <span class="acts"><button class="btn ghost" id="selStop">Retour</button><button class="btn danger" id="selGo" ${nSel ? "" : "disabled"}>Annuler</button><button class="btn danger solid" id="selDel" ${nSel ? "" : "disabled"}>Supprimer définitivement</button></span></div>` : ""}`;
   bindCanals(k => { S.ocanal = k; renderCommandes(); });
   $("#main").querySelectorAll("[data-f]").forEach(b => b.onclick = () => { S.filter = b.dataset.f; renderCommandes(); });
   const oq = $("#oq"); oq.oninput = () => { S.q = oq.value; const pos = oq.selectionStart; renderCommandes(); const n = $("#oq"); n.focus(); n.setSelectionRange(pos,pos); };
   $("#main").querySelectorAll("button[data-st]").forEach(b => b.onclick = () => setStatus(b.dataset.id, b.dataset.st));
   $("#main").querySelectorAll("[data-solde]").forEach(b => b.onclick = () => encaisserSolde(b.dataset.solde));
   $("#main").querySelectorAll("[data-cancel]").forEach(b => b.onclick = () => cancelOrders([b.dataset.cancel]));
+  $("#main").querySelectorAll("[data-odel]").forEach(b => b.onclick = () => deleteOrders([b.dataset.odel]));
   const ss = $("#selStart"); if(ss) ss.onclick = () => { S.sel = new Set(); if(S.filter === "ouvertes") S.filter = "toutes"; renderCommandes(); };
   if(sel){
     $("#main").querySelectorAll("[data-pick]").forEach(c => {
@@ -860,6 +870,7 @@ function renderCommandes(){
     });
     $("#selStop").onclick = () => { S.sel = null; renderCommandes(); };
     $("#selGo").onclick = () => cancelOrders([...sel]);
+    $("#selDel").onclick = () => deleteOrders([...sel]);
   }
 }
 function orderHTML(o){
@@ -867,10 +878,10 @@ function orderHTML(o){
   const next = {a_faire:"en_cours", en_cours:"prete", prete:"livree"}[o.statut];
   const nextLbl = {en_cours:"Commencer", prete:"Marquer prête", livree:"Remettre au client"}[next];
   const off = o.statut === "annulee";
-  const pickable = S.sel && !off, on = pickable && S.sel.has(o.id);
+  const pickable = !!S.sel, on = pickable && S.sel.has(o.id);
   const pill = off ? `<span class="pill annulee">Annulée</span>` : `<span class="pill ${o.type==="vente" ? "vente" : o.statut}">${o.type==="vente" ? "Vente directe" : STATUTS[o.statut]}</span>`;
   const rels = [...new Set(o.paiements.map(p => p.releve).filter(Boolean))].map(releveOf).filter(Boolean);
-  return `<article class="order${pickable ? " pick" : ""}${on ? " on" : ""}${S.sel && off ? " off" : ""}" data-state="${off ? "annulee" : o.type==="vente" ? "livree" : o.statut}"
+  return `<article class="order${pickable ? " pick" : ""}${on ? " on" : ""}${S.sel && off && !on ? " off" : ""}" data-state="${off ? "annulee" : o.type==="vente" ? "livree" : o.statut}"
       ${pickable ? `data-pick="${o.id}" role="checkbox" aria-checked="${on}" tabindex="0"` : ""}>
     <div class="top">${pickable ? `<span class="check" aria-hidden="true">${on ? "✓" : ""}</span>` : ""}<div style="flex:1;min-width:0"><h3>${esc(o.client.nom || "Client de passage")} <span class="muted num" style="font-weight:600">n° ${o.num}</span></h3>
       <div class="meta">${canalPill(o.canal)}${o.client.equipe ? `<span>${esc(o.client.equipe)}</span>` : ""}${o.client.tel ? `<a href="tel:${esc(o.client.tel.replace(/\s/g,""))}">${esc(o.client.tel)}</a>` : ""}<span>${frDate(o.date)} ${frTime(o.date)}</span></div></div>
@@ -885,6 +896,7 @@ function orderHTML(o){
       ${o.type==="commande" && next ? `<button class="btn small primary" data-st="${next}" data-id="${o.id}">${nextLbl}</button>` : ""}
       ${o.type==="commande" && d > 0 ? `<button class="btn small ghost" data-solde="${o.id}">Encaisser ${eur(d)}</button>` : ""}
       <button class="btn small danger" data-cancel="${o.id}">${o.type==="vente" ? "Annuler la vente" : "Annuler"}</button></div>` : ""}
+    ${!S.sel && off ? `<div class="acts"><button class="btn small ghost" data-odel="${o.id}">Supprimer définitivement</button></div>` : ""}
   </article>`;
 }
 async function setStatus(id, st){
@@ -905,7 +917,7 @@ async function encaisserSolde(id){
 /* Annulation d'une ou plusieurs ventes / commandes, avec remboursement et remise en stock */
 function cancelOrders(ids){
   const list = ids.map(id => S.orders.find(o => o.id === id)).filter(o => o && o.statut !== "annulee");
-  if(!list.length) return;
+  if(!list.length) return toast("Ces ventes sont déjà annulées");
   const toRefund = r2(list.reduce((t,o) => t + Math.max(0, paid(o)), 0));
   const restock = list.filter(o => o.type === "vente").reduce((t,o) => t + o.lignes.reduce((u,l) => u + l.qte, 0), 0);
   const onRel = list.filter(o => o.paiements.some(p => p.releve));
@@ -936,6 +948,36 @@ function cancelOrders(ids){
     }
     S.sel = null; closeDlg(); await reload(); render();
     toast(one ? `n° ${list[0].num} annulée` : `${list.length} ventes annulées`);
+  };
+}
+
+/* Suppression définitive (ventes d'essai, erreurs) : la vente disparaît de l'appli et de tous les comptes */
+function deleteOrders(ids){
+  const list = ids.map(id => S.orders.find(o => o.id === id)).filter(Boolean);
+  if(!list.length) return;
+  const onRel = [...new Set(list.flatMap(o => o.paiements.map(p => p.releve)).filter(Boolean))].map(releveOf).filter(Boolean);
+  const restock = list.filter(o => o.type === "vente" && o.statut !== "annulee").reduce((t,o) => t + o.lignes.reduce((u,l) => u + l.qte, 0), 0);
+  const one = list.length === 1;
+  openDlg(`<header><h2>${one ? `Supprimer la vente n° ${list[0].num} ?` : `Supprimer ${list.length} ventes ?`}</h2></header>
+    <div class="body">
+      <ul style="margin:0;padding-left:18px;display:flex;flex-direction:column;gap:4px">${list.map(o => `<li>n° ${o.num} · ${frDate(o.date)} · ${esc(o.client.nom || "Client de passage")} · <span class="num">${eur(o.total)}</span>${o.statut === "annulee" ? " · annulée" : ""}</li>`).join("")}</ul>
+      <p style="margin:0"><b>Suppression définitive</b>, à réserver aux essais et aux erreurs de saisie : ${one ? "la vente disparaît" : "ces ventes disparaissent"} du bilan, des exports et des relevés à venir.</p>
+      <p class="muted" style="margin:0">Pour une vraie vente que le client annule, utilisez plutôt « Annuler » : elle reste tracée.</p>
+      ${onRel.length ? `<p class="muted" style="margin:0">Figure déjà sur ${onRel.map(r => esc(r.num)).join(", ")} : ce relevé n'est pas modifié. S'il s'agissait d'un relevé d'essai, supprimez-le aussi dans Remboursements.</p>` : ""}
+      ${restock ? `<p class="muted" style="margin:0">${restock} article${restock>1?"s":""} en stock ${restock>1?"reviennent":"revient"} dans le catalogue.</p>` : ""}
+    </div>
+    <footer><button class="btn ghost" id="dxNo" type="button">Retour</button><button class="btn danger solid" id="dxYes" type="button">${one ? "Supprimer" : `Supprimer les ${list.length}`}</button></footer>`);
+  $("#dxNo").onclick = closeDlg;
+  $("#dxYes").onclick = async () => {
+    for(const o of list){
+      if(o.type === "vente" && o.statut !== "annulee"){
+        for(const l of o.lignes){ const a = l.artId && art(l.artId); if(a && a.mode === "stock"){ a.stock += l.qte; await DB.put("articles", a); } }
+      }
+      o.paiements.forEach(p => S.relExcl.delete(p.id));
+      await DB.del("orders", o.id);
+    }
+    S.sel = null; closeDlg(); await reload(); render();
+    toast(one ? `Vente n° ${list[0].num} supprimée` : `${list.length} ventes supprimées`);
   };
 }
 
@@ -1099,23 +1141,35 @@ function releveRows(items){
 const dueLabel = part => part < 0 ? ["Montant à reverser au club", -part] : ["Montant à rembourser", part];
 const relTotals = rows => { const t = r2(rows.reduce((s,r) => s + r.montant, 0)), p = r2(rows.reduce((s,r) => s + r.part, 0)); return {total:t, part:p, marge:r2(t - p)}; };
 function renderReleves(){
-  const au = S.relAu;
-  const items = pendingClub(au), rows = releveRows(items), t = relTotals(rows);
-  const later = pendingClub().length - items.length;
+  const all = pendingClub();
+  const first = all.length ? dayOf(all[0].p.date) : todayISO();
+  const du = S.relDu || first, au = S.relAu;
+  const inRange = pendingClub(du, au);
+  const items = inRange.filter(x => !S.relExcl.has(x.p.id)), rows = releveRows(items), t = relTotals(rows);
+  const before = pendingClub(null, addDays(du, -1)).length, after = pendingClub(addDays(au, 1), null).length;
   const r = {mode:S.settings.margeMode, val:S.settings.margeVal};
   const v = S.settings.vendeur;
   $("#main").innerHTML = `
   <div class="head"><div><h1>Remboursements ${esc(CLUB())}</h1><p>Le club encaisse au prix club et rembourse le prix Dragonne Créa. Chaque encaissement ne figure que sur un seul relevé.</p></div></div>
   <section class="panel next">
-    <div class="nexthead"><h2>Prochain relevé</h2><label class="f" style="min-width:190px">Encaissements jusqu'au<input type="date" id="relAu" value="${au}"></label></div>
-    ${rows.length ? `<div class="stats" style="margin:0">
-      <div class="stat"><small>Encaissements</small><b class="num">${rows.length}</b><span class="muted small">du ${dmy(rows[0].date)} au ${dmy(rows[rows.length-1].date)}</span></div>
+    <div class="nexthead"><h2>Prochain relevé</h2>
+      <div class="fgrid range"><label class="f">Du<input type="date" id="relDu" value="${du}"></label><label class="f">Au<input type="date" id="relAu" value="${au}"></label></div></div>
+    ${inRange.length ? `<p class="muted" style="margin:0">Décochez un encaissement pour le laisser de côté (il restera disponible pour un prochain relevé). La corbeille supprime définitivement une vente d'essai.</p>
+    <div class="tbl"><table class="pick-table"><thead><tr><th></th><th>Date</th><th>N°</th><th>Client</th><th>Détail</th><th>Nature</th><th class="r">Encaissé</th><th class="r">Part D. Créa</th><th></th></tr></thead><tbody>
+      ${inRange.map(({p, o}) => { const on = !S.relExcl.has(p.id); return `<tr class="${on ? "" : "excl"}">
+        <td><input type="checkbox" class="rck" data-pid="${p.id}" ${on ? "checked" : ""} aria-label="Inclure l'encaissement n° ${o.num}"></td>
+        <td class="num">${dmy(p.date)}</td><td class="num">${o.num}</td><td>${esc(o.client.nom || "Client de passage")}</td><td class="det">${esc(detailOf(o))}</td>
+        <td>${NATURES[p.nature] || p.nature}</td><td class="r num">${eur(p.montant)}</td><td class="r num">${eur(p.part)}</td>
+        <td class="r"><button class="icon-del" data-odel="${o.id}" aria-label="Supprimer définitivement la vente n° ${o.num}" title="Supprimer la vente"><svg viewBox="0 0 24 24"><path d="M5 7h14M10 7V5h4v2M7 7l1 13h8l1-13"/></svg></button></td></tr>`; }).join("")}
+    </tbody></table></div>
+    <div class="stats" style="margin:0">
+      <div class="stat"><small>Encaissements retenus</small><b class="num">${rows.length} / ${inRange.length}</b></div>
       <div class="stat"><small>Encaissé par le club</small><b class="num">${eur(t.total)}</b></div>
       <div class="stat"><small>Marge du club</small><b class="num">${eur(t.marge)}</b></div>
       <div class="stat key"><small>${t.part < 0 ? "À reverser au club" : "À rembourser"}</small><b class="num">${eur(Math.abs(t.part))}</b></div>
-    </div>
-    <div class="acts"><button class="btn primary" id="relPrev">Voir le relevé et l'envoyer</button></div>`
-    : `<p class="muted" style="margin:0">Aucun encaissement ${esc(CLUB())} à reprendre${au !== todayISO() ? " jusqu'à cette date" : ""}.${later > 0 ? ` ${later} encaissement${later>1?"s":""} plus récent${later>1?"s":""} attend${later>1?"ent":""} le prochain relevé.` : ""}</p>`}
+    </div>` : `<p class="muted" style="margin:0">Aucun encaissement ${esc(CLUB())} à reprendre sur cette période.</p>`}
+    ${before || after ? `<p class="muted small" style="margin:0">${[before ? `${before} encaissement${before>1?"s":""} plus ancien${before>1?"s":""}` : "", after ? `${after} plus récent${after>1?"s":""}` : ""].filter(Boolean).join(" et ")} en dehors de la période, non repris.</p>` : ""}
+    ${rows.length ? `<div class="acts"><button class="btn primary" id="relPrev">Voir le relevé et l'envoyer</button></div>` : ""}
   </section>
   <section class="panel"><h2>Relevés envoyés</h2>
     ${S.releves.length ? `<div class="rels">${S.releves.map(rel => `<div class="rel">
@@ -1123,7 +1177,7 @@ function renderReleves(){
         <div class="num">${rel.rows.length} encaissement${rel.rows.length>1?"s":""} · ${rel.part < 0 ? "à reverser au club" : "à rembourser"} <b>${eur(Math.abs(rel.part))}</b></div></div>
       <span class="pill ${rel.statut === "rembourse" ? "prete" : "a_faire"}">${rel.statut === "rembourse" ? `Remboursé le ${dmy(rel.rembourseLe)}` : "En attente"}</span>
       <div class="acts"><button class="btn small ghost" data-rsend="${rel.id}">Renvoyer le PDF</button>
-        ${rel.statut === "rembourse" ? `<button class="btn small ghost" data-rundo="${rel.id}">Pas encore remboursé</button>` : `<button class="btn small ok" data-rpaid="${rel.id}">Marquer remboursé</button><button class="btn small danger" data-rdel="${rel.id}">Supprimer</button>`}</div>
+        ${rel.statut === "rembourse" ? `<button class="btn small ghost" data-rundo="${rel.id}">Pas encore remboursé</button>` : `<button class="btn small ok" data-rpaid="${rel.id}">Marquer remboursé</button>`}<button class="btn small danger" data-rdel="${rel.id}">Supprimer</button></div>
     </div>`).join("")}</div>` : `<p class="muted" style="margin:0">Aucun relevé pour l'instant.</p>`}
   </section>
   <section class="panel"><h2>Marge du club</h2>
@@ -1139,8 +1193,11 @@ function renderReleves(){
       <label class="f">Adresse du club<input type="text" id="cAdr" value="${esc(S.settings.clubAdresse)}"></label>
     </div>
   </section>`;
+  $("#relDu").onchange = e => { S.relDu = e.target.value || null; renderReleves(); };
   $("#relAu").onchange = e => { S.relAu = e.target.value || todayISO(); renderReleves(); };
-  const rp = $("#relPrev"); if(rp) rp.onclick = () => previewReleve(items);
+  $("#main").querySelectorAll(".rck").forEach(c => c.onchange = () => { c.checked ? S.relExcl.delete(c.dataset.pid) : S.relExcl.add(c.dataset.pid); renderReleves(); });
+  $("#main").querySelectorAll("[data-odel]").forEach(b => b.onclick = () => deleteOrders([b.dataset.odel]));
+  const rp = $("#relPrev"); if(rp) rp.onclick = () => previewReleve(items, du, au);
   $("#ruleEdit").onclick = () => editClubRule(renderReleves);
   const bindF = (sel, fn) => $(sel).onchange = e => { fn(e.target.value.trim()); saveSettings(); toast("Enregistré"); };
   bindF("#vNom", x => v.nom = x || "Dragonne Créa"); bindF("#vContact", x => v.contact = x); bindF("#vAdr", x => v.adresse = x); bindF("#vSiret", x => v.siret = x);
@@ -1154,9 +1211,13 @@ function renderReleves(){
     const rel = releveOf(b.dataset.rundo); rel.statut = "envoye"; rel.rembourseLe = null; await DB.put("releves", rel); await reload(); renderReleves(); });
   $("#main").querySelectorAll("[data-rdel]").forEach(b => b.onclick = async () => {
     const rel = releveOf(b.dataset.rdel);
-    if(!(await ask(`Supprimer le relevé ${rel.num} ?`, "À faire seulement s'il n'a pas été transmis au club. Ses encaissements redeviennent disponibles pour le prochain relevé.", "Supprimer", true))) return;
+    if(!(await ask(`Supprimer le relevé ${rel.num} ?`, `À réserver aux relevés d'essai ou envoyés par erreur.${rel.statut === "rembourse" ? " <b>Ce relevé est marqué remboursé.</b>" : ""} Ses encaissements encore présents redeviennent disponibles pour un prochain relevé.`, "Supprimer le relevé", true))) return;
     for(const o of S.orders){ let ch = false; o.paiements.forEach(p => { if(p.releve === rel.id){ delete p.releve; ch = true; } }); if(ch) await DB.put("orders", o); }
-    await DB.del("releves", rel.id); await reload(); renderReleves(); toast(`Relevé ${rel.num} supprimé`); });
+    await DB.del("releves", rel.id); await reload();
+    // la numérotation reprend après le dernier relevé restant de l'année
+    const y = rel.num.split("-")[1];
+    S.settings.relSeq[y] = Math.max(0, ...S.releves.filter(r => r.num.split("-")[1] === y).map(r => +r.num.split("-")[2]));
+    await saveSettings(); renderReleves(); toast(`Relevé ${rel.num} supprimé`); });
 }
 function releveHTML(rel){
   const v = S.settings.vendeur;
@@ -1175,9 +1236,9 @@ function nextReleveNum(){
   const y = new Date().getFullYear(); const seq = S.settings.relSeq || (S.settings.relSeq = {});
   return {y, n:(seq[y] || 0) + 1, label:`R-${y}-${String((seq[y] || 0) + 1).padStart(2,"0")}`};
 }
-function previewReleve(items){
+function previewReleve(items, du, au){
   const rows = releveRows(items), t = relTotals(rows), nx = nextReleveNum();
-  const draft = {num:nx.label, date:new Date().toISOString(), du:rows[0].date, au:rows[rows.length-1].date, rows, ...t};
+  const draft = {num:nx.label, date:new Date().toISOString(), du, au, rows, ...t};
   openDlg(`<header><h2>Relevé ${esc(nx.label)}</h2></header>
     <div class="body">${releveHTML(draft)}
       <p class="muted" style="margin:0">En validant, ces ${rows.length} encaissements sont marqués comme transmis : ils n'apparaîtront plus sur un prochain relevé. Le PDF s'ouvre ensuite dans le menu Partager (mail, WhatsApp, Drive, impression).</p></div>
@@ -1188,7 +1249,7 @@ function previewReleve(items){
     const rel = {id:uid(), ...draft, statut:"envoye", rembourseLe:null};
     S.settings.relSeq[nx.y] = nx.n; await saveSettings();
     const touched = new Set();
-    items.forEach(({p, o}) => { p.releve = rel.id; touched.add(o); });
+    items.forEach(({p, o}) => { p.releve = rel.id; touched.add(o); S.relExcl.delete(p.id); });
     for(const o of touched) await DB.put("orders", o);
     await DB.put("releves", rel);
     closeDlg(); await reload(); renderReleves();
