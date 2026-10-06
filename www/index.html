@@ -325,6 +325,13 @@ dialog.full{width:100vw;max-width:100vw;height:100%;max-height:100%;border-radiu
 .pick-table tr.excl td:first-child,.pick-table tr.excl td:last-child{text-decoration:none}
 .icon-del{width:38px;height:38px;border-radius:10px;border:1px solid var(--line);background:var(--surface);color:var(--danger);display:inline-grid;place-items:center}
 .icon-del svg{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.paymode button{font-size:16px;min-height:52px}
+.paymode button[aria-pressed="true"]{background:var(--ink);color:var(--bg)}
+.cashbox{display:flex;flex-direction:column;gap:8px}
+.mpill{display:inline-block;border-radius:6px;padding:1px 7px;font-size:12px;font-weight:700;white-space:nowrap}
+.mpill.m-especes{background:var(--ok-soft);color:var(--ok)}
+.mpill.m-cb{background:var(--accent-soft);color:var(--accent)}
+td.det{min-width:180px}
 .toast{position:fixed;left:50%;bottom:calc(24px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:12px 18px;border-radius:12px;font-weight:700;z-index:50;max-width:calc(100vw - 32px)}
 .cartfab{display:none}
 
@@ -412,9 +419,11 @@ const DB = {
 };
 
 const S = { articles:[], orders:[], releves:[], settings:null, cart:[], cartCanal:null, view:"accueil", cat:"Tout",
-  filter:"ouvertes", ocanal:"tous", catView:null, q:"", bilanDay:todayISO(), sel:null, relDu:null, relAu:todayISO(), relExcl:new Set() };
+  filter:"ouvertes", ocanal:"tous", catView:null, q:"", bilanDu:todayISO(), bilanAu:todayISO(), sel:null, relDu:null, relAu:todayISO(), relExcl:new Set() };
 const MAXPH = 6;
 const STATUTS = { a_faire:"À fabriquer", en_cours:"En cours", prete:"Prête", livree:"Livrée", annulee:"Annulée" };
+const MODES = { especes:"Espèces", cb:"CB" };
+const modePill = m => `<span class="mpill m-${m || "especes"}">${MODES[m] || "Espèces"}</span>`;
 const NATURES = { vente:"Vente", acompte:"Acompte", solde:"Solde", remboursement:"Annulation" };
 const saveSettings = () => DB.put("kv", S.settings);
 const DEFAULTS = { k:"settings", club:"GTO/VDB", acomptePct:30, nextNum:1, seeded:false, canal:"club",
@@ -507,12 +516,15 @@ async function migrate(){
     if(a.club === undefined){ a.club = true; a.marge = null; await DB.put("articles", a); }
   }
   for(const o of await DB.all("orders")){
-    if(o.canal) continue;
-    o.canal = "club";
-    o.lignes.forEach(l => { if(l.base === undefined) l.base = l.prix; });
-    o.totalBase = o.total;
-    o.paiements.forEach(p => { if(!p.id) p.id = uid(); if(p.part === undefined) p.part = p.montant; });
-    await DB.put("orders", o);
+    let ch = false;
+    if(!o.canal){
+      o.canal = "club"; ch = true;
+      o.lignes.forEach(l => { if(l.base === undefined) l.base = l.prix; });
+      o.totalBase = o.total;
+      o.paiements.forEach(p => { if(!p.id) p.id = uid(); if(p.part === undefined) p.part = p.montant; });
+    }
+    o.paiements.forEach(p => { if(!p.mode){ p.mode = "especes"; ch = true; } });
+    if(ch) await DB.put("orders", o);
   }
 }
 async function reload(){
@@ -541,13 +553,13 @@ const paid = o => r2(o.paiements.reduce((s,p) => s + p.montant, 0));
 const paidPart = o => r2(o.paiements.reduce((s,p) => s + (p.part ?? p.montant), 0));
 const due = o => o.statut === "annulee" ? 0 : r2(o.total - paid(o));
 /* Chaque encaissement mémorise la part Dragonne Créa (le reste est la marge du club) */
-function pay(o, montant, nature, date){
+function pay(o, montant, nature, date, mode){
   montant = r2(montant);
   const tb = o.totalBase ?? o.total;
   let part;
   if(r2(paid(o) + montant) >= o.total) part = r2(tb - paidPart(o));
   else part = o.total ? r2(montant * tb / o.total) : montant;
-  const p = {id:uid(), date: date || new Date().toISOString(), montant, part, nature};
+  const p = {id:uid(), date: date || new Date().toISOString(), montant, part, nature, mode: mode || "especes"};
   o.paiements.push(p); return p;
 }
 const releveOf = id => S.releves.find(r => r.id === id);
@@ -772,17 +784,19 @@ function openCheckout(){
     ${hasCmd ? `<fieldset><legend>Commande</legend>
       <div class="fgrid">
         <label class="f">Livraison prévue<input type="date" id="coLiv" value="${addDays(todayISO(), maxDelai)}"></label>
-        <label class="f">Acompte en espèces <span class="h">suggéré ${S.settings.acomptePct} %</span><input type="text" inputmode="decimal" id="coAc" value="${acompte0}"></label>
+        <label class="f">Acompte <span class="h">suggéré ${S.settings.acomptePct} %</span><input type="text" inputmode="decimal" id="coAc" value="${acompte0}"></label>
       </div>
       <label class="f">Note <span class="h">couleurs, délai particulier…</span><textarea id="coNote" rows="2"></textarea></label>
     </fieldset>` : ""}
     <div class="paybox">
+      <div class="seg paymode" role="radiogroup" aria-label="Mode de paiement"><button type="button" data-pm="especes" aria-pressed="true">Espèces</button><button type="button" data-pm="cb" aria-pressed="false">Carte bancaire</button></div>
       ${t.stock ? `<div class="row"><span>Articles à emporter</span><b class="num">${eur(t.stock)}</b></div>` : ""}
       ${hasCmd ? `<div class="row"><span>Acompte sur commande</span><b class="num" id="coAcOut"></b></div>` : ""}
       <div class="row big"><span>À encaisser${canal === "club" ? ` pour ${esc(CLUB())}` : ""}</span><span class="num" id="coNow"></span></div>
       ${hasCmd ? `<div class="row due"><span>Reste dû à la livraison</span><span class="num" id="coRest"></span></div>` : ""}
-      <label class="f">Espèces reçues<input type="text" inputmode="decimal" id="coRecu" placeholder="Pour calculer la monnaie"></label>
-      <div class="row"><span>Monnaie à rendre</span><span class="change num" id="coChange">—</span></div>
+      <div id="cashBox" class="cashbox"><label class="f">Espèces reçues<input type="text" inputmode="decimal" id="coRecu" placeholder="Pour calculer la monnaie"></label>
+      <div class="row"><span>Monnaie à rendre</span><span class="change num" id="coChange">—</span></div></div>
+      <p id="cbNote" class="muted small" style="margin:0" hidden>Encaissez le montant sur le terminal de paiement, puis validez.</p>
     </div>
   </form>
   <footer><button class="btn ghost" id="coCancel" type="button">Retour</button><button class="btn ok" id="coOk" type="button">${hasCmd ? "Valider la commande" : "Valider la vente"}</button></footer>`);
@@ -799,6 +813,10 @@ function openCheckout(){
   };
   ["#coAc","#coRecu"].forEach(s => { const e = $(s); if(e) e.oninput = upd; });
   upd();
+  let pm = "especes";
+  document.querySelectorAll("[data-pm]").forEach(b => b.onclick = () => { pm = b.dataset.pm;
+    document.querySelectorAll("[data-pm]").forEach(x => x.setAttribute("aria-pressed", x === b));
+    $("#cashBox").hidden = pm !== "especes"; $("#cbNote").hidden = pm === "especes"; });
   $("#coCancel").onclick = closeDlg;
   $("#coOk").onclick = async () => {
     const nom = $("#coNom").value.trim();
@@ -812,7 +830,7 @@ function openCheckout(){
     if(stockLines.length){
       const o = {id:uid(), num:S.settings.nextNum++, type:"vente", canal, date:now, client, statut:"livree",
         lignes:stockLines.map(ligne), total:t.stock, totalBase:t.stockBase, paiements:[]};
-      pay(o, t.stock, "vente", now);
+      pay(o, t.stock, "vente", now, pm);
       await DB.put("orders", o); nums.push(o.num);
       for(const l of stockLines){ const a = art(l.artId); if(a){ a.stock = Math.max(0, a.stock - l.qte); await DB.put("articles", a); } }
     }
@@ -820,7 +838,7 @@ function openCheckout(){
       const o = {id:uid(), num:S.settings.nextNum++, type:"commande", canal, date:now, client, statut:"a_faire",
         livraison:$("#coLiv").value, note:$("#coNote").value.trim(),
         lignes:cmdLines.map(ligne), total:t.cmd, totalBase:t.cmdBase, paiements:[]};
-      if(ac > 0) pay(o, ac, "acompte", now);
+      if(ac > 0) pay(o, ac, "acompte", now, pm);
       await DB.put("orders", o); nums.push(o.num);
     }
     await saveSettings();
@@ -902,16 +920,18 @@ function orderHTML(o){
 async function setStatus(id, st){
   const o = S.orders.find(x => x.id === id);
   if(st === "livree" && due(o) > 0){
-    if(!(await ask("Encaisser le solde ?", `Il reste ${eur(due(o))} à payer sur la commande n° ${o.num}. Encaisser maintenant en espèces et remettre la commande ?`, "Encaisser et remettre"))) return;
-    pay(o, due(o), "solde");
+    const m = await askPay("Encaisser le solde ?", `Il reste <b>${eur(due(o))}</b> à payer sur la commande n° ${o.num}. Encaisser maintenant et remettre la commande :`);
+    if(!m) return;
+    pay(o, due(o), "solde", null, m);
   }
   o.statut = st; await DB.put("orders", o); await reload(); renderCommandes();
   toast(`Commande n° ${o.num} : ${STATUTS[st].toLowerCase()}`);
 }
 async function encaisserSolde(id){
   const o = S.orders.find(x => x.id === id);
-  if(!(await ask("Encaisser le solde", `Encaisser ${eur(due(o))} en espèces pour la commande n° ${o.num} (${esc(o.client.nom)}) ?`, "Encaisser"))) return;
-  pay(o, due(o), "solde");
+  const m = await askPay("Encaisser le solde", `Encaisser <b>${eur(due(o))}</b> pour la commande n° ${o.num} (${esc(o.client.nom)}) :`);
+  if(!m) return;
+  pay(o, due(o), "solde", null, m);
   await DB.put("orders", o); await reload(); renderCommandes(); toast("Solde encaissé");
 }
 /* Annulation d'une ou plusieurs ventes / commandes, avec remboursement et remise en stock */
@@ -925,7 +945,7 @@ function cancelOrders(ids){
   openDlg(`<header><h2>${one ? (list[0].type === "vente" ? `Annuler la vente n° ${list[0].num} ?` : `Annuler la commande n° ${list[0].num} ?`) : `Annuler ${list.length} ventes ?`}</h2></header>
     <div class="body">
       <ul style="margin:0;padding-left:18px;display:flex;flex-direction:column;gap:4px">${list.map(o => `<li>n° ${o.num} · ${esc(o.client.nom || "Client de passage")} · <span class="num">${eur(o.total)}</span>${paid(o) ? ` <span class="muted num">(payé ${eur(paid(o))})</span>` : ""}</li>`).join("")}</ul>
-      ${toRefund ? `<label class="refund"><input type="checkbox" id="cxRefund" checked> <span><b>Rendre <span class="num">${eur(toRefund)}</span> au client</b><br><span class="muted">Le remboursement est déduit des espèces du jour dans le Bilan.</span></span></label>` : ""}
+      ${toRefund ? `<label class="refund"><input type="checkbox" id="cxRefund" checked> <span><b>Rembourser <span class="num">${eur(toRefund)}</span> au client</b><br><span class="muted">Avec le même moyen de paiement ; déduit des encaissements du jour dans le Bilan.</span></span></label>` : ""}
       ${onRel.length ? `<p class="muted" style="margin:0">Déjà sur un relevé envoyé au club : le remboursement apparaîtra en déduction sur le prochain relevé.</p>` : ""}
       ${restock ? `<p class="muted" style="margin:0">${restock} article${restock>1?"s":""} en stock ${restock>1?"reviennent":"revient"} dans le catalogue.</p>` : ""}
     </div>
@@ -936,7 +956,8 @@ function cancelOrders(ids){
     const now = new Date().toISOString();
     for(const o of list){
       const p = paid(o), pp = paidPart(o);
-      if(refund && p > 0) o.paiements.push({id:uid(), date:now, montant:-p, part:-pp, nature:"remboursement"});
+      const lastMode = ([...o.paiements].reverse().find(x => x.montant > 0) || {}).mode || "especes";
+      if(refund && p > 0) o.paiements.push({id:uid(), date:now, montant:-p, part:-pp, nature:"remboursement", mode:lastMode});
       if(o.type === "vente"){
         for(const l of o.lignes){
           const a = (l.artId && art(l.artId)) || S.articles.find(x => x.nom === l.nom && x.mode === "stock");
@@ -1408,32 +1429,51 @@ async function saveBinary(name, bin, type){
 
 /* ---------- Bilan, export, sauvegarde ---------- */
 function renderBilan(){
-  const day = S.bilanDay;
+  const du = S.bilanDu, au = S.bilanAu, inP = iso => { const d = dayOf(iso); return d >= du && d <= au; };
   const pays = [];
-  S.orders.forEach(o => o.paiements.forEach(p => { if(dayOf(p.date) === day) pays.push({...p, o}); }));
+  S.orders.forEach(o => o.paiements.forEach(p => { if(inP(p.date)) pays.push({...p, o}); }));
   pays.sort((a,b) => a.date.localeCompare(b.date));
-  const sum = (canal, f = p => p.montant) => r2(pays.filter(p => !canal || p.o.canal === canal).reduce((s,p) => s + f(p), 0));
+  const sum = (f, filt = () => true) => r2(pays.filter(filt).reduce((s,p) => s + f(p), 0));
+  const M = p => p.montant, mode = m => p => (p.mode || "especes") === m, canal = c => p => p.o.canal === c;
   const open = S.orders.filter(o => o.type==="commande" && !["livree","annulee"].includes(o.statut));
   const resteDu = r2(open.reduce((s,o) => s + due(o), 0));
   const enAttente = r2(pendingClub().reduce((s,x) => s + x.p.part, 0) + S.releves.filter(r => r.statut !== "rembourse").reduce((s,r) => s + r.part, 0));
-  const first = S.orders.length ? dayOf(S.orders[S.orders.length-1].date) : todayISO();
+  const top = bestSellers(du, au);
+  const oneDay = du === au;
+  const presets = [["jour","Aujourd'hui",todayISO(),todayISO()],["7j","7 derniers jours",addDays(todayISO(),-6),todayISO()],
+    ["mois","Ce mois",todayISO().slice(0,8)+"01",todayISO()],["tout","Depuis le début",S.orders.length ? dayOf(S.orders[S.orders.length-1].date) : todayISO(),todayISO()]];
   $("#main").innerHTML = `
-  <div class="head"><div><h1>Bilan</h1><p>Espèces encaissées et commandes en attente</p></div>
-    <label class="f" style="min-width:200px">Journée<input type="date" id="bDay" value="${day}"></label></div>
+  <div class="head"><div><h1>Bilan</h1><p>${oneDay ? `Journée du ${frDate(du)}` : `Du ${dmy(du)} au ${dmy(au)}`}</p></div>
+    <div class="fgrid range"><label class="f">Du<input type="date" id="bDu" value="${du}"></label><label class="f">Au<input type="date" id="bAu" value="${au}"></label></div></div>
+  <div class="chips">${presets.map(([k,l,d1,d2]) => `<button class="chip" data-pr="${k}" aria-pressed="${d1===du && d2===au}">${l}</button>`).join("")}</div>
   <div class="stats">
-    <div class="stat key c-club"><small>Encaissé ${esc(CLUB())}</small><b class="num">${eur(sum("club"))}</b><span class="small">dont marge club ${eur(sum("club", p => p.montant - (p.part ?? p.montant)))}</span></div>
-    <div class="stat key c-dc"><small>Encaissé Dragonne Créa</small><b class="num">${eur(sum("dc"))}</b><span class="small">en direct</span></div>
+    <div class="stat key"><small>Total encaissé</small><b class="num">${eur(sum(M))}</b><span class="small">${pays.length} encaissement${pays.length>1?"s":""}</span></div>
+    <div class="stat"><small>Espèces</small><b class="num">${eur(sum(M, mode("especes")))}</b></div>
+    <div class="stat"><small>Carte bancaire</small><b class="num">${eur(sum(M, mode("cb")))}</b></div>
+  </div>
+  <div class="stats">
+    <div class="stat key c-club"><small>${esc(CLUB())}</small><b class="num">${eur(sum(M, canal("club")))}</b><span class="small">dont part Dragonne Créa ${eur(sum(p => p.part ?? p.montant, canal("club")))} · marge club ${eur(sum(p => p.montant - (p.part ?? p.montant), canal("club")))}</span></div>
+    <div class="stat key c-dc"><small>Dragonne Créa en direct</small><b class="num">${eur(sum(M, canal("dc")))}</b></div>
     <div class="stat"><small>Le club doit (toutes dates)</small><b class="num" style="color:var(--sea)">${eur(enAttente)}</b><span class="small muted">relevés en attente compris</span></div>
     <div class="stat"><small>Reste dû · ${open.length} cde${open.length>1?"s":""}</small><b class="num" style="color:var(--warn)">${eur(resteDu)}</b></div>
   </div>
-  <section class="panel"><h2>Encaissements du ${frDate(day)}</h2>
-    ${pays.length ? `<div class="tbl"><table><thead><tr><th>Heure</th><th>N°</th><th>Circuit</th><th>Client</th><th>Nature</th><th class="r">Montant</th><th class="r">Part D. Créa</th></tr></thead><tbody>
-      ${pays.map(p => `<tr><td class="num">${frTime(p.date)}</td><td class="num">${p.o.num}</td><td>${canalPill(p.o.canal)}</td><td>${esc(p.o.client.nom || "Client de passage")}</td><td>${NATURES[p.nature] || p.nature}</td><td class="r num">${eur(p.montant)}</td><td class="r num">${eur(p.part ?? p.montant)}</td></tr>`).join("")}
-      </tbody></table></div>` : `<p class="muted">Aucun encaissement ce jour-là.</p>`}
+  <section class="panel"><div class="nexthead"><h2>Articles vendus</h2>${top.length ? `<button class="btn small ghost" id="exTop">Exporter le classement (CSV)</button>` : ""}</div>
+    ${top.length ? `<p class="muted small" style="margin:0">Classés par quantité vendue sur la période (ventes et commandes, hors annulations). Utile pour prévoir les réassorts.</p>
+    <div class="tbl"><table><thead><tr><th>#</th><th>Article</th><th>Circuit</th><th class="r">Qté</th><th class="r">Chiffre</th><th class="r">Stock restant</th></tr></thead><tbody>
+      ${top.map((r,i) => `<tr><td class="num">${i+1}</td><td><b>${esc(r.nom)}</b></td><td>${canalPill(r.canal)}</td><td class="r num"><b>${r.qte}</b></td><td class="r num">${eur(r.ca)}</td>
+        <td class="r num">${r.stock === null ? `<span class="muted">sur commande</span>` : r.stock <= 0 ? `<span class="tag out">Épuisé</span>` : r.stock <= 3 ? `<span class="tag cmd">${r.stock} · à réassortir</span>` : r.stock}</td></tr>`).join("")}
+    </tbody></table></div>` : `<p class="muted" style="margin:0">Aucun article vendu sur cette période.</p>`}
+  </section>
+  <section class="panel"><h2>Encaissements et produits achetés</h2>
+    ${pays.length ? `<div class="tbl"><table><thead><tr><th>${oneDay ? "Heure" : "Date"}</th><th>N°</th><th>Circuit</th><th>Client</th><th>Produits</th><th>Nature</th><th>Paiement</th><th class="r">Montant</th></tr></thead><tbody>
+      ${pays.map(p => `<tr><td class="num">${oneDay ? frTime(p.date) : `${dmy(p.date)} ${frTime(p.date)}`}</td><td class="num">${p.o.num}</td><td>${canalPill(p.o.canal)}</td><td>${esc(p.o.client.nom || "Client de passage")}</td>
+        <td class="det">${p.o.lignes.map(l => `${l.qte > 1 ? l.qte + " × " : ""}${esc(l.nom)}${l.perso ? ` <span class="muted">(${esc(l.perso)})</span>` : ""}`).join("<br>")}</td>
+        <td>${NATURES[p.nature] || p.nature}</td><td>${modePill(p.mode)}</td><td class="r num">${eur(p.montant)}</td></tr>`).join("")}
+      </tbody></table></div>` : `<p class="muted" style="margin:0">Aucun encaissement sur cette période.</p>`}
   </section>
   <section class="panel"><h2>Exporter pour Excel</h2>
-    <div class="fgrid"><label class="f">Du<input type="date" id="exFrom" value="${first}"></label><label class="f">Au<input type="date" id="exTo" value="${todayISO()}"></label></div>
-    <div class="acts"><button class="btn primary" id="exCsv">Télécharger les ventes et commandes (CSV)</button></div>
+    <p class="muted small" style="margin:0">Une ligne par article vendu, avec le mode de paiement, pour la période choisie en haut.</p>
+    <div class="acts"><button class="btn primary" id="exCsv">Télécharger les ventes (CSV)</button></div>
   </section>
   <section class="panel"><h2>Sauvegarde</h2>
     <p class="muted" style="margin:0">Les données restent uniquement sur cette tablette. Faites une sauvegarde régulière et gardez le fichier ailleurs (téléphone, ordinateur) : elle permet de tout retrouver sur un nouvel appareil.</p>
@@ -1443,11 +1483,32 @@ function renderBilan(){
     <div class="fgrid"><label class="f">Acompte suggéré (%)<input type="number" min="0" max="100" id="stPct" value="${S.settings.acomptePct}"></label></div>
     <p class="muted" style="margin:0">Nom du club, marge et coordonnées des relevés : écran Remboursements.</p>
   </section>`;
-  $("#bDay").onchange = e => { S.bilanDay = e.target.value || todayISO(); renderBilan(); };
-  $("#exCsv").onclick = () => exportCSV($("#exFrom").value, $("#exTo").value);
+  $("#bDu").onchange = e => { S.bilanDu = e.target.value || todayISO(); if(S.bilanAu < S.bilanDu) S.bilanAu = S.bilanDu; renderBilan(); };
+  $("#bAu").onchange = e => { S.bilanAu = e.target.value || todayISO(); if(S.bilanAu < S.bilanDu) S.bilanDu = S.bilanAu; renderBilan(); };
+  $("#main").querySelectorAll("[data-pr]").forEach(b => b.onclick = () => { const pr = presets.find(x => x[0] === b.dataset.pr); S.bilanDu = pr[2]; S.bilanAu = pr[3]; renderBilan(); });
+  const et = $("#exTop"); if(et) et.onclick = () => exportTop(du, au);
+  $("#exCsv").onclick = () => exportCSV(du, au);
   $("#bkOut").onclick = backup;
   $("#bkIn").onclick = () => $("#jsonIn").click();
   $("#stPct").onchange = e => { S.settings.acomptePct = Math.min(100, Math.max(0, parseInt(e.target.value)||0)); saveSettings(); toast("Réglage enregistré"); };
+}
+/* Classement des articles vendus sur une période (date de la vente ou de la commande) */
+function bestSellers(du, au){
+  const m = new Map();
+  S.orders.forEach(o => { if(o.statut === "annulee") return; const d = dayOf(o.date); if(d < du || d > au) return;
+    o.lignes.forEach(l => { const k = l.artId || ("nom:" + l.nom);
+      const r = m.get(k) || {nom:l.nom, canal:o.canal, qte:0, ca:0, artId:l.artId};
+      r.qte += l.qte; r.ca = r2(r.ca + l.prix * l.qte); m.set(k, r); }); });
+  return [...m.values()].map(r => { const a = r.artId && art(r.artId);
+    return {...r, nom:a ? a.nom : r.nom, stock: a && a.mode === "stock" ? a.stock : null}; })
+    .sort((a,b) => b.qte - a.qte || b.ca - a.ca);
+}
+function exportTop(du, au){
+  const fmt = n => String(r2(n)).replace(".", ",");
+  const rows = [["Rang","Article","Circuit","Quantité vendue","Chiffre","Stock restant"]].concat(
+    bestSellers(du, au).map((r,i) => [i+1, r.nom, canalName(r.canal), r.qte, fmt(r.ca), r.stock === null ? "sur commande" : r.stock]));
+  const csv = "﻿" + rows.map(r => r.map(v => `"${String(v ?? "").replace(/"/g,'""')}"`).join(";")).join("\r\n");
+  download(`articles-vendus_${du}_${au}.csv`, csv, "text/csv;charset=utf-8").then(ok => ok && !IS_APP && toast("Export téléchargé"));
 }
 const IS_APP = !!(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform());
 /* Dans l'appli Android : le fichier est créé puis proposé via le menu Partager (Drive, mail, WhatsApp…) */
@@ -1479,14 +1540,15 @@ function showText(name, content){
     try { await navigator.clipboard.writeText(t.value); toast("Copié"); } catch(e){ document.execCommand("copy"); toast("Copié"); } };
 }
 function exportCSV(from, to){
-  const rows = [["N°","Date","Circuit","Type","Client","Téléphone","Équipe / remarque","Article","Personnalisation","Qté","Prix de vente unitaire","Prix Dragonne Créa unitaire","Montant ligne","Marge club ligne","Total","Payé","Reste dû","Statut","Livraison prévue","Relevé"]];
+  const rows = [["N°","Date","Circuit","Type","Client","Téléphone","Équipe / remarque","Article","Personnalisation","Qté","Prix de vente unitaire","Prix Dragonne Créa unitaire","Montant ligne","Marge club ligne","Total","Payé","Reste dû","Statut","Livraison prévue","Paiement","Relevé"]];
   const fmt = n => String(r2(n)).replace(".", ",");
   S.orders.filter(o => { const d = dayOf(o.date); return (!from || d >= from) && (!to || d <= to); })
     .sort((a,b) => a.date.localeCompare(b.date))
     .forEach(o => { const rels = [...new Set(o.paiements.map(p => p.releve).filter(Boolean))].map(releveOf).filter(Boolean).map(r => r.num).join(" ");
       o.lignes.forEach(l => rows.push([o.num, new Date(o.date).toLocaleString("fr-FR"), canalName(o.canal), o.type==="vente"?"Vente directe":"Commande", o.client.nom, o.client.tel, o.client.equipe,
       l.nom, l.perso, l.qte, fmt(l.prix), fmt(l.base ?? l.prix), fmt(l.prix*l.qte), fmt((l.prix - (l.base ?? l.prix))*l.qte), fmt(o.total), fmt(paid(o)), fmt(due(o)),
-      o.statut === "annulee" ? "Annulée" : o.type==="vente" ? "Payée" : STATUTS[o.statut], o.livraison || "", rels])); });
+      o.statut === "annulee" ? "Annulée" : o.type==="vente" ? "Payée" : STATUTS[o.statut], o.livraison || "",
+      [...new Set(o.paiements.filter(p => p.montant > 0).map(p => MODES[p.mode] || "Espèces"))].join(" + "), rels])); });
   if(rows.length === 1) return toast("Aucune vente sur cette période");
   const csv = "﻿" + rows.map(r => r.map(v => `"${String(v ?? "").replace(/"/g,'""')}"`).join(";")).join("\r\n");
   download(`dragonne-club_${from}_${to}.csv`, csv, "text/csv;charset=utf-8").then(ok => ok && !IS_APP && toast("Export téléchargé"));
@@ -1521,6 +1583,15 @@ $("#jsonIn").onchange = async e => {
 function openDlg(html, full){ $("#dlgInner").innerHTML = html; const d = $("#dlg"); d.classList.toggle("full", !!full); if(!d.open) d.showModal(); }
 function closeDlg(){ const d = $("#dlg"); if(d.open) d.close(); }
 $("#dlg").addEventListener("close", () => { const d = $("#dlg"); if(d.classList.contains("full")){ d.classList.remove("full"); if(S.view === "vente") renderVente(); } });
+/* Choix du mode de paiement pour un encaissement isolé (solde) */
+function askPay(title, msg){
+  return new Promise(res => {
+    openDlg(`<header><h2>${esc(title)}</h2></header><div class="body"><p style="margin:0">${msg}</p></div>
+      <footer><button class="btn ghost" id="apNo" type="button">Retour</button><button class="btn primary" id="apCb" type="button">Par carte</button><button class="btn ok" id="apEsp" type="button">En espèces</button></footer>`);
+    const done = v => { closeDlg(); res(v); };
+    $("#apNo").onclick = () => done(null); $("#apCb").onclick = () => done("cb"); $("#apEsp").onclick = () => done("especes");
+  });
+}
 function ask(title, msg, okLabel, danger){
   return new Promise(res => {
     openDlg(`<header><h2>${esc(title)}</h2></header><div class="body"><p style="margin:0">${msg}</p></div>
