@@ -340,6 +340,23 @@ td.det{min-width:180px}
 .cl-logo{height:26px;width:auto;flex:none}
 .cl-logo.round{border-radius:99px;background:#fff}
 @media (max-width:640px){ .duo img{height:56px} .duo{padding:6px 10px} }
+.kpill{display:inline-block;border-radius:6px;padding:1px 7px;font-size:12px;font-weight:700;background:var(--resin-soft);color:var(--resin);white-space:nowrap}
+.szchips{display:flex;flex-wrap:wrap;gap:4px}
+.sz{border:1px solid var(--line);border-radius:6px;padding:1px 6px;font-size:12px;font-variant-numeric:tabular-nums;background:var(--surface)}
+.sz.low{border-color:var(--resin);color:var(--resin)}
+.sz.off{opacity:.45;text-decoration:line-through}
+.szbadge{display:inline-block;background:var(--ink);color:var(--bg);border-radius:6px;padding:0 7px;font-size:13px;font-weight:700;margin-left:4px}
+.szdet{margin-top:6px}
+.szdet summary{cursor:pointer;color:var(--accent);font-weight:700;font-size:14px;padding:4px 0}
+.sizes{display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:10px}
+.size{border:2px solid var(--line);background:var(--surface);border-radius:14px;padding:14px 8px;display:flex;flex-direction:column;align-items:center;gap:2px;min-height:76px}
+.size b{font:800 22px/1 var(--f-display)}
+.size small{color:var(--muted);font-weight:700}
+.size:not(:disabled):active{border-color:var(--sea);background:var(--sea-soft)}
+.size:disabled{opacity:.4}
+.sizeed{display:flex;flex-direction:column;gap:8px;background:var(--sunk);border-radius:12px;padding:12px}
+.szrow{display:grid;grid-template-columns:minmax(0,1fr) 110px 40px;gap:8px;align-items:center}
+.pdfbar{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;background:var(--accent-soft);border-radius:14px;padding:10px 14px;margin-bottom:16px;font-weight:700;color:var(--accent)}
 .toast{position:fixed;left:50%;bottom:calc(24px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:12px 18px;border-radius:12px;font-weight:700;z-index:50;max-width:calc(100vw - 32px)}
 .cartfab{display:none}
 
@@ -427,10 +444,24 @@ const DB = {
 };
 
 const S = { articles:[], orders:[], releves:[], settings:null, cart:[], cartCanal:null, view:"accueil", cat:"Tout",
-  filter:"ouvertes", ocanal:"tous", catView:null, q:"", bilanDu:todayISO(), bilanAu:todayISO(), sel:null, relDu:null, relAu:todayISO(), relExcl:new Set() };
+  filter:"ouvertes", ocanal:"tous", catView:null, q:"", bilanDu:todayISO(), bilanAu:todayISO(), bilanCanal:"tous", sel:null, relDu:null, relAu:todayISO(), relExcl:new Set() };
 const MAXPH = 6;
 const STATUTS = { a_faire:"À fabriquer", en_cours:"En cours", prete:"Prête", livree:"Livrée", annulee:"Annulée" };
 const MODES = { especes:"Espèces", cb:"CB" };
+const KINDS = { resine:"Résine", merch:"Merchandising" };
+const isMerch = a => a && a.kind === "merch";
+const hasSizes = a => isMerch(a) && Array.isArray(a.tailles) && a.tailles.length > 0;
+const sizeOf = (a, t) => hasSizes(a) ? a.tailles.find(x => x.t === t) : null;
+const stockOf = (a, t) => hasSizes(a) ? ((sizeOf(a, t) || {}).stock || 0) : (+a.stock || 0);
+const totalStock = a => hasSizes(a) ? a.tailles.reduce((s,x) => s + (+x.stock || 0), 0) : (+a.stock || 0);
+const lineName = l => l.nom + (l.taille ? ` (${l.taille})` : "");
+/* Remet (ou retire) du stock sur l'article d'une ligne, taille comprise */
+function moveStock(l, delta){
+  const a = l.artId && art(l.artId); if(!a || a.mode !== "stock") return null;
+  if(hasSizes(a)){ const z = sizeOf(a, l.taille); if(z) z.stock = Math.max(0, z.stock + delta); }
+  else a.stock = Math.max(0, a.stock + delta);
+  return a;
+}
 const modePill = m => `<span class="mpill m-${m || "especes"}">${MODES[m] || "Espèces"}</span>`;
 const NATURES = { vente:"Vente", acompte:"Acompte", solde:"Solde", remboursement:"Annulation" };
 const saveSettings = () => DB.put("kv", S.settings);
@@ -445,6 +476,7 @@ const rule = a => (a.club && a.marge) ? a.marge : {mode:S.settings.margeMode, va
 const ruleText = r => r.mode === "pct" ? `+${numIn(r.val)} %` : `+${eur(r.val)}`;
 /* Prix de vente au club = prix Dragonne Créa + marge du club, arrondi au pas choisi */
 function clubPrice(a){
+  if(isMerch(a)) return r2(a.prix);
   const base = +a.prix || 0, r = rule(a);
   let p = r.mode === "pct" ? base * (1 + (+r.val || 0) / 100) : base + (+r.val || 0);
   p = r2(p);
@@ -503,6 +535,20 @@ async function seed(){
   }
 }
 
+async function seedMerch(){
+  const ex = [
+    ["Sweat à capuche GTO", "Vêtements", 35, [["S",4],["M",6],["L",5],["XL",2]], 220],
+    ["T-shirt GTO enfant", "Vêtements", 15, [["6 ans",3],["8 ans",5],["10 ans",4],["12 ans",0]], 30],
+    ["Bonnet GTO", "Accessoires", 12, null, 140],
+    ["Écharpe GTO", "Accessoires", 15, null, 100]
+  ];
+  for(const [nom, cat, prix, tailles, hue] of ex){
+    await DB.put("articles", {id:uid(), nom, cat, prix, kind:"merch", club:true, marge:null, mode:"stock",
+      stock: tailles ? 0 : 10, tailles: tailles ? tailles.map(([t, stock]) => ({t, stock})) : null, delai:0,
+      photos:[samplePhoto("Exemple", hue, "carre")], exemple:true, actif:true, cree:new Date().toISOString()});
+  }
+}
+
 /* ---------- Démarrage et mise à niveau des données existantes ---------- */
 async function boot(){
   await DB.open();
@@ -512,6 +558,7 @@ async function boot(){
   S.settings.vendeur = Object.assign({}, DEFAULTS.vendeur, S.settings.vendeur || {});
   if(!S.settings.club || S.settings.club === "Club de rugby") S.settings.club = "GTO/VDB";
   if(!S.settings.seeded){ await seed(); S.settings.seeded = true; }
+  if(!S.settings.seededMerch){ await seedMerch(); S.settings.seededMerch = true; }
   await saveSettings();
   await migrate();
   await reload();
@@ -521,7 +568,8 @@ async function boot(){
 /* Les données saisies avant cette version étaient toutes pour le club, sans marge */
 async function migrate(){
   for(const a of await DB.all("articles")){
-    if(a.club === undefined){ a.club = true; a.marge = null; await DB.put("articles", a); }
+    if(a.club === undefined){ a.club = true; a.marge = null; }
+    if(!a.kind){ a.kind = "resine"; await DB.put("articles", a); }
   }
   for(const o of await DB.all("orders")){
     let ch = false;
@@ -531,7 +579,8 @@ async function migrate(){
       o.totalBase = o.total;
       o.paiements.forEach(p => { if(!p.id) p.id = uid(); if(p.part === undefined) p.part = p.montant; });
     }
-    o.paiements.forEach(p => { if(!p.mode){ p.mode = "especes"; ch = true; } });
+    o.paiements.forEach(p => { if(!p.mode){ p.mode = "especes"; ch = true; } if(p.res === undefined){ p.res = p.montant; ch = true; } });
+    if(o.totalRes === undefined){ o.totalRes = o.total; o.lignes.forEach(l => { if(!l.kind) l.kind = "resine"; }); ch = true; }
     if(ch) await DB.put("orders", o);
   }
 }
@@ -551,23 +600,28 @@ document.querySelectorAll(".nav, .brand").forEach(n => n.addEventListener("click
 function render(){ ({accueil:renderAccueil, vitrine:renderVitrine, vente:renderVente, commandes:renderCommandes, catalogue:renderCatalogue, bilan:renderBilan, releves:renderReleves})[S.view](); }
 
 const art = id => S.articles.find(a => a.id === id);
-const inCart = id => S.cart.filter(l => l.artId === id).reduce((s,l) => s + l.qte, 0);
-const modeTag = a => a.mode === "stock"
+const inCart = (id, t) => S.cart.filter(l => l.artId === id && (t === undefined || (l.taille || "") === t)).reduce((s,l) => s + l.qte, 0);
+const modeTag = a => hasSizes(a)
+  ? (totalStock(a) > 0 ? `<span class="tag stock num">${totalStock(a)} en stock</span>` : `<span class="tag out">Épuisé</span>`)
+  : a.mode === "stock"
   ? (a.stock > 0 ? `<span class="tag stock num">${a.stock} en stock</span>` : `<span class="tag out">Épuisé</span>`)
   : `<span class="tag cmd num">Sur commande · ${a.delai} j</span>`;
+const sizeChips = a => hasSizes(a) ? `<span class="szchips">${a.tailles.map(z => `<span class="sz${z.stock <= 0 ? " off" : z.stock <= 2 ? " low" : ""}"><b>${esc(z.t)}</b> ${z.stock}</span>`).join("")}</span>` : "";
+const kindPill = a => isMerch(a) ? `<span class="kpill">Merch</span>` : "";
 
 /* ---------- Argent : encaissements et part revenant à Dragonne Créa ---------- */
 const paid = o => r2(o.paiements.reduce((s,p) => s + p.montant, 0));
 const paidPart = o => r2(o.paiements.reduce((s,p) => s + (p.part ?? p.montant), 0));
+const paidRes = o => r2(o.paiements.reduce((s,p) => s + (p.res ?? p.montant), 0));
 const due = o => o.statut === "annulee" ? 0 : r2(o.total - paid(o));
 /* Chaque encaissement mémorise la part Dragonne Créa (le reste est la marge du club) */
 function pay(o, montant, nature, date, mode){
   montant = r2(montant);
-  const tb = o.totalBase ?? o.total;
-  let part;
-  if(r2(paid(o) + montant) >= o.total) part = r2(tb - paidPart(o));
-  else part = o.total ? r2(montant * tb / o.total) : montant;
-  const p = {id:uid(), date: date || new Date().toISOString(), montant, part, nature, mode: mode || "especes"};
+  const tb = o.totalBase ?? o.total, tr = o.totalRes ?? o.total;
+  const last = r2(paid(o) + montant) >= o.total;
+  const part = last ? r2(tb - paidPart(o)) : (o.total ? r2(montant * tb / o.total) : montant);
+  const res = last ? r2(tr - paidRes(o)) : (o.total ? r2(montant * tr / o.total) : montant);
+  const p = {id:uid(), date: date || new Date().toISOString(), montant, part, res, nature, mode: mode || "especes"};
   o.paiements.push(p); return p;
 }
 const releveOf = id => S.releves.find(r => r.id === id);
@@ -575,10 +629,10 @@ const releveOf = id => S.releves.find(r => r.id === id);
 function pendingClub(du, au){
   const rows = [];
   S.orders.forEach(o => { if(o.canal !== "club") return;
-    o.paiements.forEach(p => { const d = dayOf(p.date); if(!p.releve && (!du || d >= du) && (!au || d <= au)) rows.push({p, o}); }); });
+    o.paiements.forEach(p => { const d = dayOf(p.date); if(!p.releve && ((p.res ?? p.montant) !== 0 || p.part !== 0) && (!du || d >= du) && (!au || d <= au)) rows.push({p, o}); }); });
   return rows.sort((a,b) => a.p.date.localeCompare(b.p.date));
 }
-const detailOf = o => o.lignes.map(l => `${l.qte > 1 ? l.qte + " × " : ""}${l.nom}${l.perso ? " (" + l.perso + ")" : ""}`).join(", ");
+const detailOf = (o, onlyRes) => o.lignes.filter(l => !onlyRes || l.kind !== "merch").map(l => `${l.qte > 1 ? l.qte + " × " : ""}${lineName(l)}${l.perso ? " – " + l.perso : ""}`).join(", ");
 
 /* ---------- Accueil ---------- */
 const ICONS = {
@@ -660,7 +714,7 @@ function openFiche(id, from){
   const a = art(id); if(!a) return;
   const list = from === "vitrine" ? (S.ficheList || []) : [];
   const i = list.indexOf(id);
-  const out = a.mode === "stock" && a.stock - inCart(a.id) <= 0;
+  const out = a.mode === "stock" && totalStock(a) - inCart(a.id) <= 0;
   openDlg(`<div class="fiche">
     <div class="gal">
       <button class="close" id="fClose" aria-label="Fermer">×</button>
@@ -671,13 +725,13 @@ function openFiche(id, from){
       <span class="muted" style="font-weight:700;text-transform:uppercase;letter-spacing:.06em;font-size:13px">${esc(a.cat)}</span>
       <h2>${esc(a.nom)}</h2>
       <div class="price num">${eur(salePrice(a))}</div>
-      <div>${modeTag(a)}</div>
+      <div>${hasSizes(a) ? sizeChips(a) : modeTag(a)}</div>
       ${a.mode === "commande" ? `<p class="muted" style="margin:0">Fabriqué à la demande et personnalisable (prénom, numéro, couleurs). Prêt en ${a.delai} jour${a.delai>1?"s":""} environ.</p>` : ""}
       <button class="btn primary" id="fAdd" ${out ? "disabled" : ""}>${out ? "Plus de stock" : "Ajouter au panier"}</button>
       ${list.length > 1 ? `<div class="navs"><button class="btn ghost" id="fPrev">← Précédente</button><button class="btn ghost" id="fNext">Suivante →</button></div>` : ""}
     </div></div>`, true);
   $("#fClose").onclick = closeDlg;
-  $("#fAdd").onclick = () => { addToCart(a.id); closeDlg(); };
+  $("#fAdd").onclick = () => { closeDlg(); addToCart(a.id); };
   const sl = $("#fSlides"), dots = $("#fDots");
   if(dots) sl.onscroll = () => { const k = Math.round(sl.scrollLeft / sl.clientWidth); dots.querySelectorAll("i").forEach((d,j) => d.classList.toggle("on", j === k)); };
   if(list.length > 1){
@@ -708,14 +762,14 @@ function renderVente(){
       <div class="chips">${cats.map(c => `<button class="chip" data-cat="${esc(c)}" aria-pressed="${c===S.cat}">${esc(c)}</button>`).join("")}</div>
       ${list.length ? `<div class="grid">${list.map(a => {
         const n = inCart(a.id);
-        return `<div class="card${a.mode==="stock" && a.stock<=0 ? " dim":""}" role="button" tabindex="0" data-add="${a.id}" aria-label="Ajouter ${esc(a.nom)} au panier">
+        return `<div class="card${a.mode==="stock" && totalStock(a)<=0 ? " dim":""}" role="button" tabindex="0" data-add="${a.id}" aria-label="Ajouter ${esc(a.nom)} au panier">
           <span class="phw">${a.photos[0] ? `<img class="ph" src="${a.photos[0]}" alt="">` : `<span class="ph"></span>`}
           ${a.photos.length > 1 ? `<span class="nphotos num">${a.photos.length} photos</span>` : ""}</span>
           <button class="zoom" data-zoom="${a.id}" aria-label="Voir les photos de ${esc(a.nom)}"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="6"/><path d="m20 20-4.5-4.5M11 8v6M8 11h6"/></svg></button>
           ${n ? `<span class="incart num">${n}</span>` : ""}
-          <span class="bd"><span class="nm">${esc(a.nom)}</span><span>${modeTag(a)} ${a.exemple ? '<span class="tag ex">Exemple</span>' : ""}</span>
+          <span class="bd"><span class="nm">${esc(a.nom)}</span>${hasSizes(a) ? sizeChips(a) : `<span>${modeTag(a)} ${a.exemple ? '<span class="tag ex">Exemple</span>' : ""}</span>`}
           <span class="pr num">${eur(salePrice(a))}</span></span></div>`; }).join("")}</div>`
-      : `<div class="panel"><p class="muted">Aucun article ${esc(canalName(canal))} dans cette catégorie. Ajoutez-en depuis le Catalogue${canal === "club" ? ` en cochant « ${esc(CLUB())} »` : ""}.</p></div>`}
+      : `<div class="panel"><p class="muted">Aucun article ${esc(canalName(canal))} dans cette catégorie. Ajoutez-en depuis le Catalogue.</p></div>`}
     </section>
     <aside class="cart" aria-label="Panier">${cartHTML()}</aside>
   </div>`;
@@ -729,10 +783,12 @@ function renderVente(){
   bindCart();
 }
 function cartTotals(){
-  const sum = (mode, k) => r2(S.cart.filter(l => l.mode === mode).reduce((s,l) => s + l[k]*l.qte, 0));
+  const sum = (mode, k, f = () => true) => r2(S.cart.filter(l => l.mode === mode && f(l)).reduce((s,l) => s + l[k]*l.qte, 0));
+  const res = l => l.kind !== "merch";
   const stock = sum("stock","prix"), cmd = sum("commande","prix");
   const stockBase = sum("stock","base"), cmdBase = sum("commande","base");
-  return {stock, cmd, total:r2(stock+cmd), stockBase, cmdBase, base:r2(stockBase+cmdBase)};
+  const stockRes = sum("stock","prix",res), cmdRes = sum("commande","prix",res);
+  return {stock, cmd, total:r2(stock+cmd), stockBase, cmdBase, base:r2(stockBase+cmdBase), stockRes, cmdRes, res:r2(stockRes+cmdRes)};
 }
 function cartHTML(){
   const cc = S.cartCanal || S.settings.canal;
@@ -741,7 +797,7 @@ function cartHTML(){
   return `<header><h2>Panier</h2>${canalPill(cc)}<button class="btn small ghost" id="clearCart">Vider</button></header>
   <div class="lines">${S.cart.map((l,i) => `
     <div class="line">
-      <div class="t">${esc(l.nom)}<div>${l.mode==="commande" ? '<span class="tag cmd">Sur commande</span>' : '<span class="tag stock">À emporter</span>'}</div></div>
+      <div class="t">${esc(l.nom)}${l.taille ? ` <span class="szbadge">${esc(l.taille)}</span>` : ""}<div>${l.mode==="commande" ? '<span class="tag cmd">Sur commande</span>' : l.kind === "merch" ? '<span class="kpill">Merch</span>' : '<span class="tag stock">À emporter</span>'}</div></div>
       <div class="p num"><b>${eur(l.prix*l.qte)}</b><div class="muted">${eur(l.prix)} / u</div></div>
       <div class="qty"><button data-dec="${i}" aria-label="Retirer un">−</button><span class="num">${l.qte}</span><button data-inc="${i}" aria-label="Ajouter un">+</button></div>
       <div></div>
@@ -750,32 +806,43 @@ function cartHTML(){
   <div class="tot">
     ${t.stock && t.cmd ? `<div class="row muted"><span>À emporter</span><span class="num">${eur(t.stock)}</span></div><div class="row muted"><span>Sur commande</span><span class="num">${eur(t.cmd)}</span></div>` : ""}
     <div class="row big"><span>Total</span><span class="num">${eur(t.total)}</span></div>
-    ${cc === "club" ? `<div class="row muted small"><span>dont marge ${esc(CLUB())}</span><span class="num">${eur(t.total - t.base)}</span></div>` : ""}
+    ${cc === "club" && t.res !== t.total ? `<div class="row muted small"><span>dont résine / merchandising</span><span class="num">${eur(t.res)} / ${eur(t.total - t.res)}</span></div>` : ""}
     <button class="btn primary" id="checkout">${t.cmd ? "Prendre la commande" : "Encaisser"}</button>
   </div>`;
 }
 function bindCart(){
   const box = document.querySelector(".cart"); if(!box) return;
-  box.querySelectorAll("[data-inc]").forEach(b => b.onclick = () => { const l = S.cart[b.dataset.inc]; if(l.mode === "stock" && inCart(l.artId) >= art(l.artId).stock) return toast("Plus de stock pour cet article"); l.qte++; renderVente(); });
+  box.querySelectorAll("[data-inc]").forEach(b => b.onclick = () => { const l = S.cart[b.dataset.inc]; const a = art(l.artId); if(l.mode === "stock" && a && inCart(l.artId, l.taille || "") >= stockOf(a, l.taille)) return toast("Plus de stock pour cet article"); l.qte++; renderVente(); });
   box.querySelectorAll("[data-dec]").forEach(b => b.onclick = () => { const i = +b.dataset.dec; if(--S.cart[i].qte <= 0) S.cart.splice(i,1); if(!S.cart.length) S.cartCanal = null; renderVente(); });
   box.querySelectorAll("[data-perso]").forEach(inp => inp.oninput = () => { S.cart[inp.dataset.perso].perso = inp.value; });
   const c = $("#clearCart"); if(c) c.onclick = async () => { if(await ask("Vider le panier ?", "Les articles ajoutés seront retirés.", "Vider")) { S.cart = []; S.cartCanal = null; renderVente(); } };
   const k = $("#checkout"); if(k) k.onclick = openCheckout;
 }
-function addToCart(id){
+function addToCart(id, taille){
   const a = art(id);
   const canal = a.club ? "club" : "dc";
   if(S.cart.length && S.cartCanal && S.cartCanal !== canal) return toast(`Le panier contient des articles ${canalName(S.cartCanal)} : encaissez-les d'abord`);
-  if(a.mode === "stock" && inCart(id) >= a.stock) return toast(a.stock ? "Plus de stock pour cet article" : "Article épuisé");
+  if(hasSizes(a) && taille === undefined) return pickSize(a);
+  const t = taille || "";
+  if(a.mode === "stock" && inCart(id, t) >= stockOf(a, t)) return toast(stockOf(a, t) ? "Plus de stock pour cet article" : "Article épuisé");
   // Les articles sur commande gardent une ligne par pièce personnalisée
-  const l = a.mode === "stock" ? S.cart.find(x => x.artId === id) : null;
-  if(l) l.qte++; else S.cart.push({artId:id, nom:a.nom, prix:salePrice(a), base:r2(a.prix), mode:a.mode, qte:1, perso:"", delai:a.delai||0});
+  const l = a.mode === "stock" ? S.cart.find(x => x.artId === id && (x.taille || "") === t) : null;
+  if(l) l.qte++; else S.cart.push({artId:id, nom:a.nom, taille:t, kind:a.kind || "resine", prix:salePrice(a), base:isMerch(a) ? 0 : r2(a.prix), mode:a.mode, qte:1, perso:"", delai:a.delai||0});
   S.cartCanal = canal;
-  if(S.view !== "vente") return toast(`${a.nom} ajouté au panier`);
+  if(S.view !== "vente") return toast(`${a.nom}${t ? " (" + t + ")" : ""} ajouté au panier`);
   renderVente();
   const c = document.querySelector(`[data-add="${id}"]`); if(c) c.classList.add("pop");
 }
-
+/* Choix de la taille au moment de vendre : stock affiché pour chaque taille */
+function pickSize(a){
+  openDlg(`<header><h2>${esc(a.nom)}</h2></header>
+    <div class="body"><p class="muted" style="margin:0">Choisissez la taille · ${eur(salePrice(a))}</p>
+      <div class="sizes">${a.tailles.map(z => { const left = z.stock - inCart(a.id, z.t);
+        return `<button class="size" data-sz="${esc(z.t)}" ${left <= 0 ? "disabled" : ""}><b>${esc(z.t)}</b><small>${left <= 0 ? "épuisé" : `${left} en stock`}</small></button>`; }).join("")}</div></div>
+    <footer><button class="btn ghost" id="szNo" type="button">Retour</button></footer>`);
+  $("#szNo").onclick = closeDlg;
+  document.querySelectorAll("[data-sz]").forEach(b => b.onclick = () => { closeDlg(); addToCart(a.id, b.dataset.sz); });
+}
 /* ---------- Encaissement / prise de commande ---------- */
 function openCheckout(){
   const t = cartTotals(), hasCmd = t.cmd > 0, canal = S.cartCanal || S.settings.canal;
@@ -835,19 +902,19 @@ function openCheckout(){
     const client = {nom, tel:$("#coTel").value.trim(), equipe:$("#coEq").value.trim()};
     const now = new Date().toISOString();
     const stockLines = S.cart.filter(l => l.mode === "stock"), cmdLines = S.cart.filter(l => l.mode === "commande");
-    const ligne = l => ({artId:l.artId, nom:l.nom, prix:l.prix, base:l.base, qte:l.qte, perso:(l.perso||"").trim()});
+    const ligne = l => ({artId:l.artId, nom:l.nom, taille:l.taille || "", kind:l.kind || "resine", prix:l.prix, base:l.base, qte:l.qte, perso:(l.perso||"").trim()});
     const nums = [];
     if(stockLines.length){
       const o = {id:uid(), num:S.settings.nextNum++, type:"vente", canal, date:now, client, statut:"livree",
-        lignes:stockLines.map(ligne), total:t.stock, totalBase:t.stockBase, paiements:[]};
+        lignes:stockLines.map(ligne), total:t.stock, totalBase:t.stockBase, totalRes:t.stockRes, paiements:[]};
       pay(o, t.stock, "vente", now, pm);
       await DB.put("orders", o); nums.push(o.num);
-      for(const l of stockLines){ const a = art(l.artId); if(a){ a.stock = Math.max(0, a.stock - l.qte); await DB.put("articles", a); } }
+      for(const l of stockLines){ const a = moveStock(l, -l.qte); if(a) await DB.put("articles", a); }
     }
     if(cmdLines.length){
       const o = {id:uid(), num:S.settings.nextNum++, type:"commande", canal, date:now, client, statut:"a_faire",
         livraison:$("#coLiv").value, note:$("#coNote").value.trim(),
-        lignes:cmdLines.map(ligne), total:t.cmd, totalBase:t.cmdBase, paiements:[]};
+        lignes:cmdLines.map(ligne), total:t.cmd, totalBase:t.cmdBase, totalRes:t.cmdRes, paiements:[]};
       if(ac > 0) pay(o, ac, "acompte", now, pm);
       await DB.put("orders", o); nums.push(o.num);
     }
@@ -914,10 +981,10 @@ function orderHTML(o){
     <div class="top">${pickable ? `<span class="check" aria-hidden="true">${on ? "✓" : ""}</span>` : ""}<div style="flex:1;min-width:0"><h3>${esc(o.client.nom || "Client de passage")} <span class="muted num" style="font-weight:600">n° ${o.num}</span></h3>
       <div class="meta">${canalPill(o.canal)}${o.client.equipe ? `<span>${esc(o.client.equipe)}</span>` : ""}${o.client.tel ? `<a href="tel:${esc(o.client.tel.replace(/\s/g,""))}">${esc(o.client.tel)}</a>` : ""}<span>${frDate(o.date)} ${frTime(o.date)}</span></div></div>
       ${pill}</div>
-    <ul>${o.lignes.map(l => `<li><span>${l.qte > 1 ? l.qte+" × " : ""}${esc(l.nom)}${l.perso ? `<em>${esc(l.perso)}</em>` : ""}</span><span class="num">${eur(l.prix*l.qte)}</span></li>`).join("")}</ul>
+    <ul>${o.lignes.map(l => `<li><span>${l.qte > 1 ? l.qte+" × " : ""}${esc(lineName(l))}${l.kind === "merch" ? ' <span class="kpill">Merch</span>' : ""}${l.perso ? `<em>${esc(l.perso)}</em>` : ""}</span><span class="num">${eur(l.prix*l.qte)}</span></li>`).join("")}</ul>
     ${o.note ? `<div class="muted" style="font-size:14px">Note : ${esc(o.note)}</div>` : ""}
     <div class="money num"><span>Total <b>${eur(o.total)}</b></span><span>Payé <b>${eur(paid(o))}</b></span>${d > 0 ? `<span class="due">Reste ${eur(d)}</span>` : (off ? (o.annuleLe ? `<span class="muted">Annulée le ${frDate(o.annuleLe)}</span>` : "") : `<span style="color:var(--ok);font-weight:700">Soldée</span>`)}</div>
-    ${o.canal === "club" && (o.totalBase ?? o.total) !== o.total ? `<div class="meta"><span>Part Dragonne Créa ${eur(o.totalBase)} · marge club ${eur(o.total - o.totalBase)}</span></div>` : ""}
+    ${o.canal === "club" && (o.totalRes ?? o.total) > 0 && (o.totalBase ?? o.total) !== (o.totalRes ?? o.total) ? `<div class="meta"><span>Résine : part Dragonne Créa ${eur(o.totalBase)} · marge club ${eur((o.totalRes ?? o.total) - o.totalBase)}</span></div>` : ""}
     ${rels.length ? `<div class="meta"><span class="relnote">Sur relevé ${rels.map(r => esc(r.num)).join(", ")}</span></div>` : ""}
     ${o.type==="commande" && o.livraison && !off && o.statut !== "livree" ? `<div class="meta"><span ${late ? 'style="color:var(--danger);font-weight:700"' : ""}>Livraison prévue ${frDate(o.livraison)}${late ? " · en retard" : ""}</span></div>` : ""}
     ${!S.sel && !off ? `<div class="acts">
@@ -967,12 +1034,9 @@ function cancelOrders(ids){
     for(const o of list){
       const p = paid(o), pp = paidPart(o);
       const lastMode = ([...o.paiements].reverse().find(x => x.montant > 0) || {}).mode || "especes";
-      if(refund && p > 0) o.paiements.push({id:uid(), date:now, montant:-p, part:-pp, nature:"remboursement", mode:lastMode});
+      if(refund && p > 0) o.paiements.push({id:uid(), date:now, montant:-p, part:-pp, res:-paidRes(o), nature:"remboursement", mode:lastMode});
       if(o.type === "vente"){
-        for(const l of o.lignes){
-          const a = (l.artId && art(l.artId)) || S.articles.find(x => x.nom === l.nom && x.mode === "stock");
-          if(a && a.mode === "stock"){ a.stock += l.qte; await DB.put("articles", a); }
-        }
+        for(const l of o.lignes){ const a = moveStock(l, l.qte); if(a) await DB.put("articles", a); }
       }
       o.statut = "annulee"; o.annuleLe = now;
       await DB.put("orders", o);
@@ -1002,7 +1066,7 @@ function deleteOrders(ids){
   $("#dxYes").onclick = async () => {
     for(const o of list){
       if(o.type === "vente" && o.statut !== "annulee"){
-        for(const l of o.lignes){ const a = l.artId && art(l.artId); if(a && a.mode === "stock"){ a.stock += l.qte; await DB.put("articles", a); } }
+        for(const l of o.lignes){ const a = moveStock(l, l.qte); if(a) await DB.put("articles", a); }
       }
       o.paiements.forEach(p => S.relExcl.delete(p.id));
       await DB.del("orders", o.id);
@@ -1015,24 +1079,28 @@ function deleteOrders(ids){
 /* ---------- Catalogue ---------- */
 function renderCatalogue(){
   if(!S.catView) S.catView = S.settings.canal;
-  const v = S.catView;
-  const list = S.articles.filter(a => v === "tous" || visibleIn(a, v));
+  if(!S.catKind) S.catKind = "tous";
+  const v = S.catView, k = S.catKind;
+  const list = S.articles.filter(a => (v === "tous" || visibleIn(a, v)) && (k === "tous" || (a.kind || "resine") === k));
   const nEx = S.articles.filter(a => a.exemple).length;
   const r = {mode:S.settings.margeMode, val:S.settings.margeVal};
   $("#main").innerHTML = `
   <div class="head"><div><h1>Catalogue</h1><p>${S.articles.length} article${S.articles.length>1?"s":""} · catalogue commun, la case ${esc(CLUB())} réserve un article au club</p></div>
     <div class="acts">${nEx ? `<button class="btn ghost" id="delEx">Supprimer les ${nEx} exemples</button>` : ""}<button class="btn primary" id="newArt">Ajouter un article</button></div></div>
   ${canalTabs(v, {all:true, compact:true})}
-  ${v !== "dc" ? `<div class="rulebar"><span><b>Marge ${esc(CLUB())}</b> ${ruleText(r)} par article${+S.settings.arrondi ? ` · prix arrondi aux ${eur(S.settings.arrondi)} supérieurs` : ""}${!+S.settings.margeVal ? ` <span class="warnchip">à régler</span>` : ""}</span><button class="btn small ghost" id="ruleEdit">Modifier</button></div>` : ""}
+  ${v !== "dc" ? `<div class="chips">${[["tous","Tous les produits"],["resine","Résines"],["merch","Merchandising " + CLUB()]].map(([x,l]) => `<button class="chip" data-kind="${x}" aria-pressed="${x===k}">${esc(l)}</button>`).join("")}</div>` : ""}
+  ${v !== "dc" && k !== "merch" ? `<div class="rulebar"><span><b>Marge ${esc(CLUB())}</b> ${ruleText(r)} par article${+S.settings.arrondi ? ` · prix arrondi aux ${eur(S.settings.arrondi)} supérieurs` : ""}${!+S.settings.margeVal ? ` <span class="warnchip">à régler</span>` : ""}</span><button class="btn small ghost" id="ruleEdit">Modifier</button></div>` : ""}
   ${list.length ? `<div class="list">${list.map(a => `
     <div class="item"><img src="${a.photos[0] || ""}" alt="">
       <div style="min-width:0"><div class="nm">${esc(a.nom)}</div>
-        <div class="meta">${canalPill(a.club ? "club" : "dc")}<span>${esc(a.cat)}</span>
-          ${a.club ? `<span class="num"><b style="color:var(--ink)">${eur(clubPrice(a))}</b> au club · ${eur(a.prix)} pour Dragonne Créa${a.marge ? " · marge propre" : ""}</span>` : `<b class="num" style="color:var(--ink)">${eur(a.prix)}</b>`}
-          ${modeTag(a)}${a.exemple ? '<span class="tag ex">Exemple</span>' : ""}${a.actif ? "" : '<span class="tag ex">Masqué</span>'}</div></div>
+        <div class="meta">${canalPill(a.club ? "club" : "dc")}${kindPill(a)}<span>${esc(a.cat)}</span>
+          ${isMerch(a) ? `<b class="num" style="color:var(--ink)">${eur(a.prix)}</b>` : a.club ? `<span class="num"><b style="color:var(--ink)">${eur(clubPrice(a))}</b> au club · ${eur(a.prix)} pour Dragonne Créa${a.marge ? " · marge propre" : ""}</span>` : `<b class="num" style="color:var(--ink)">${eur(a.prix)}</b>`}
+          ${modeTag(a)}${a.exemple ? '<span class="tag ex">Exemple</span>' : ""}${a.actif ? "" : '<span class="tag ex">Masqué</span>'}</div>
+        ${hasSizes(a) ? `<details class="szdet"><summary>Stock par taille</summary>${sizeChips(a)}</details>` : ""}</div>
       <button class="btn small ghost" data-edit="${a.id}">Modifier</button></div>`).join("")}</div>`
   : `<div class="panel"><p class="muted">Aucun article ici. Ajoutez le premier avec sa photo et son prix.</p></div>`}`;
-  bindCanals(k => { S.catView = k; renderCatalogue(); });
+  bindCanals(x => { S.catView = x; renderCatalogue(); });
+  $("#main").querySelectorAll("[data-kind]").forEach(b => b.onclick = () => { S.catKind = b.dataset.kind; renderCatalogue(); });
   $("#newArt").onclick = () => editArticle(null);
   const re = $("#ruleEdit"); if(re) re.onclick = () => editClubRule(renderCatalogue);
   $("#main").querySelectorAll("[data-edit]").forEach(b => b.onclick = () => editArticle(b.dataset.edit));
@@ -1078,15 +1146,19 @@ function editClubRule(after){
 }
 function editArticle(id){
   const a0 = id ? art(id) : null;
-  const a = a0 ? JSON.parse(JSON.stringify(a0)) : {id:uid(), nom:"", cat:"", prix:"", club:(S.catView || S.settings.canal) === "club", marge:null, mode:"stock", stock:1, delai:7, photos:[], exemple:false, actif:true, cree:new Date().toISOString()};
+  const a = a0 ? JSON.parse(JSON.stringify(a0)) : {id:uid(), nom:"", cat:"", prix:"", kind:S.catKind === "merch" ? "merch" : "resine", club:S.catKind === "merch" || (S.catView || S.settings.canal) === "club", marge:null, mode:"stock", stock:1, tailles:null, delai:7, photos:[], exemple:false, actif:true, cree:new Date().toISOString()};
+  if(!a.kind) a.kind = "resine";
+  const PRESETS = [["Adulte", ["XS","S","M","L","XL","XXL"]], ["Enfant", ["4 ans","6 ans","8 ans","10 ans","12 ans","14 ans"]]];
   const cats = [...new Set(S.articles.map(x => x.cat))];
   const draw = () => {
-    const own = !!a.marge;
+    const own = !!a.marge, merch = a.kind === "merch", sized = merch && Array.isArray(a.tailles);
     openDlg(`
     <header><h2>${a0 ? "Modifier l'article" : "Nouvel article"}</h2></header>
     <div class="body">
-      <label class="clubbox${a.club ? " on" : ""}"><input type="checkbox" id="aClub" ${a.club ? "checked" : ""}>
-        <span><b>${esc(CLUB())}</b> · article réservé au club<br><span class="muted">${a.club ? `Vendu uniquement dans les ventes ${esc(CLUB())}, au prix club (marge incluse).` : "Non coché : vendu uniquement par Dragonne Créa, au prix indiqué."}</span></span></label>
+      <div class="f" style="display:flex;flex-direction:column;gap:6px;font-weight:700;font-size:14px">Type de produit
+        <div class="seg"><button type="button" data-kd="resine" aria-pressed="${!merch}">Résine</button><button type="button" data-kd="merch" aria-pressed="${merch}">Merchandising ${esc(CLUB())}</button></div></div>
+      ${merch ? `<p class="muted small" style="margin:0">Produit du club (bonnet, écharpe, sweat…) : vendu uniquement au stand ${esc(CLUB())}, 100 % pour le club. Il n'apparaît jamais sur les relevés de remboursement.</p>` : `<label class="clubbox${a.club ? " on" : ""}"><input type="checkbox" id="aClub" ${a.club ? "checked" : ""}>
+        <span><b>${esc(CLUB())}</b> · article réservé au club<br><span class="muted">${a.club ? `Vendu uniquement dans les ventes ${esc(CLUB())}, au prix club (marge incluse).` : "Non coché : vendu uniquement par Dragonne Créa, au prix indiqué."}</span></span></label>`}
       <div class="f" style="display:flex;flex-direction:column;gap:10px;font-weight:700;font-size:14px">Photos <span class="h" style="font-weight:400;color:var(--muted)">jusqu'à ${MAXPH} · la première est celle affichée à la vente, touchez ★ pour en changer</span>
         <div class="photos" id="phs">${a.photos.map((p,i) => `<figure><img src="${p}" alt="Photo ${i+1}">
           ${i === 0 ? `<span class="main">Principale</span>` : `<button type="button" class="star" data-main="${i}" aria-label="Mettre en photo principale">★</button>`}
@@ -1097,17 +1169,23 @@ function editArticle(id){
       <div class="fgrid">
         <label class="f">Nom de l'article *<input type="text" id="aNom" value="${esc(a.nom)}"></label>
         <label class="f">Catégorie *<input type="text" id="aCat" list="catList" value="${esc(a.cat)}" placeholder="ex. Porte-clés"><datalist id="catList">${cats.map(c => `<option value="${esc(c)}">`).join("")}</datalist></label>
-        <label class="f">Prix Dragonne Créa (€) * <span class="h">${a.club ? "ce que le club vous rembourse" : "prix de vente"}</span><input type="text" inputmode="decimal" id="aPrix" value="${a.prix === "" ? "" : numIn(a.prix)}"></label>
+        <label class="f">${merch ? "Prix de vente (€) *" : "Prix Dragonne Créa (€) *"} <span class="h">${merch ? "prix payé au stand" : a.club ? "ce que le club vous rembourse" : "prix de vente"}</span><input type="text" inputmode="decimal" id="aPrix" value="${a.prix === "" ? "" : numIn(a.prix)}"></label>
       </div>
-      ${a.club ? `<div class="f" style="display:flex;flex-direction:column;gap:6px;font-weight:700;font-size:14px">Marge du club sur cet article
+      ${merch ? `<div class="f" style="display:flex;flex-direction:column;gap:6px;font-weight:700;font-size:14px">Tailles
+        <div class="seg"><button type="button" data-sized="0" aria-pressed="${!sized}">Taille unique</button><button type="button" data-sized="1" aria-pressed="${sized}">Plusieurs tailles</button></div></div>
+        ${sized ? `<div class="sizeed">
+          ${a.tailles.map((z,i) => `<div class="szrow"><input type="text" id="tz-${i}" value="${esc(z.t)}" aria-label="Taille"><input type="number" min="0" inputmode="numeric" id="ts-${i}" value="${z.stock}" aria-label="Stock"><button type="button" class="icon-del" data-tzrm="${i}" aria-label="Retirer la taille"><svg viewBox="0 0 24 24"><path d="M5 7h14M10 7V5h4v2M7 7l1 13h8l1-13"/></svg></button></div>`).join("")}
+          <div class="acts"><button type="button" class="btn small ghost" id="tzAdd">+ Ajouter une taille</button>${PRESETS.map(([l], i) => `<button type="button" class="btn small ghost" data-preset="${i}">Tailles ${l.toLowerCase()}</button>`).join("")}</div>
+          <p class="muted small" style="margin:0">Stock total : <b id="tzTot">${totalStock(a)}</b> pièces. Chaque taille a son propre stock, décompté à chaque vente.</p></div>` : ""}` : ""}
+      ${a.club && !merch ? `<div class="f" style="display:flex;flex-direction:column;gap:6px;font-weight:700;font-size:14px">Marge du club sur cet article
         <div class="seg"><button type="button" data-own="0" aria-pressed="${!own}">Règle générale (${ruleText({mode:S.settings.margeMode, val:S.settings.margeVal})})</button><button type="button" data-own="1" aria-pressed="${own}">Marge propre</button></div></div>
         ${own ? `<div class="fgrid"><label class="f">Type<select id="aMm"><option value="eur" ${a.marge.mode==="eur"?"selected":""}>Montant fixe (€)</option><option value="pct" ${a.marge.mode==="pct"?"selected":""}>Pourcentage (%)</option></select></label>
           <label class="f">Valeur<input type="text" inputmode="decimal" id="aMv" value="${numIn(a.marge.val)}"></label></div>` : ""}
         <div class="example" id="aEx"></div>` : ""}
-      <div class="f" style="display:flex;flex-direction:column;gap:6px;font-weight:700;font-size:14px">Disponibilité
-        <div class="seg"><button type="button" data-mode="stock" aria-pressed="${a.mode==="stock"}">En stock, à emporter</button><button type="button" data-mode="commande" aria-pressed="${a.mode==="commande"}">Fabriqué sur commande</button></div></div>
+      ${merch ? "" : `<div class="f" style="display:flex;flex-direction:column;gap:6px;font-weight:700;font-size:14px">Disponibilité
+        <div class="seg"><button type="button" data-mode="stock" aria-pressed="${a.mode==="stock"}">En stock, à emporter</button><button type="button" data-mode="commande" aria-pressed="${a.mode==="commande"}">Fabriqué sur commande</button></div></div>`}
       <div class="fgrid">
-        ${a.mode === "stock" ? `<label class="f">Quantité en stock<input type="number" min="0" inputmode="numeric" id="aStock" value="${a.stock}"></label>`
+        ${sized ? "" : a.mode === "stock" ? `<label class="f">Quantité en stock<input type="number" min="0" inputmode="numeric" id="aStock" value="${a.stock}"></label>`
           : `<label class="f">Délai de fabrication (jours)<input type="number" min="0" inputmode="numeric" id="aDelai" value="${a.delai}"></label>`}
         <label class="f">Visible à la vente<div class="seg"><button type="button" data-act="1" aria-pressed="${a.actif}">Oui</button><button type="button" data-act="0" aria-pressed="${!a.actif}">Masqué</button></div></label>
       </div>
@@ -1115,7 +1193,8 @@ function editArticle(id){
     <footer>${a0 ? `<button class="btn danger" id="aDel" type="button" style="margin-right:auto">Supprimer</button>` : ""}<button class="btn ghost" id="aCancel" type="button">Annuler</button><button class="btn primary" id="aOk" type="button">Enregistrer</button></footer>`);
     const keep = () => { a.nom = $("#aNom").value; a.cat = $("#aCat").value; a.prix = $("#aPrix").value;
       if($("#aStock")) a.stock = Math.max(0, parseInt($("#aStock").value)||0); if($("#aDelai")) a.delai = Math.max(0, parseInt($("#aDelai").value)||0);
-      if($("#aMm")) a.marge = {mode:$("#aMm").value, val:parseNum($("#aMv").value)}; };
+      if($("#aMm")) a.marge = {mode:$("#aMm").value, val:parseNum($("#aMv").value)};
+      if(Array.isArray(a.tailles)) a.tailles = a.tailles.map((z,i) => $("#tz-" + i) ? {t:$("#tz-" + i).value.trim(), stock:Math.max(0, parseInt($("#ts-" + i).value)||0)} : z); };
     const ex = () => { const box = $("#aEx"); if(!box) return; keep();
       const base = parseNum(a.prix); if(!(base > 0)){ box.textContent = "Indiquez le prix pour voir le prix club."; return; }
       const p = clubPrice({...a, prix:base});
@@ -1123,7 +1202,15 @@ function editArticle(id){
     ["#aPrix","#aMv"].forEach(s => { const e = $(s); if(e) e.addEventListener("input", ex); });
     const mm = $("#aMm"); if(mm) mm.onchange = ex;
     ex();
-    $("#aClub").onchange = e => { keep(); a.club = e.target.checked; if(!a.club) a.marge = null; draw(); };
+    const ac = $("#aClub"); if(ac) ac.onchange = e => { keep(); a.club = e.target.checked; if(!a.club) a.marge = null; draw(); };
+    document.querySelectorAll("[data-kd]").forEach(b => b.onclick = () => { keep(); a.kind = b.dataset.kd;
+      if(a.kind === "merch"){ a.club = true; a.marge = null; a.mode = "stock"; } else { a.tailles = null; } draw(); });
+    document.querySelectorAll("[data-sized]").forEach(b => b.onclick = () => { keep(); a.tailles = b.dataset.sized === "1" ? (a.tailles || []) : null; draw(); });
+    document.querySelectorAll("[data-tzrm]").forEach(b => b.onclick = () => { keep(); a.tailles.splice(+b.dataset.tzrm, 1); draw(); });
+    const tza = $("#tzAdd"); if(tza) tza.onclick = () => { keep(); a.tailles.push({t:"", stock:0}); draw(); const i = a.tailles.length - 1; const f = $("#tz-" + i); if(f) f.focus(); };
+    document.querySelectorAll("[data-preset]").forEach(b => b.onclick = () => { keep();
+      PRESETS[+b.dataset.preset][1].forEach(t => { if(!a.tailles.some(z => z.t === t)) a.tailles.push({t, stock:0}); }); draw(); });
+    document.querySelectorAll("[id^=ts-]").forEach(f => f.oninput = () => { keep(); const tt = $("#tzTot"); if(tt) tt.textContent = totalStock(a); });
     document.querySelectorAll("[data-own]").forEach(b => b.onclick = () => { keep(); a.marge = b.dataset.own === "1" ? (a.marge || {mode:S.settings.margeMode, val:S.settings.margeVal}) : null; draw(); });
     document.querySelectorAll("[data-mode]").forEach(b => b.onclick = () => { keep(); a.mode = b.dataset.mode; draw(); });
     document.querySelectorAll("[data-act]").forEach(b => b.onclick = () => { keep(); a.actif = b.dataset.act === "1"; draw(); });
@@ -1147,7 +1234,13 @@ function editArticle(id){
       if(!a.nom) return toast("Indiquez le nom de l'article");
       if(!a.cat) return toast("Indiquez une catégorie");
       if(!(p > 0)) return toast("Indiquez un prix");
-      a.prix = p; if(!a.club) a.marge = null; if(a0 && a0.exemple) a.exemple = false;
+      if(Array.isArray(a.tailles)){
+        a.tailles = a.tailles.filter(z => z.t);
+        const names = a.tailles.map(z => z.t.toLowerCase());
+        if(new Set(names).size !== names.length) return toast("Deux tailles portent le même nom");
+        if(!a.tailles.length) return toast("Ajoutez au moins une taille, ou choisissez « Taille unique »");
+      }
+      a.prix = p; if(!a.club || a.kind === "merch") a.marge = null; if(a0 && a0.exemple) a.exemple = false;
       await DB.put("articles", a); closeDlg(); await reload(); renderCatalogue(); toast("Article enregistré");
     };
   };
@@ -1166,8 +1259,8 @@ function resizeImage(file){
 
 /* ---------- Remboursements du club : relevés numérotés ---------- */
 function releveRows(items){
-  return items.map(({p, o}) => ({date:p.date, num:o.num, client:o.client.nom || "Client de passage", detail:detailOf(o),
-    nature:NATURES[p.nature] || p.nature, montant:r2(p.montant), part:r2(p.part)}));
+  return items.map(({p, o}) => ({date:p.date, num:o.num, client:o.client.nom || "Client de passage", detail:detailOf(o, true),
+    nature:NATURES[p.nature] || p.nature, montant:r2(p.res ?? p.montant), part:r2(p.part)}));
 }
 const dueLabel = part => part < 0 ? ["Montant à reverser au club", -part] : ["Montant à rembourser", part];
 const relTotals = rows => { const t = r2(rows.reduce((s,r) => s + r.montant, 0)), p = r2(rows.reduce((s,r) => s + r.part, 0)); return {total:t, part:p, marge:r2(t - p)}; };
@@ -1189,8 +1282,8 @@ function renderReleves(){
     <div class="tbl"><table class="pick-table"><thead><tr><th></th><th>Date</th><th>N°</th><th>Client</th><th>Détail</th><th>Nature</th><th class="r">Encaissé</th><th class="r">Part D. Créa</th><th></th></tr></thead><tbody>
       ${inRange.map(({p, o}) => { const on = !S.relExcl.has(p.id); return `<tr class="${on ? "" : "excl"}">
         <td><input type="checkbox" class="rck" data-pid="${p.id}" ${on ? "checked" : ""} aria-label="Inclure l'encaissement n° ${o.num}"></td>
-        <td class="num">${dmy(p.date)}</td><td class="num">${o.num}</td><td>${esc(o.client.nom || "Client de passage")}</td><td class="det">${esc(detailOf(o))}</td>
-        <td>${NATURES[p.nature] || p.nature}</td><td class="r num">${eur(p.montant)}</td><td class="r num">${eur(p.part)}</td>
+        <td class="num">${dmy(p.date)}</td><td class="num">${o.num}</td><td>${esc(o.client.nom || "Client de passage")}</td><td class="det">${esc(detailOf(o, true))}</td>
+        <td>${NATURES[p.nature] || p.nature}</td><td class="r num">${eur(p.res ?? p.montant)}</td><td class="r num">${eur(p.part)}</td>
         <td class="r"><button class="icon-del" data-odel="${o.id}" aria-label="Supprimer définitivement la vente n° ${o.num}" title="Supprimer la vente"><svg viewBox="0 0 24 24"><path d="M5 7h14M10 7V5h4v2M7 7l1 13h8l1-13"/></svg></button></td></tr>`; }).join("")}
     </tbody></table></div>
     <div class="stats" style="margin:0">
@@ -1295,9 +1388,18 @@ const WIN = {0x20AC:0x80,0x201A:0x82,0x0192:0x83,0x201E:0x84,0x2026:0x85,0x2020:
 const W80 = {0x80:556,0x82:222,0x83:556,0x84:333,0x85:1000,0x86:556,0x87:556,0x88:333,0x89:1000,0x8A:667,0x8B:333,0x8C:1000,0x8E:611,0x91:222,0x92:222,0x93:333,0x94:333,0x95:350,0x96:556,0x97:1000,0x98:333,0x99:1000,0x9A:500,0x9B:333,0x9C:944,0x9E:500,0x9F:667};
 function winBytes(s){ let out = ""; for(const ch of String(s)){ let c = ch.codePointAt(0); if(c > 255 || (c >= 0x80 && c < 0xA0)) c = WIN[c] ?? 0x3F; else if(c < 32) c = 32; out += String.fromCharCode(c); } return out; }
 function textW(s, size, bold){ const t = bold ? HW.b : HW.r; let w = 0; for(const ch of winBytes(s)){ const c = ch.charCodeAt(0); w += (c >= 0x80 && c < 0xA0) ? (W80[c] || 556) : (t[c - 32] || 556); } return w * size / 1000; }
+function wrapText(s, size, bold, maxW){
+  const out = []; let cur = "";
+  for(const w of String(s).split(/\s+/)){
+    const t = cur ? cur + " " + w : w;
+    if(textW(t, size, bold) <= maxW) cur = t; else { if(cur) out.push(cur); cur = textW(w, size, bold) <= maxW ? w : fitText(w, size, bold, maxW); }
+  }
+  if(cur) out.push(cur); return out.length ? out : [""];
+}
 function fitText(s, size, bold, maxW){ s = String(s); if(textW(s, size, bold) <= maxW) return s; while(s.length > 1 && textW(s + "…", size, bold) > maxW) s = s.slice(0, -1); return s.trimEnd() + "…"; }
 class PdfDoc {
-  constructor(){ this.pages = []; this.img = null; this.addPage(); }
+  constructor(){ this.pages = []; this.imgs = []; this.addPage(); }
+  addImg(img){ if(!img) return null; this.imgs.push(img); return "Im" + this.imgs.length; }
   addPage(){ this.c = []; this.pages.push(this.c); }
   col(rgb){ return rgb.map(v => (v / 255).toFixed(3)).join(" "); }
   text(x, y, s, o = {}){
@@ -1310,19 +1412,19 @@ class PdfDoc {
     if(stroke) this.c.push(`${this.col(stroke)} RG 0.7 w ${x} ${(842 - y - h).toFixed(2)} ${w} ${h} re S`);
   }
   line(x1, y1, x2, y2, color, wd){ this.c.push(`${this.col(color || [210,210,220])} RG ${wd || 0.6} w ${x1} ${842 - y1} m ${x2} ${842 - y2} l S`); }
-  image(x, y, w, h){ if(this.img) this.c.push(`q ${w} 0 0 ${h} ${x} ${(842 - y - h).toFixed(2)} cm /Im1 Do Q`); }
+  image(name, x, y, w, h){ if(name) this.c.push(`q ${w} 0 0 ${h} ${x} ${(842 - y - h).toFixed(2)} cm /${name} Do Q`); }
   build(){
     const objs = [], add = s => (objs.push(s), objs.length);
     const cat = add(""), pages = add("");
     const f1 = add("<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>");
     const f2 = add("<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold /Encoding /WinAnsiEncoding >>");
-    let im = 0;
-    if(this.img) im = add(`<< /Type /XObject /Subtype /Image /Width ${this.img.w} /Height ${this.img.h} /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length ${this.img.bin.length} >>\nstream\n${this.img.bin}\nendstream`);
+    const ims = this.imgs.map(g => add(`<< /Type /XObject /Subtype /Image /Width ${g.w} /Height ${g.h} /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length ${g.bin.length} >>\nstream\n${g.bin}\nendstream`));
+    const xo = ims.length ? ` /XObject << ${ims.map((n, i) => `/Im${i + 1} ${n} 0 R`).join(" ")} >>` : "";
     const kids = [];
     for(const c of this.pages){
       const s = c.join("\n");
       const cs = add(`<< /Length ${s.length} >>\nstream\n${s}\nendstream`);
-      kids.push(add(`<< /Type /Page /Parent ${pages} 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 ${f1} 0 R /F2 ${f2} 0 R >>${im ? ` /XObject << /Im1 ${im} 0 R >>` : ""} >> /Contents ${cs} 0 R >>`));
+      kids.push(add(`<< /Type /Page /Parent ${pages} 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 ${f1} 0 R /F2 ${f2} 0 R >>${xo} >> /Contents ${cs} 0 R >>`));
     }
     objs[cat - 1] = `<< /Type /Catalog /Pages ${pages} 0 R >>`;
     objs[pages - 1] = `<< /Type /Pages /Kids [${kids.map(k => k + " 0 R").join(" ")}] /Count ${kids.length} >>`;
@@ -1333,26 +1435,26 @@ class PdfDoc {
     return out;
   }
 }
-let LOGO = null;
-async function loadLogo(){
-  if(LOGO) return LOGO;
+const JPG = {};
+async function loadJpeg(url){
+  if(JPG[url]) return JPG[url];
   try {
-    const buf = new Uint8Array(await (await fetch("logo.jpg")).arrayBuffer());
+    const buf = new Uint8Array(await (await fetch(url)).arrayBuffer());
     let bin = ""; for(let i = 0; i < buf.length; i += 8192) bin += String.fromCharCode.apply(null, buf.subarray(i, i + 8192));
     let w = 0, h = 0; // dimensions lues dans l'en-tête JPEG
     for(let i = 2; i < buf.length - 9;){ if(buf[i] !== 0xFF){ i++; continue; } const m = buf[i+1];
       if(m >= 0xC0 && m <= 0xC3){ h = buf[i+5] << 8 | buf[i+6]; w = buf[i+7] << 8 | buf[i+8]; break; }
       i += 2 + (buf[i+2] << 8 | buf[i+3]); }
-    if(w && h) LOGO = {bin, w, h};
+    if(w && h) JPG[url] = {bin, w, h};
   } catch(e){}
-  return LOGO;
+  return JPG[url] || null;
 }
 async function relevePdf(rel){
   const v = S.settings.vendeur, doc = new PdfDoc(), L = 40, R = 555;
   const ink = [28,27,46], muted = [102,99,125], navy = [45,58,140], line = [214,214,224], soft = [243,243,248];
-  doc.img = await loadLogo();
+  const lg = await loadJpeg("logo.jpg"), lgN = doc.addImg(lg);
   // En-tête
-  if(doc.img){ const w = 92, h = w * doc.img.h / doc.img.w; doc.image(L, 34, w, h); }
+  if(lg){ const w = 92, h = w * lg.h / lg.w; doc.image(lgN, L, 34, w, h); }
   doc.text(R, 58, "RELEVÉ DE REMBOURSEMENT", {size:16, bold:true, align:"right", color:navy});
   doc.text(R, 78, `N° ${rel.num}`, {size:11, bold:true, align:"right"});
   doc.text(R, 94, `Date : ${dmy(rel.date)}`, {size:10, align:"right", color:muted});
@@ -1414,6 +1516,112 @@ async function relevePdf(rel){
     doc.text(R, 820, `Page ${i + 1}/${n}`, {size:7.5, color:muted, align:"right"}); });
   return doc.build();
 }
+/* Journal des encaissements (page 1 et suivantes) + ventes par produit (feuille séparée) */
+async function journalPdf(du, au, cn){
+  const doc = new PdfDoc(), L = 40, R = 555;
+  const ink = [28,27,46], muted = [102,99,125], navy = [45,58,140], teal = [15,124,131], line = [214,214,224], soft = [243,243,248], white = [255,255,255], red = [179,38,30];
+  const lg = await loadJpeg("logo.jpg"), gt = cn !== "dc" ? await loadJpeg("gto.jpg") : null;
+  const lgN = doc.addImg(lg), gtN = doc.addImg(gt);
+  const pays = bilanPays(du, au, cn), top = bestSellers(du, au, cn);
+  const circuit = cn === "tous" ? "Tous circuits" : canalName(cn);
+  const period = du === au ? `Journée du ${dmy(du)}` : `Du ${dmy(du)} au ${dmy(au)}`;
+  const header = (title) => {
+    let x = L;
+    if(lg){ const h = 62, w = h * lg.w / lg.h; doc.image(lgN, x, 30, w, h); x += w + 10; }
+    if(gt){ const h = 58, w = h * gt.w / gt.h; doc.image(gtN, x, 32, w, h); }
+    doc.text(R, 52, title, {size:15, bold:true, align:"right", color:navy});
+    doc.text(R, 70, period, {size:10.5, bold:true, align:"right"});
+    doc.text(R, 85, `${circuit} · édité le ${dmy(new Date().toISOString())} à ${frTime(new Date().toISOString())}`, {size:8.5, align:"right", color:muted});
+    return 112;
+  };
+  const S1 = (f, filt = () => true) => r2(pays.filter(filt).reduce((s,p) => s + f(p), 0));
+  const Rs = p => p.res ?? p.montant;
+  // --- Page 1 : synthèse + encaissements
+  let y = header("JOURNAL DES ENCAISSEMENTS");
+  const boxes = [["Total encaissé", S1(p => p.montant), true], ["Espèces", S1(p => p.montant, p => (p.mode || "especes") === "especes")], ["Carte bancaire", S1(p => p.montant, p => p.mode === "cb")],
+    ["Résines", S1(Rs)], ["Merchandising", S1(p => p.montant - Rs(p))]];
+  const bw = (R - L - 4 * 8) / 5;
+  boxes.forEach(([t, v, key], i) => { const x = L + i * (bw + 8);
+    doc.rect(x, y, bw, 46, key ? navy : soft);
+    doc.text(x + 8, y + 15, t.toUpperCase(), {size:7, bold:true, color:key ? white : muted, maxW:bw - 12});
+    doc.text(x + 8, y + 35, eur(v), {size:13, bold:true, color:key ? white : ink, maxW:bw - 12}); });
+  y += 62;
+  doc.text(L, y, `${pays.length} encaissement${pays.length > 1 ? "s" : ""}`, {size:11, bold:true}); y += 10;
+  const C = {date:L, num:L + 70, circ:L + 98, prod:L + 150, nat:L + 352, pay:L + 404, mt:R};
+  const head = () => { doc.rect(L, y, R - L, 18, navy);
+    [["Date et heure", C.date], ["N°", C.num], ["Circuit", C.circ], ["Produits achetés", C.prod], ["Nature", C.nat], ["Paiement", C.pay]].forEach(([t, x]) => doc.text(x + 4, y + 12.5, t, {size:7.5, bold:true, color:white}));
+    doc.text(C.mt - 4, y + 12.5, "Montant", {size:7.5, bold:true, color:white, align:"right"}); y += 18; };
+  head();
+  pays.forEach((p, i) => {
+    const prods = p.o.lignes.map(l => `${l.qte > 1 ? l.qte + " × " : ""}${lineName(l)}${l.kind === "merch" ? " [merch]" : ""}`);
+    const lines = prods.flatMap(t => wrapText(t, 8, false, 196));
+    const h = Math.max(16, lines.length * 10.5 + 6);
+    if(y + h > 770){ doc.addPage(); y = 50; head(); }
+    if(i % 2) doc.rect(L, y, R - L, h, soft);
+    const neg = p.montant < 0 ? red : ink;
+    doc.text(C.date + 4, y + 11, `${dmy(p.date)} ${frTime(p.date)}`, {size:8});
+    doc.text(C.num + 4, y + 11, String(p.o.num), {size:8});
+    doc.text(C.circ + 4, y + 11, p.o.canal === "club" ? CLUB() : "D. Créa", {size:8, maxW:48, color:p.o.canal === "club" ? teal : navy});
+    lines.forEach((t, k) => doc.text(C.prod + 4, y + 11 + k * 10.5, t, {size:8}));
+    doc.text(C.nat + 4, y + 11, NATURES[p.nature] || p.nature, {size:8, maxW:48, color:neg});
+    doc.text(C.pay + 4, y + 11, MODES[p.mode] || "Espèces", {size:8, bold:true, color:p.mode === "cb" ? navy : [44,122,75]});
+    doc.text(C.mt - 4, y + 11, eur(p.montant), {size:8.5, bold:true, align:"right", color:neg});
+    y += h;
+  });
+  if(!pays.length){ doc.text(L + 4, y + 14, "Aucun encaissement sur cette période.", {size:9, color:muted}); y += 22; }
+  doc.line(L, y, R, y, line);
+  if(y > 720){ doc.addPage(); y = 50; }
+  y += 18;
+  [["Espèces", boxes[1][1]], ["Carte bancaire", boxes[2][1]]].forEach(([t, v]) => { doc.text(430, y, t, {size:9.5, color:muted, align:"right"}); doc.text(R, y, eur(v), {size:10, align:"right"}); y += 15; });
+  doc.rect(300, y - 4, R - 300, 26, navy);
+  doc.text(310, y + 13, "TOTAL ENCAISSÉ", {size:10, bold:true, color:white});
+  doc.text(R - 10, y + 14, eur(boxes[0][1]), {size:13, bold:true, color:white, align:"right"});
+
+  // --- Feuille séparée : ventes par produit
+  doc.addPage(); y = header("VENTES PAR PRODUIT");
+  doc.text(L, y, "Quantités et montants vendus sur la période (ventes et commandes, hors annulations), au prix de vente.", {size:8.5, color:muted, maxW:R - L});
+  y += 16;
+  const section = (title, rows, color) => {
+    if(y > 700){ doc.addPage(); y = 50; }
+    doc.text(L, y + 4, title, {size:12, bold:true, color}); y += 12;
+    const hd = () => { doc.rect(L, y, R - L, 18, color);
+      doc.text(L + 4, y + 12.5, "Produit", {size:7.5, bold:true, color:white}); doc.text(L + 290, y + 12.5, "Taille", {size:7.5, bold:true, color:white});
+      doc.text(L + 400, y + 12.5, "Quantité", {size:7.5, bold:true, color:white, align:"right"}); doc.text(R - 4, y + 12.5, "Montant", {size:7.5, bold:true, color:white, align:"right"}); y += 18; };
+    hd();
+    if(!rows.length){ doc.text(L + 4, y + 12, "Aucune vente.", {size:8.5, color:muted}); y += 18; }
+    rows.forEach((r, i) => { if(y > 770){ doc.addPage(); y = 50; hd(); }
+      if(i % 2) doc.rect(L, y, R - L, 16, soft);
+      doc.text(L + 4, y + 11, r.nom + (cn === "tous" && r.kind !== "merch" ? ` · ${r.canal === "club" ? CLUB() : "Dragonne Créa"}` : ""), {size:8.5, maxW:280});
+      doc.text(L + 290, y + 11, r.taille || "–", {size:8.5});
+      doc.text(L + 400, y + 11, String(r.qte), {size:8.5, bold:true, align:"right"});
+      doc.text(R - 4, y + 11, eur(r.ca), {size:8.5, align:"right"}); y += 16; });
+    const q = rows.reduce((s,r) => s + r.qte, 0), ca = r2(rows.reduce((s,r) => s + r.ca, 0));
+    doc.line(L, y, R, y, line); y += 14;
+    doc.text(L + 4, y, `Sous-total ${title}`, {size:9, bold:true});
+    doc.text(L + 400, y, String(q), {size:9, bold:true, align:"right"}); doc.text(R - 4, y, eur(ca), {size:9, bold:true, align:"right"});
+    y += 26; return {q, ca};
+  };
+  const byName = (a, b) => b.qte - a.qte || a.nom.localeCompare(b.nom) || String(a.taille).localeCompare(String(b.taille));
+  const sR = section("Résines", top.filter(r => r.kind !== "merch").sort(byName), navy);
+  const sM = cn === "dc" ? {q:0, ca:0} : section(`Merchandising ${CLUB()}`, top.filter(r => r.kind === "merch").sort(byName), teal);
+  if(y > 740){ doc.addPage(); y = 50; }
+  doc.rect(300, y - 4, R - 300, 26, navy);
+  doc.text(310, y + 13, `TOTAL · ${sR.q + sM.q} PIÈCES`, {size:10, bold:true, color:white});
+  doc.text(R - 10, y + 14, eur(sR.ca + sM.ca), {size:13, bold:true, color:white, align:"right"});
+  // Pied de page
+  const n = doc.pages.length;
+  doc.pages.forEach((c, i) => { doc.c = c; doc.line(L, 806, R, 806, line);
+    doc.text(L, 820, `Dragonne Créa · ${circuit} · ${period}`, {size:7.5, color:muted});
+    doc.text(R, 820, `Page ${i + 1}/${n}`, {size:7.5, color:muted, align:"right"}); });
+  return doc.build();
+}
+async function shareJournal(du, au, cn){
+  try {
+    const bin = await journalPdf(du, au, cn);
+    const tag = cn === "tous" ? "" : "-" + canalName(cn).replace(/[^\w-]+/g, "");
+    await saveBinary(`Journal${tag}_${du}${du === au ? "" : "_" + au}.pdf`, bin, "application/pdf");
+  } catch(e){ console.error(e); toast("Le PDF n'a pas pu être créé"); }
+}
 async function shareReleve(rel){
   try {
     const bin = await relevePdf(rel);
@@ -1439,50 +1647,53 @@ async function saveBinary(name, bin, type){
 
 /* ---------- Bilan, export, sauvegarde ---------- */
 function renderBilan(){
-  const du = S.bilanDu, au = S.bilanAu, inP = iso => { const d = dayOf(iso); return d >= du && d <= au; };
-  const pays = [];
-  S.orders.forEach(o => o.paiements.forEach(p => { if(inP(p.date)) pays.push({...p, o}); }));
-  pays.sort((a,b) => a.date.localeCompare(b.date));
+  const du = S.bilanDu, au = S.bilanAu, cn = S.bilanCanal;
+  const pays = bilanPays(du, au, cn);
   const sum = (f, filt = () => true) => r2(pays.filter(filt).reduce((s,p) => s + f(p), 0));
-  const M = p => p.montant, mode = m => p => (p.mode || "especes") === m, canal = c => p => p.o.canal === c;
-  const open = S.orders.filter(o => o.type==="commande" && !["livree","annulee"].includes(o.statut));
+  const M = p => p.montant, R = p => p.res ?? p.montant, mode = m => p => (p.mode || "especes") === m;
+  const open = S.orders.filter(o => o.type==="commande" && !["livree","annulee"].includes(o.statut) && (cn === "tous" || o.canal === cn));
   const resteDu = r2(open.reduce((s,o) => s + due(o), 0));
   const enAttente = r2(pendingClub().reduce((s,x) => s + x.p.part, 0) + S.releves.filter(r => r.statut !== "rembourse").reduce((s,r) => s + r.part, 0));
-  const top = bestSellers(du, au);
+  const top = bestSellers(du, au, cn);
+  const tk = k => top.filter(r => r.kind === k).reduce((a,r) => ({q:a.q + r.qte, ca:r2(a.ca + r.ca)}), {q:0, ca:0});
+  const tRes = tk("resine"), tMer = tk("merch");
   const oneDay = du === au;
   const presets = [["jour","Aujourd'hui",todayISO(),todayISO()],["7j","7 derniers jours",addDays(todayISO(),-6),todayISO()],
     ["mois","Ce mois",todayISO().slice(0,8)+"01",todayISO()],["tout","Depuis le début",S.orders.length ? dayOf(S.orders[S.orders.length-1].date) : todayISO(),todayISO()]];
+  const club = sum(R, p => p.o.canal === "club"), clubPart = sum(p => p.part ?? p.montant, p => p.o.canal === "club");
   $("#main").innerHTML = `
   <div class="head"><div><h1>Bilan</h1><p>${oneDay ? `Journée du ${frDate(du)}` : `Du ${dmy(du)} au ${dmy(au)}`}</p></div>
     <div class="fgrid range"><label class="f">Du<input type="date" id="bDu" value="${du}"></label><label class="f">Au<input type="date" id="bAu" value="${au}"></label></div></div>
   <div class="chips">${presets.map(([k,l,d1,d2]) => `<button class="chip" data-pr="${k}" aria-pressed="${d1===du && d2===au}">${l}</button>`).join("")}</div>
+  ${canalTabs(cn, {all:true, compact:true})}
+  <div class="pdfbar"><span>Journal des encaissements et ventes par produit, prêt à transmettre ou imprimer.</span><button class="btn primary" id="jPdf" ${pays.length || top.length ? "" : "disabled"}>Journal PDF</button></div>
   <div class="stats">
     <div class="stat key"><small>Total encaissé</small><b class="num">${eur(sum(M))}</b><span class="small">${pays.length} encaissement${pays.length>1?"s":""}</span></div>
     <div class="stat"><small>Espèces</small><b class="num">${eur(sum(M, mode("especes")))}</b></div>
     <div class="stat"><small>Carte bancaire</small><b class="num">${eur(sum(M, mode("cb")))}</b></div>
   </div>
   <div class="stats">
-    <div class="stat key c-club"><small>${esc(CLUB())}</small><b class="num">${eur(sum(M, canal("club")))}</b><span class="small">dont part Dragonne Créa ${eur(sum(p => p.part ?? p.montant, canal("club")))} · marge club ${eur(sum(p => p.montant - (p.part ?? p.montant), canal("club")))}</span></div>
-    <div class="stat key c-dc"><small>Dragonne Créa en direct</small><b class="num">${eur(sum(M, canal("dc")))}</b></div>
-    <div class="stat"><small>Le club doit (toutes dates)</small><b class="num" style="color:var(--sea)">${eur(enAttente)}</b><span class="small muted">relevés en attente compris</span></div>
+    <div class="stat key c-dc"><small>Résines</small><b class="num">${eur(sum(R))}</b>${club ? `<span class="small">dont ${esc(CLUB())} ${eur(club)} : part Dragonne Créa ${eur(clubPart)} · marge club ${eur(club - clubPart)}</span>` : ""}</div>
+    <div class="stat key c-club"><small>Merchandising ${esc(CLUB())}</small><b class="num">${eur(sum(p => p.montant - R(p)))}</b><span class="small">100 % club</span></div>
+    <div class="stat"><small>Le club doit (toutes dates)</small><b class="num" style="color:var(--sea)">${eur(enAttente)}</b><span class="small muted">résines, relevés en attente compris</span></div>
     <div class="stat"><small>Reste dû · ${open.length} cde${open.length>1?"s":""}</small><b class="num" style="color:var(--warn)">${eur(resteDu)}</b></div>
   </div>
   <section class="panel"><div class="nexthead"><h2>Articles vendus</h2>${top.length ? `<button class="btn small ghost" id="exTop">Exporter le classement (CSV)</button>` : ""}</div>
-    ${top.length ? `<p class="muted small" style="margin:0">Classés par quantité vendue sur la période (ventes et commandes, hors annulations). Utile pour prévoir les réassorts.</p>
-    <div class="tbl"><table><thead><tr><th>#</th><th>Article</th><th>Circuit</th><th class="r">Qté</th><th class="r">Chiffre</th><th class="r">Stock restant</th></tr></thead><tbody>
-      ${top.map((r,i) => `<tr><td class="num">${i+1}</td><td><b>${esc(r.nom)}</b></td><td>${canalPill(r.canal)}</td><td class="r num"><b>${r.qte}</b></td><td class="r num">${eur(r.ca)}</td>
+    ${top.length ? `<p class="muted small" style="margin:0">Classés par quantité vendue (ventes et commandes de la période, hors annulations). Résines : <b>${tRes.q}</b> pièces · ${eur(tRes.ca)}. Merchandising : <b>${tMer.q}</b> pièces · ${eur(tMer.ca)}.</p>
+    <div class="tbl"><table><thead><tr><th>#</th><th>Article</th><th>Taille</th><th>Type</th><th class="r">Qté</th><th class="r">Montant</th><th class="r">Stock restant</th></tr></thead><tbody>
+      ${top.map((r,i) => `<tr><td class="num">${i+1}</td><td><b>${esc(r.nom)}</b></td><td>${esc(r.taille || "")}</td><td>${r.kind === "merch" ? '<span class="kpill">Merch</span>' : canalPill(r.canal)}</td><td class="r num"><b>${r.qte}</b></td><td class="r num">${eur(r.ca)}</td>
         <td class="r num">${r.stock === null ? `<span class="muted">sur commande</span>` : r.stock <= 0 ? `<span class="tag out">Épuisé</span>` : r.stock <= 3 ? `<span class="tag cmd">${r.stock} · à réassortir</span>` : r.stock}</td></tr>`).join("")}
     </tbody></table></div>` : `<p class="muted" style="margin:0">Aucun article vendu sur cette période.</p>`}
   </section>
   <section class="panel"><h2>Encaissements et produits achetés</h2>
     ${pays.length ? `<div class="tbl"><table><thead><tr><th>${oneDay ? "Heure" : "Date"}</th><th>N°</th><th>Circuit</th><th>Client</th><th>Produits</th><th>Nature</th><th>Paiement</th><th class="r">Montant</th></tr></thead><tbody>
       ${pays.map(p => `<tr><td class="num">${oneDay ? frTime(p.date) : `${dmy(p.date)} ${frTime(p.date)}`}</td><td class="num">${p.o.num}</td><td>${canalPill(p.o.canal)}</td><td>${esc(p.o.client.nom || "Client de passage")}</td>
-        <td class="det">${p.o.lignes.map(l => `${l.qte > 1 ? l.qte + " × " : ""}${esc(l.nom)}${l.perso ? ` <span class="muted">(${esc(l.perso)})</span>` : ""}`).join("<br>")}</td>
+        <td class="det">${p.o.lignes.map(l => `${l.qte > 1 ? l.qte + " × " : ""}${esc(lineName(l))}${l.kind === "merch" ? ' <span class="kpill">Merch</span>' : ""}${l.perso ? ` <span class="muted">(${esc(l.perso)})</span>` : ""}`).join("<br>")}</td>
         <td>${NATURES[p.nature] || p.nature}</td><td>${modePill(p.mode)}</td><td class="r num">${eur(p.montant)}</td></tr>`).join("")}
       </tbody></table></div>` : `<p class="muted" style="margin:0">Aucun encaissement sur cette période.</p>`}
   </section>
   <section class="panel"><h2>Exporter pour Excel</h2>
-    <p class="muted small" style="margin:0">Une ligne par article vendu, avec le mode de paiement, pour la période choisie en haut.</p>
+    <p class="muted small" style="margin:0">Une ligne par article vendu, avec la taille, le type de produit et le mode de paiement, pour la période et le circuit choisis.</p>
     <div class="acts"><button class="btn primary" id="exCsv">Télécharger les ventes (CSV)</button></div>
   </section>
   <section class="panel"><h2>Sauvegarde</h2>
@@ -1496,27 +1707,36 @@ function renderBilan(){
   $("#bDu").onchange = e => { S.bilanDu = e.target.value || todayISO(); if(S.bilanAu < S.bilanDu) S.bilanAu = S.bilanDu; renderBilan(); };
   $("#bAu").onchange = e => { S.bilanAu = e.target.value || todayISO(); if(S.bilanAu < S.bilanDu) S.bilanDu = S.bilanAu; renderBilan(); };
   $("#main").querySelectorAll("[data-pr]").forEach(b => b.onclick = () => { const pr = presets.find(x => x[0] === b.dataset.pr); S.bilanDu = pr[2]; S.bilanAu = pr[3]; renderBilan(); });
-  const et = $("#exTop"); if(et) et.onclick = () => exportTop(du, au);
-  $("#exCsv").onclick = () => exportCSV(du, au);
+  bindCanals(k => { S.bilanCanal = k; renderBilan(); });
+  $("#jPdf").onclick = () => shareJournal(du, au, cn);
+  const et = $("#exTop"); if(et) et.onclick = () => exportTop(du, au, cn);
+  $("#exCsv").onclick = () => exportCSV(du, au, cn);
   $("#bkOut").onclick = backup;
   $("#bkIn").onclick = () => $("#jsonIn").click();
   $("#stPct").onchange = e => { S.settings.acomptePct = Math.min(100, Math.max(0, parseInt(e.target.value)||0)); saveSettings(); toast("Réglage enregistré"); };
 }
-/* Classement des articles vendus sur une période (date de la vente ou de la commande) */
-function bestSellers(du, au){
+/* Encaissements d'une période (et d'un circuit) */
+function bilanPays(du, au, cn){
+  const out = [];
+  S.orders.forEach(o => { if(cn && cn !== "tous" && o.canal !== cn) return;
+    o.paiements.forEach(p => { const d = dayOf(p.date); if(d >= du && d <= au) out.push({...p, o}); }); });
+  return out.sort((a,b) => a.date.localeCompare(b.date));
+}
+function bestSellers(du, au, cn){
   const m = new Map();
-  S.orders.forEach(o => { if(o.statut === "annulee") return; const d = dayOf(o.date); if(d < du || d > au) return;
-    o.lignes.forEach(l => { const k = l.artId || ("nom:" + l.nom);
-      const r = m.get(k) || {nom:l.nom, canal:o.canal, qte:0, ca:0, artId:l.artId};
+  S.orders.forEach(o => { if(o.statut === "annulee") return; if(cn && cn !== "tous" && o.canal !== cn) return;
+    const d = dayOf(o.date); if(d < du || d > au) return;
+    o.lignes.forEach(l => { const k = (l.artId || ("nom:" + l.nom)) + "|" + (l.taille || "");
+      const r = m.get(k) || {nom:l.nom, taille:l.taille || "", kind:l.kind || "resine", canal:o.canal, qte:0, ca:0, artId:l.artId};
       r.qte += l.qte; r.ca = r2(r.ca + l.prix * l.qte); m.set(k, r); }); });
   return [...m.values()].map(r => { const a = r.artId && art(r.artId);
-    return {...r, nom:a ? a.nom : r.nom, stock: a && a.mode === "stock" ? a.stock : null}; })
+    return {...r, nom:a ? a.nom : r.nom, stock: a && a.mode === "stock" ? stockOf(a, r.taille) : null}; })
     .sort((a,b) => b.qte - a.qte || b.ca - a.ca);
 }
-function exportTop(du, au){
+function exportTop(du, au, cn){
   const fmt = n => String(r2(n)).replace(".", ",");
-  const rows = [["Rang","Article","Circuit","Quantité vendue","Chiffre","Stock restant"]].concat(
-    bestSellers(du, au).map((r,i) => [i+1, r.nom, canalName(r.canal), r.qte, fmt(r.ca), r.stock === null ? "sur commande" : r.stock]));
+  const rows = [["Rang","Article","Taille","Type","Circuit","Quantité vendue","Montant","Stock restant"]].concat(
+    bestSellers(du, au, cn).map((r,i) => [i+1, r.nom, r.taille, KINDS[r.kind], canalName(r.canal), r.qte, fmt(r.ca), r.stock === null ? "sur commande" : r.stock]));
   const csv = "﻿" + rows.map(r => r.map(v => `"${String(v ?? "").replace(/"/g,'""')}"`).join(";")).join("\r\n");
   download(`articles-vendus_${du}_${au}.csv`, csv, "text/csv;charset=utf-8").then(ok => ok && !IS_APP && toast("Export téléchargé"));
 }
@@ -1549,14 +1769,14 @@ function showText(name, content){
   $("#txtCopy").onclick = async () => { const t = $("#txtOut"); t.select();
     try { await navigator.clipboard.writeText(t.value); toast("Copié"); } catch(e){ document.execCommand("copy"); toast("Copié"); } };
 }
-function exportCSV(from, to){
-  const rows = [["N°","Date","Circuit","Type","Client","Téléphone","Équipe / remarque","Article","Personnalisation","Qté","Prix de vente unitaire","Prix Dragonne Créa unitaire","Montant ligne","Marge club ligne","Total","Payé","Reste dû","Statut","Livraison prévue","Paiement","Relevé"]];
+function exportCSV(from, to, cn){
+  const rows = [["N°","Date","Circuit","Type","Client","Téléphone","Équipe / remarque","Article","Taille","Type de produit","Personnalisation","Qté","Prix de vente unitaire","Prix Dragonne Créa unitaire","Montant ligne","Marge club ligne","Total","Payé","Reste dû","Statut","Livraison prévue","Paiement","Relevé"]];
   const fmt = n => String(r2(n)).replace(".", ",");
-  S.orders.filter(o => { const d = dayOf(o.date); return (!from || d >= from) && (!to || d <= to); })
+  S.orders.filter(o => { const d = dayOf(o.date); return (!from || d >= from) && (!to || d <= to) && (!cn || cn === "tous" || o.canal === cn); })
     .sort((a,b) => a.date.localeCompare(b.date))
     .forEach(o => { const rels = [...new Set(o.paiements.map(p => p.releve).filter(Boolean))].map(releveOf).filter(Boolean).map(r => r.num).join(" ");
       o.lignes.forEach(l => rows.push([o.num, new Date(o.date).toLocaleString("fr-FR"), canalName(o.canal), o.type==="vente"?"Vente directe":"Commande", o.client.nom, o.client.tel, o.client.equipe,
-      l.nom, l.perso, l.qte, fmt(l.prix), fmt(l.base ?? l.prix), fmt(l.prix*l.qte), fmt((l.prix - (l.base ?? l.prix))*l.qte), fmt(o.total), fmt(paid(o)), fmt(due(o)),
+      l.nom, l.taille || "", KINDS[l.kind || "resine"], l.perso, l.qte, fmt(l.prix), fmt(l.base ?? l.prix), fmt(l.prix*l.qte), fmt((l.prix - (l.base ?? l.prix))*l.qte), fmt(o.total), fmt(paid(o)), fmt(due(o)),
       o.statut === "annulee" ? "Annulée" : o.type==="vente" ? "Payée" : STATUTS[o.statut], o.livraison || "",
       [...new Set(o.paiements.filter(p => p.montant > 0).map(p => MODES[p.mode] || "Espèces"))].join(" + "), rels])); });
   if(rows.length === 1) return toast("Aucune vente sur cette période");
