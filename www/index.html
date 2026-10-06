@@ -139,10 +139,10 @@ dialog::backdrop{background:rgba(12,10,30,.55)}
 .toolbar input{max-width:320px}
 .orders{display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:14px}
 .order{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:14px 16px;display:flex;flex-direction:column;gap:10px;border-left-width:6px}
-.order[data-st="a_faire"]{border-left-color:var(--resin)}
-.order[data-st="en_cours"]{border-left-color:var(--accent)}
-.order[data-st="prete"]{border-left-color:var(--ok)}
-.order[data-st="livree"],.order[data-st="annulee"]{border-left-color:var(--line)}
+.order[data-state="a_faire"]{border-left-color:var(--resin)}
+.order[data-state="en_cours"]{border-left-color:var(--accent)}
+.order[data-state="prete"]{border-left-color:var(--ok)}
+.order[data-state="livree"],.order[data-state="annulee"]{border-left-color:var(--line)}
 .order .top{display:flex;justify-content:space-between;gap:10px;align-items:start}
 .order h3{font-size:18px}
 .order ul{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:4px}
@@ -259,6 +259,63 @@ dialog.full{width:100vw;max-width:100vw;height:100%;max-height:100%;border-radiu
 .yay span{color:var(--muted);font-weight:700}
 @keyframes yay{0%{transform:scale(.6);opacity:0}15%{transform:scale(1.05);opacity:1}25%{transform:scale(1)}80%{opacity:1}100%{opacity:0;transform:translateY(-20px)}}
 
+
+/* Circuits de vente */
+.canals{display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap}
+.canal{flex:1;min-width:150px;border:2px solid var(--line);background:var(--surface);border-radius:16px;padding:12px 16px;text-align:left;display:flex;flex-direction:column;gap:2px;color:var(--ink)}
+.canal b{font:800 19px/1.2 var(--f-display)}
+.canal small{color:var(--muted);font-size:13px;font-weight:700}
+.canals.compact .canal{padding:9px 14px;flex:0 1 auto;min-width:0}
+.canals.compact .canal b{font-size:16px}
+.canal.c-club[aria-selected="true"]{border-color:var(--sea);background:var(--sea-soft);color:var(--sea)}
+.canal.c-dc[aria-selected="true"]{border-color:var(--accent);background:var(--accent-soft);color:var(--accent)}
+.canal.c-tous[aria-selected="true"]{border-color:var(--ink);background:var(--ink);color:var(--bg)}
+.canal[aria-selected="true"] small{color:inherit;opacity:.85}
+.cpill{display:inline-block;border-radius:6px;padding:1px 7px;font-size:12px;font-weight:700;white-space:nowrap}
+.cpill.c-club{background:var(--sea-soft);color:var(--sea)}
+.cpill.c-dc{background:var(--accent-soft);color:var(--accent)}
+.cart header{gap:8px}
+.cart header h2{margin-right:auto}
+.row.small,.small{font-size:13px}
+.rulebar{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;background:var(--sea-soft);color:var(--ink);border-radius:12px;padding:10px 14px;margin-bottom:14px}
+.rulebar b{color:var(--sea)}
+.warnchip{background:var(--resin-soft);color:var(--resin);border-radius:6px;padding:1px 7px;font-size:12px;font-weight:700;margin-left:6px}
+.example{background:var(--sunk);border-radius:12px;padding:12px 14px;font-size:15px}
+.clubbox{display:flex;gap:12px;align-items:flex-start;border:2px solid var(--line);border-radius:14px;padding:12px 14px;cursor:pointer}
+.clubbox.on{border-color:var(--sea);background:var(--sea-soft)}
+.clubbox input{width:26px;height:26px;flex:none;margin-top:1px;accent-color:var(--sea)}
+.clubbox b{color:var(--sea);font-size:17px}
+.relnote{background:var(--sea-soft);color:var(--sea);border-radius:6px;padding:1px 7px;font-weight:700}
+.t-vclub{--t-bg:var(--sea);--t-ink:#FFFFFF;--t-chip:rgba(255,255,255,.18);--t-blob:rgba(255,255,255,.22)}
+.t-remb{--t-bg:var(--sea-soft);--t-ink:var(--sea);--t-chip:var(--surface);--t-blob:var(--sea)}
+.tile.t-remb::after{opacity:.16}
+.tile.half{grid-column:span 2;min-height:0;flex-direction:row;align-items:center;justify-content:flex-start}
+.tile.half::after{display:none}
+.stat span{display:block;margin-top:2px}
+.stat.key.c-club{background:var(--sea);border-color:var(--sea);color:#fff}
+.stat.key.c-dc{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.next .nexthead{display:flex;justify-content:space-between;align-items:end;gap:12px;flex-wrap:wrap}
+.rels{display:flex;flex-direction:column}
+.rel{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px 14px;align-items:center;padding:12px 0;border-top:1px solid var(--line)}
+.rel:first-child{border-top:0}
+.rel .acts{grid-column:1/-1}
+/* Aperçu papier du relevé (toujours clair, comme le PDF) */
+.paper{background:#fff;color:#1C1B2E;border:1px solid #DCDAE7;border-radius:10px;padding:18px;display:flex;flex-direction:column;gap:12px;font-size:14px}
+.paper .ph1{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;text-align:right}
+.paper .ph1 img{width:84px;height:auto}
+.paper h3{font-size:18px;color:#2D3A8C;text-transform:uppercase;letter-spacing:.02em}
+.paper .ph2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.paper .ph2>div{background:#F3F3F8;border-radius:8px;padding:10px;display:flex;flex-direction:column}
+.paper small{font-size:11px;font-weight:700;color:#66637D;letter-spacing:.06em;text-transform:uppercase}
+.paper p{margin:0}
+.paper table{font-size:13px}
+.paper th{color:#fff;background:#2D3A8C}
+.paper td,.paper th{border-color:#E4E3EC}
+.paper .ptot{align-self:flex-end;min-width:min(320px,100%);display:flex;flex-direction:column;gap:4px}
+.paper .ptot>div{display:flex;justify-content:space-between;gap:12px}
+.paper .ptot .big{background:#2D3A8C;color:#fff;border-radius:8px;padding:8px 10px;font-weight:800;margin-top:4px}
+@media (max-width:900px){ .tile.half{grid-column:span 1} }
+@media (max-width:640px){ .nav-x{display:none} .paper .ph2{grid-template-columns:1fr} .canal{min-width:0} }
 .toast{position:fixed;left:50%;bottom:calc(24px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:12px 18px;border-radius:12px;font-weight:700;z-index:50;max-width:calc(100vw - 32px)}
 .cartfab{display:none}
 
@@ -291,6 +348,7 @@ dialog.full{width:100vw;max-width:100vw;height:100%;max-height:100%;border-radiu
     <button class="nav" data-view="vitrine"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="9" cy="10" r="2"/><path d="m21 16-5-5-8 8"/></svg>Vitrine</button>
     <button class="nav" data-view="commandes"><svg viewBox="0 0 24 24"><rect x="5" y="4" width="14" height="17" rx="2"/><path d="M9 9h6M9 13h6M9 17h3"/></svg>Commandes<span class="badge num" id="badge" hidden></span></button>
     <button class="nav" data-view="catalogue"><svg viewBox="0 0 24 24"><rect x="4" y="4" width="7" height="7" rx="1.5"/><rect x="13" y="4" width="7" height="7" rx="1.5"/><rect x="4" y="13" width="7" height="7" rx="1.5"/><rect x="13" y="13" width="7" height="7" rx="1.5"/></svg>Catalogue</button>
+    <button class="nav nav-x" data-view="releves"><svg viewBox="0 0 24 24"><rect x="3" y="6" width="18" height="12" rx="2"/><circle cx="12" cy="12" r="2.5"/><path d="M7 10v4M17 10v4"/></svg>Rembours.</button>
     <button class="nav" data-view="bilan"><svg viewBox="0 0 24 24"><path d="M5 20V10M12 20V4M19 20v-7"/></svg>Bilan</button>
   </nav>
   <main id="main"></main>
@@ -306,7 +364,7 @@ dialog.full{width:100vw;max-width:100vw;height:100%;max-height:100%;border-radiu
 /* ---------- Utilitaires ---------- */
 const $ = s => document.querySelector(s);
 const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
-const r2 = n => Math.round((+n || 0) * 100) / 100;
+const r2 = n => Math.round(((+n || 0) + Number.EPSILON) * 100) / 100;
 const eur = n => r2(n).toLocaleString("fr-FR", {style:"currency", currency:"EUR"});
 const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
 const todayISO = () => { const d = new Date(); d.setMinutes(d.getMinutes() - d.getTimezoneOffset()); return d.toISOString().slice(0,10); };
@@ -314,7 +372,9 @@ const addDays = (iso, n) => { const d = new Date(iso + "T12:00:00"); d.setDate(d
 const dayOf = iso => { const d = new Date(iso); d.setMinutes(d.getMinutes() - d.getTimezoneOffset()); return d.toISOString().slice(0,10); };
 const frDate = iso => iso ? new Date(iso.length === 10 ? iso + "T12:00:00" : iso).toLocaleDateString("fr-FR", {weekday:"short", day:"numeric", month:"short"}) : "";
 const frTime = iso => new Date(iso).toLocaleTimeString("fr-FR", {hour:"2-digit", minute:"2-digit"});
+const dmy = iso => iso ? new Date(iso.length === 10 ? iso + "T12:00:00" : iso).toLocaleDateString("fr-FR") : "";
 const parseNum = v => r2(String(v).replace(",", ".").replace(/[^\d.]/g, ""));
+const numIn = v => String(v ?? "").replace(".", ",");
 
 function toast(msg){
   const t = document.createElement("div"); t.className = "toast"; t.textContent = msg;
@@ -325,11 +385,10 @@ function toast(msg){
 const DB = {
   db:null,
   open(){ return new Promise((res, rej) => {
-    const r = indexedDB.open("dragonne-club", 1);
+    const r = indexedDB.open("dragonne-club", 2);
     r.onupgradeneeded = () => { const d = r.result;
-      if(!d.objectStoreNames.contains("articles")) d.createObjectStore("articles", {keyPath:"id"});
-      if(!d.objectStoreNames.contains("orders")) d.createObjectStore("orders", {keyPath:"id"});
-      if(!d.objectStoreNames.contains("kv")) d.createObjectStore("kv", {keyPath:"k"}); };
+      for(const [s, k] of [["articles","id"],["orders","id"],["kv","k"],["releves","id"]])
+        if(!d.objectStoreNames.contains(s)) d.createObjectStore(s, {keyPath:k}); };
     r.onsuccess = () => { this.db = r.result; res(); };
     r.onerror = () => rej(r.error);
   });},
@@ -343,10 +402,47 @@ const DB = {
   clear(s){ return this.tx(s, "readwrite", st => { st.clear(); }); }
 };
 
-const S = { articles:[], orders:[], settings:null, cart:[], view:"vente", cat:"Tout", filter:"ouvertes", q:"", bilanDay:todayISO(), sel:null };
+const S = { articles:[], orders:[], releves:[], settings:null, cart:[], cartCanal:null, view:"accueil", cat:"Tout",
+  filter:"ouvertes", ocanal:"tous", catView:null, q:"", bilanDay:todayISO(), sel:null, relAu:todayISO() };
 const MAXPH = 6;
 const STATUTS = { a_faire:"À fabriquer", en_cours:"En cours", prete:"Prête", livree:"Livrée", annulee:"Annulée" };
+const NATURES = { vente:"Vente", acompte:"Acompte", solde:"Solde", remboursement:"Annulation" };
 const saveSettings = () => DB.put("kv", S.settings);
+const DEFAULTS = { k:"settings", club:"GTO/VDB", acomptePct:30, nextNum:1, seeded:false, canal:"club",
+  margeMode:"eur", margeVal:0, arrondi:0.1, relSeq:{}, vendeur:{nom:"Dragonne Créa", contact:"", adresse:"", siret:""}, clubAdresse:"" };
+
+/* ---------- Deux circuits de vente : le club (GTO/VDB) et Dragonne Créa ---------- */
+const CLUB = () => S.settings.club || "GTO/VDB";
+const canalName = k => k === "club" ? CLUB() : "Dragonne Créa";
+const visibleIn = (a, canal) => canal === "club" ? !!a.club : !a.club;
+const rule = a => (a.club && a.marge) ? a.marge : {mode:S.settings.margeMode, val:S.settings.margeVal};
+const ruleText = r => r.mode === "pct" ? `+${numIn(r.val)} %` : `+${eur(r.val)}`;
+/* Prix de vente au club = prix Dragonne Créa + marge du club, arrondi au pas choisi */
+function clubPrice(a){
+  const base = +a.prix || 0, r = rule(a);
+  let p = r.mode === "pct" ? base * (1 + (+r.val || 0) / 100) : base + (+r.val || 0);
+  p = r2(p);
+  const step = +S.settings.arrondi || 0;
+  if(step > 0) p = r2(Math.ceil(p / step - 1e-9) * step);
+  return p;
+}
+const salePrice = a => a.club ? clubPrice(a) : r2(a.prix);
+function canalTabs(cur, opts = {}){
+  const list = (opts.all ? [["tous", "Tout"]] : []).concat([["club", CLUB()], ["dc", "Dragonne Créa"]]);
+  const sub = {tous:"Les deux circuits", club:"Prix club · encaissé par le club", dc:"Prix Dragonne Créa · encaissé directement"};
+  return `<div class="canals${opts.compact ? " compact" : ""}" role="tablist" aria-label="Circuit de vente">${list.map(([k,l]) =>
+    `<button role="tab" class="canal c-${k}" data-canal="${k}" aria-selected="${k===cur}"><b>${esc(l)}</b>${opts.compact ? "" : `<small>${sub[k]}</small>`}</button>`).join("")}</div>`;
+}
+function bindCanals(fn){ $("#main").querySelectorAll("[data-canal]").forEach(b => b.onclick = () => fn(b.dataset.canal)); }
+async function setCanal(k){
+  if(k === S.settings.canal) return;
+  if(S.cart.length && S.cartCanal && S.cartCanal !== k){
+    if(!(await ask("Changer de circuit ?", `Le panier contient des articles ${esc(canalName(S.cartCanal))}. Il sera vidé pour passer en ${esc(canalName(k))}.`, "Vider et changer"))) return;
+    S.cart = []; S.cartCanal = null;
+  }
+  S.settings.canal = k; saveSettings(); S.cat = "Tout"; render();
+}
+const canalPill = k => `<span class="cpill c-${k}">${esc(canalName(k))}</span>`;
 
 /* ---------- Exemples (dessinés, à supprimer quand le vrai catalogue est saisi) ---------- */
 function samplePhoto(label, hue, shape){
@@ -365,33 +461,55 @@ function samplePhoto(label, hue, shape){
 }
 async function seed(){
   const ex = [
-    ["Porte-clés ballon", "Porte-clés", 6, "stock", 20, 0, "ballon", 250],
-    ["Porte-clés prénom + n°", "Porte-clés", 8, "commande", 0, 7, "goutte", 270],
-    ["Médaille joueur personnalisée", "Souvenirs", 12, "commande", 0, 10, "rond", 40],
-    ["Dessous de verre logo (lot de 4)", "Maison", 18, "stock", 6, 0, "rond", 200],
-    ["Plateau de service logo club", "Maison", 45, "commande", 0, 21, "carre", 160],
-    ["Plaque de vestiaire prénom", "Souvenirs", 25, "commande", 0, 14, "carre", 300],
-    ["Magnet couleurs du club", "Petits prix", 4, "stock", 30, 0, "goutte", 120],
-    ["Trophée fin de saison", "Souvenirs", 35, "commande", 0, 21, "goutte", 20]
+    ["Porte-clés ballon aux couleurs du club", "Porte-clés", 8, "stock", 20, 0, "ballon", 250, true],
+    ["Médaille joueur personnalisée", "Souvenirs", 12, "commande", 0, 10, "rond", 40, true],
+    ["Plateau de service logo club", "Maison", 45, "commande", 0, 21, "carre", 160, true],
+    ["Magnet couleurs du club", "Petits prix", 4, "stock", 30, 0, "goutte", 120, true],
+    ["Pendentif goutte fleurs séchées", "Bijoux", 18, "stock", 5, 0, "goutte", 300, false],
+    ["Dessous de verre océan (lot de 4)", "Maison", 24, "stock", 4, 0, "rond", 190, false],
+    ["Marque-page prénom", "Papeterie", 7, "commande", 0, 7, "carre", 60, false],
+    ["Plateau géode sur mesure", "Maison", 55, "commande", 0, 21, "carre", 270, false]
   ];
-  for(const [nom, cat, prix, mode, stock, delai, shape, hue] of ex){
-    await DB.put("articles", {id:uid(), nom, cat, prix, mode, stock, delai, photos: mode === "commande" ? [samplePhoto("Exemple", hue, shape), samplePhoto("Exemple · détail", hue + 60, shape)] : [samplePhoto("Exemple", hue, shape)], exemple:true, actif:true, cree:new Date().toISOString()});
+  for(const [nom, cat, prix, mode, stock, delai, shape, hue, club] of ex){
+    await DB.put("articles", {id:uid(), nom, cat, prix, club, marge:null, mode, stock, delai,
+      photos: mode === "commande" ? [samplePhoto("Exemple", hue, shape), samplePhoto("Exemple · détail", hue + 60, shape)] : [samplePhoto("Exemple", hue, shape)],
+      exemple:true, actif:true, cree:new Date().toISOString()});
   }
 }
 
-/* ---------- Démarrage ---------- */
+/* ---------- Démarrage et mise à niveau des données existantes ---------- */
 async function boot(){
   await DB.open();
   const kv = await DB.all("kv");
-  S.settings = kv.find(x => x.k === "settings") || {k:"settings", club:"Club de rugby", acomptePct:30, nextNum:1, seeded:false};
-  if(!S.settings.seeded){ await seed(); S.settings.seeded = true; await saveSettings(); }
+  const st = kv.find(x => x.k === "settings");
+  S.settings = Object.assign({}, DEFAULTS, st || {});
+  S.settings.vendeur = Object.assign({}, DEFAULTS.vendeur, S.settings.vendeur || {});
+  if(!S.settings.club || S.settings.club === "Club de rugby") S.settings.club = "GTO/VDB";
+  if(!S.settings.seeded){ await seed(); S.settings.seeded = true; }
+  await saveSettings();
+  await migrate();
   await reload();
   try { navigator.storage && navigator.storage.persist && navigator.storage.persist(); } catch(e){}
   go("accueil");
 }
+/* Les données saisies avant cette version étaient toutes pour le club, sans marge */
+async function migrate(){
+  for(const a of await DB.all("articles")){
+    if(a.club === undefined){ a.club = true; a.marge = null; await DB.put("articles", a); }
+  }
+  for(const o of await DB.all("orders")){
+    if(o.canal) continue;
+    o.canal = "club";
+    o.lignes.forEach(l => { if(l.base === undefined) l.base = l.prix; });
+    o.totalBase = o.total;
+    o.paiements.forEach(p => { if(!p.id) p.id = uid(); if(p.part === undefined) p.part = p.montant; });
+    await DB.put("orders", o);
+  }
+}
 async function reload(){
   S.articles = (await DB.all("articles")).sort((a,b) => a.cat.localeCompare(b.cat) || a.nom.localeCompare(b.nom));
   S.orders = (await DB.all("orders")).sort((a,b) => b.date.localeCompare(a.date));
+  S.releves = (await DB.all("releves")).sort((a,b) => b.date.localeCompare(a.date));
   const open = S.orders.filter(o => o.type === "commande" && !["livree","annulee"].includes(o.statut)).length;
   const b = $("#badge"); b.hidden = !open; b.textContent = open;
 }
@@ -401,13 +519,37 @@ function go(v){
   render(); $("#main").scrollTop = 0;
 }
 document.querySelectorAll(".nav, .brand").forEach(n => n.addEventListener("click", () => go(n.dataset.view)));
-function render(){ ({accueil:renderAccueil, vitrine:renderVitrine, vente:renderVente, commandes:renderCommandes, catalogue:renderCatalogue, bilan:renderBilan})[S.view](); }
+function render(){ ({accueil:renderAccueil, vitrine:renderVitrine, vente:renderVente, commandes:renderCommandes, catalogue:renderCatalogue, bilan:renderBilan, releves:renderReleves})[S.view](); }
 
 const art = id => S.articles.find(a => a.id === id);
 const inCart = id => S.cart.filter(l => l.artId === id).reduce((s,l) => s + l.qte, 0);
 const modeTag = a => a.mode === "stock"
   ? (a.stock > 0 ? `<span class="tag stock num">${a.stock} en stock</span>` : `<span class="tag out">Épuisé</span>`)
   : `<span class="tag cmd num">Sur commande · ${a.delai} j</span>`;
+
+/* ---------- Argent : encaissements et part revenant à Dragonne Créa ---------- */
+const paid = o => r2(o.paiements.reduce((s,p) => s + p.montant, 0));
+const paidPart = o => r2(o.paiements.reduce((s,p) => s + (p.part ?? p.montant), 0));
+const due = o => o.statut === "annulee" ? 0 : r2(o.total - paid(o));
+/* Chaque encaissement mémorise la part Dragonne Créa (le reste est la marge du club) */
+function pay(o, montant, nature, date){
+  montant = r2(montant);
+  const tb = o.totalBase ?? o.total;
+  let part;
+  if(r2(paid(o) + montant) >= o.total) part = r2(tb - paidPart(o));
+  else part = o.total ? r2(montant * tb / o.total) : montant;
+  const p = {id:uid(), date: date || new Date().toISOString(), montant, part, nature};
+  o.paiements.push(p); return p;
+}
+const releveOf = id => S.releves.find(r => r.id === id);
+/* Encaissements du club pas encore repris sur un relevé (jusqu'à une date incluse) */
+function pendingClub(au){
+  const rows = [];
+  S.orders.forEach(o => { if(o.canal !== "club") return;
+    o.paiements.forEach(p => { if(!p.releve && (!au || dayOf(p.date) <= au)) rows.push({p, o}); }); });
+  return rows.sort((a,b) => a.p.date.localeCompare(b.p.date));
+}
+const detailOf = o => o.lignes.map(l => `${l.qte > 1 ? l.qte + " × " : ""}${l.nom}${l.perso ? " (" + l.perso + ")" : ""}`).join(", ");
 
 /* ---------- Accueil ---------- */
 const ICONS = {
@@ -416,12 +558,13 @@ const ICONS = {
   cmd:'<rect x="5" y="4" width="14" height="17" rx="2"/><path d="M9 9h6M9 13h6M9 17h3"/>',
   cat:'<rect x="4" y="4" width="7" height="7" rx="1.5"/><rect x="13" y="4" width="7" height="7" rx="1.5"/><rect x="4" y="13" width="7" height="7" rx="1.5"/><path d="M16.5 13v7M13 16.5h7"/>',
   bilan:'<path d="M5 20V10M12 20V4M19 20v-7"/>',
-  save:'<path d="M12 4v11M7 10l5 5 5-5"/><path d="M5 19h14"/>'
+  save:'<path d="M12 4v11M7 10l5 5 5-5"/><path d="M5 19h14"/>',
+  remb:'<rect x="3" y="6" width="18" height="12" rx="2"/><circle cx="12" cy="12" r="2.5"/><path d="M7 10v4M17 10v4"/>'
 };
 const ic = k => `<span class="ic"><svg viewBox="0 0 24 24">${ICONS[k]}</svg></span>`;
-function todayCash(){
-  const d = todayISO(); let s = 0;
-  S.orders.forEach(o => o.paiements.forEach(p => { if(dayOf(p.date) === d) s += p.montant; }));
+function dayCash(day, canal){
+  let s = 0;
+  S.orders.forEach(o => { if(canal && o.canal !== canal) return; o.paiements.forEach(p => { if(dayOf(p.date) === day) s += p.montant; }); });
   return r2(s);
 }
 function renderAccueil(){
@@ -430,47 +573,57 @@ function renderAccueil(){
   const pretes = cmds.filter(o => o.statut === "prete").length;
   const retard = cmds.filter(o => !["livree","annulee"].includes(o.statut) && o.livraison && o.livraison < todayISO()).length;
   const nCart = S.cart.reduce((s,l) => s + l.qte, 0);
-  const nPh = S.articles.filter(a => a.actif && a.photos.length).length;
+  const canal = S.settings.canal;
+  const nPh = S.articles.filter(a => a.actif && visibleIn(a, canal) && a.photos.length).length;
   const last = S.settings.lastBackup;
   const days = last ? Math.floor((Date.now() - new Date(last)) / 864e5) : null;
+  const pend = pendingClub(), pendPart = r2(pend.reduce((s,x) => s + x.p.part, 0));
+  const attente = S.releves.filter(r => r.statut !== "rembourse");
   const h = new Date().getHours();
   $("#main").innerHTML = `
   <div class="hello">
     <img class="logo" src="logo.jpg" alt="Dragonne Créa, résine UV et époxy">
-    <div><h1>${h < 18 ? "Bonjour" : "Bonsoir"} !</h1><p>Ventes au ${esc(S.settings.club)}</p></div>
+    <div><h1>${h < 18 ? "Bonjour" : "Bonsoir"} !</h1><p>Aujourd'hui, je vends pour :</p></div>
   </div>
+  ${canalTabs(canal)}
   <div class="today">
-    <span>Aujourd'hui <b class="num">${eur(todayCash())}</b></span>
+    <span>${esc(CLUB())} <b class="num">${eur(dayCash(todayISO(), "club"))}</b></span>
+    <span>Dragonne Créa <b class="num">${eur(dayCash(todayISO(), "dc"))}</b></span>
     ${aFaire ? `<span>${aFaire} à fabriquer</span>` : ""}
     ${pretes ? `<span style="color:var(--ok)">${pretes} prête${pretes>1?"s":""} à remettre</span>` : ""}
     ${retard ? `<span style="color:var(--danger)">${retard} en retard</span>` : ""}
   </div>
   <div class="tiles">
-    <button class="tile t-vente big" data-go="vente">${ic("vente")}<div><h2>Vendre</h2><small>${nCart ? `${nCart} article${nCart>1?"s":""} dans le panier` : "Encaisser une vente ou prendre une commande"}</small></div></button>
+    <button class="tile ${canal === "club" ? "t-vclub" : "t-vente"} big" data-go="vente">${ic("vente")}<div><h2>Vendre</h2><small>${nCart ? `${nCart} article${nCart>1?"s":""} dans le panier · ${esc(canalName(S.cartCanal || canal))}` : canal === "club" ? `Ventes ${esc(CLUB())} au prix club` : "Ventes Dragonne Créa en direct"}</small></div></button>
     <button class="tile t-vitrine" data-go="vitrine">${ic("vitrine")}<div><h2>Vitrine</h2><small>Montrer les pièces en grand · ${nPh} en photo</small></div></button>
     <button class="tile t-cmd" data-go="commandes">${ic("cmd")}<div><h2>Commandes</h2><small>${aFaire || pretes ? `${aFaire} en cours · ${pretes} prête${pretes>1?"s":""}` : "Aucune en attente"}</small></div></button>
     <button class="tile t-cat" data-go="catalogue">${ic("cat")}<div><h2>Catalogue</h2><small>${S.articles.length} article${S.articles.length>1?"s":""} · ajouter une pièce</small></div></button>
-    <button class="tile t-bilan" data-go="bilan">${ic("bilan")}<div><h2>Bilan</h2><small class="num">${eur(todayCash())} encaissés aujourd'hui</small></div></button>
-    <button class="tile t-save wide" id="tSave">${ic("save")}<div><h2>Sauvegarde</h2><small ${days === null || days > 7 ? 'style="color:var(--warn)"' : ""}>${days === null ? "Jamais faite, pensez-y" : days === 0 ? "Faite aujourd'hui" : `Dernière il y a ${days} jour${days>1?"s":""}`}</small></div></button>
+    <button class="tile t-bilan" data-go="bilan">${ic("bilan")}<div><h2>Bilan</h2><small class="num">${eur(dayCash(todayISO()))} encaissés aujourd'hui</small></div></button>
+    <button class="tile t-remb" data-go="releves">${ic("remb")}<div><h2>Remboursements</h2><small class="num">${pend.length ? `${eur(pendPart)} à demander au club` : attente.length ? `${attente.length} relevé${attente.length>1?"s":""} en attente` : "Tout est à jour"}</small></div></button>
+    <button class="tile t-save half" id="tSave">${ic("save")}<div><h2>Sauvegarde</h2><small ${days === null || days > 7 ? 'style="color:var(--warn)"' : ""}>${days === null ? "Jamais faite, pensez-y" : days === 0 ? "Faite aujourd'hui" : `Dernière il y a ${days} jour${days>1?"s":""}`}</small></div></button>
   </div>`;
+  bindCanals(setCanal);
   $("#main").querySelectorAll("[data-go]").forEach(b => b.onclick = () => go(b.dataset.go));
   $("#tSave").onclick = backup;
 }
 
 /* ---------- Vitrine : présenter les pièces en grand ---------- */
 function renderVitrine(){
-  const actifs = S.articles.filter(a => a.actif);
+  const canal = S.settings.canal;
+  const actifs = S.articles.filter(a => a.actif && visibleIn(a, canal));
   const cats = ["Tout", ...new Set(actifs.map(a => a.cat))];
   if(!cats.includes(S.cat)) S.cat = "Tout";
   const list = actifs.filter(a => S.cat === "Tout" || a.cat === S.cat);
   S.ficheList = list.map(a => a.id);
   $("#main").innerHTML = `
   <div class="head"><div><h1>Vitrine</h1><p>Touchez une pièce pour la montrer en plein écran</p></div></div>
+  ${canalTabs(canal, {compact:true})}
   <div class="chips">${cats.map(c => `<button class="chip" data-cat="${esc(c)}" aria-pressed="${c===S.cat}">${esc(c)}</button>`).join("")}</div>
   ${list.length ? `<div class="show">${list.map(a => `<button data-fiche="${a.id}">
       ${a.photos[0] ? `<img src="${a.photos[0]}" alt="">` : `<span style="aspect-ratio:4/5;background:var(--sunk);display:block"></span>`}
-      <span class="cap"><span><span style="font-weight:700;display:block">${esc(a.nom)}</span>${modeTag(a)}</span><b class="num">${eur(a.prix)}</b></span></button>`).join("")}</div>`
-    : `<div class="panel"><p class="muted">Aucune pièce à montrer. Ajoutez des articles avec leurs photos depuis le Catalogue.</p></div>`}`;
+      <span class="cap"><span><span style="font-weight:700;display:block">${esc(a.nom)}</span>${modeTag(a)}</span><b class="num">${eur(salePrice(a))}</b></span></button>`).join("")}</div>`
+    : `<div class="panel"><p class="muted">Aucune pièce ${esc(canalName(canal))} à montrer. Ajoutez des articles avec leurs photos depuis le Catalogue.</p></div>`}`;
+  bindCanals(setCanal);
   $("#main").querySelectorAll("[data-cat]").forEach(b => b.onclick = () => { S.cat = b.dataset.cat; renderVitrine(); });
   $("#main").querySelectorAll("[data-fiche]").forEach(b => b.onclick = () => openFiche(b.dataset.fiche, "vitrine"));
 }
@@ -488,7 +641,7 @@ function openFiche(id, from){
     <div class="info">
       <span class="muted" style="font-weight:700;text-transform:uppercase;letter-spacing:.06em;font-size:13px">${esc(a.cat)}</span>
       <h2>${esc(a.nom)}</h2>
-      <div class="price num">${eur(a.prix)}</div>
+      <div class="price num">${eur(salePrice(a))}</div>
       <div>${modeTag(a)}</div>
       ${a.mode === "commande" ? `<p class="muted" style="margin:0">Fabriqué à la demande et personnalisable (prénom, numéro, couleurs). Prêt en ${a.delai} jour${a.delai>1?"s":""} environ.</p>` : ""}
       <button class="btn primary" id="fAdd" ${out ? "disabled" : ""}>${out ? "Plus de stock" : "Ajouter au panier"}</button>
@@ -511,28 +664,31 @@ function celebrate(title, sub){
 
 /* ---------- Vente ---------- */
 function renderVente(){
-  const actifs = S.articles.filter(a => a.actif);
+  const canal = S.settings.canal;
+  const actifs = S.articles.filter(a => a.actif && visibleIn(a, canal));
   const cats = ["Tout", ...new Set(actifs.map(a => a.cat))];
   if(!cats.includes(S.cat)) S.cat = "Tout";
   const list = actifs.filter(a => S.cat === "Tout" || a.cat === S.cat);
   $("#main").innerHTML = `
-  <div class="head"><div><h1>Vente</h1><p>${esc(S.settings.club)} · touchez un article pour l'ajouter</p></div></div>
+  <div class="head"><div><h1>Vente</h1><p>Touchez un article pour l'ajouter au panier</p></div></div>
+  ${canalTabs(canal, {compact:true})}
   <div class="sale">
     <section>
       <div class="chips">${cats.map(c => `<button class="chip" data-cat="${esc(c)}" aria-pressed="${c===S.cat}">${esc(c)}</button>`).join("")}</div>
       ${list.length ? `<div class="grid">${list.map(a => {
-        const n = inCart(a.id), out = a.mode === "stock" && a.stock - n <= 0;
+        const n = inCart(a.id);
         return `<div class="card${a.mode==="stock" && a.stock<=0 ? " dim":""}" role="button" tabindex="0" data-add="${a.id}" aria-label="Ajouter ${esc(a.nom)} au panier">
           <span class="phw">${a.photos[0] ? `<img class="ph" src="${a.photos[0]}" alt="">` : `<span class="ph"></span>`}
           ${a.photos.length > 1 ? `<span class="nphotos num">${a.photos.length} photos</span>` : ""}</span>
           <button class="zoom" data-zoom="${a.id}" aria-label="Voir les photos de ${esc(a.nom)}"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="6"/><path d="m20 20-4.5-4.5M11 8v6M8 11h6"/></svg></button>
           ${n ? `<span class="incart num">${n}</span>` : ""}
           <span class="bd"><span class="nm">${esc(a.nom)}</span><span>${modeTag(a)} ${a.exemple ? '<span class="tag ex">Exemple</span>' : ""}</span>
-          <span class="pr num">${eur(a.prix)}</span></span></div>`; }).join("")}</div>`
-      : `<div class="panel"><p class="muted">Aucun article dans cette catégorie. Ajoutez-en depuis l'onglet Catalogue.</p></div>`}
+          <span class="pr num">${eur(salePrice(a))}</span></span></div>`; }).join("")}</div>`
+      : `<div class="panel"><p class="muted">Aucun article ${esc(canalName(canal))} dans cette catégorie. Ajoutez-en depuis le Catalogue${canal === "club" ? ` en cochant « ${esc(CLUB())} »` : ""}.</p></div>`}
     </section>
     <aside class="cart" aria-label="Panier">${cartHTML()}</aside>
   </div>`;
+  bindCanals(setCanal);
   $("#main").querySelectorAll("[data-cat]").forEach(b => b.onclick = () => { S.cat = b.dataset.cat; renderVente(); });
   $("#main").querySelectorAll("[data-add]").forEach(b => {
     b.onclick = () => addToCart(b.dataset.add);
@@ -542,14 +698,16 @@ function renderVente(){
   bindCart();
 }
 function cartTotals(){
-  const stock = r2(S.cart.filter(l => l.mode === "stock").reduce((s,l) => s + l.prix*l.qte, 0));
-  const cmd = r2(S.cart.filter(l => l.mode === "commande").reduce((s,l) => s + l.prix*l.qte, 0));
-  return {stock, cmd, total:r2(stock+cmd)};
+  const sum = (mode, k) => r2(S.cart.filter(l => l.mode === mode).reduce((s,l) => s + l[k]*l.qte, 0));
+  const stock = sum("stock","prix"), cmd = sum("commande","prix");
+  const stockBase = sum("stock","base"), cmdBase = sum("commande","base");
+  return {stock, cmd, total:r2(stock+cmd), stockBase, cmdBase, base:r2(stockBase+cmdBase)};
 }
 function cartHTML(){
-  if(!S.cart.length) return `<header><h2>Panier</h2></header><p class="empty">Le panier est vide.</p>`;
+  const cc = S.cartCanal || S.settings.canal;
+  if(!S.cart.length) return `<header><h2>Panier</h2>${canalPill(cc)}</header><p class="empty">Le panier est vide.</p>`;
   const t = cartTotals();
-  return `<header><h2>Panier</h2><button class="btn small ghost" id="clearCart">Vider</button></header>
+  return `<header><h2>Panier</h2>${canalPill(cc)}<button class="btn small ghost" id="clearCart">Vider</button></header>
   <div class="lines">${S.cart.map((l,i) => `
     <div class="line">
       <div class="t">${esc(l.nom)}<div>${l.mode==="commande" ? '<span class="tag cmd">Sur commande</span>' : '<span class="tag stock">À emporter</span>'}</div></div>
@@ -561,23 +719,27 @@ function cartHTML(){
   <div class="tot">
     ${t.stock && t.cmd ? `<div class="row muted"><span>À emporter</span><span class="num">${eur(t.stock)}</span></div><div class="row muted"><span>Sur commande</span><span class="num">${eur(t.cmd)}</span></div>` : ""}
     <div class="row big"><span>Total</span><span class="num">${eur(t.total)}</span></div>
+    ${cc === "club" ? `<div class="row muted small"><span>dont marge ${esc(CLUB())}</span><span class="num">${eur(t.total - t.base)}</span></div>` : ""}
     <button class="btn primary" id="checkout">${t.cmd ? "Prendre la commande" : "Encaisser"}</button>
   </div>`;
 }
 function bindCart(){
   const box = document.querySelector(".cart"); if(!box) return;
   box.querySelectorAll("[data-inc]").forEach(b => b.onclick = () => { const l = S.cart[b.dataset.inc]; if(l.mode === "stock" && inCart(l.artId) >= art(l.artId).stock) return toast("Plus de stock pour cet article"); l.qte++; renderVente(); });
-  box.querySelectorAll("[data-dec]").forEach(b => b.onclick = () => { const i = +b.dataset.dec; if(--S.cart[i].qte <= 0) S.cart.splice(i,1); renderVente(); });
+  box.querySelectorAll("[data-dec]").forEach(b => b.onclick = () => { const i = +b.dataset.dec; if(--S.cart[i].qte <= 0) S.cart.splice(i,1); if(!S.cart.length) S.cartCanal = null; renderVente(); });
   box.querySelectorAll("[data-perso]").forEach(inp => inp.oninput = () => { S.cart[inp.dataset.perso].perso = inp.value; });
-  const c = $("#clearCart"); if(c) c.onclick = async () => { if(await ask("Vider le panier ?", "Les articles ajoutés seront retirés.", "Vider")) { S.cart = []; renderVente(); } };
+  const c = $("#clearCart"); if(c) c.onclick = async () => { if(await ask("Vider le panier ?", "Les articles ajoutés seront retirés.", "Vider")) { S.cart = []; S.cartCanal = null; renderVente(); } };
   const k = $("#checkout"); if(k) k.onclick = openCheckout;
 }
 function addToCart(id){
   const a = art(id);
+  const canal = a.club ? "club" : "dc";
+  if(S.cart.length && S.cartCanal && S.cartCanal !== canal) return toast(`Le panier contient des articles ${canalName(S.cartCanal)} : encaissez-les d'abord`);
   if(a.mode === "stock" && inCart(id) >= a.stock) return toast(a.stock ? "Plus de stock pour cet article" : "Article épuisé");
   // Les articles sur commande gardent une ligne par pièce personnalisée
   const l = a.mode === "stock" ? S.cart.find(x => x.artId === id) : null;
-  if(l) l.qte++; else S.cart.push({artId:id, nom:a.nom, prix:a.prix, mode:a.mode, qte:1, perso:"", delai:a.delai||0});
+  if(l) l.qte++; else S.cart.push({artId:id, nom:a.nom, prix:salePrice(a), base:r2(a.prix), mode:a.mode, qte:1, perso:"", delai:a.delai||0});
+  S.cartCanal = canal;
   if(S.view !== "vente") return toast(`${a.nom} ajouté au panier`);
   renderVente();
   const c = document.querySelector(`[data-add="${id}"]`); if(c) c.classList.add("pop");
@@ -585,17 +747,17 @@ function addToCart(id){
 
 /* ---------- Encaissement / prise de commande ---------- */
 function openCheckout(){
-  const t = cartTotals(), hasCmd = t.cmd > 0;
+  const t = cartTotals(), hasCmd = t.cmd > 0, canal = S.cartCanal || S.settings.canal;
   const maxDelai = Math.max(0, ...S.cart.filter(l => l.mode === "commande").map(l => l.delai));
   const acompte0 = hasCmd ? Math.ceil(t.cmd * S.settings.acomptePct / 100) : 0;
   openDlg(`
-  <header><h2>${hasCmd ? "Nouvelle commande" : "Encaisser la vente"}</h2></header>
+  <header><h2>${hasCmd ? "Nouvelle commande" : "Encaisser la vente"} ${canalPill(canal)}</h2></header>
   <form class="body" id="coForm" novalidate>
     <fieldset><legend>Client${hasCmd ? "" : ' <span class="muted" style="font:400 14px var(--f-body)">(facultatif)</span>'}</legend>
       <div class="fgrid">
         <label class="f">Nom${hasCmd ? " *" : ""}<input type="text" id="coNom" autocomplete="off" ${hasCmd ? "required" : ""}></label>
         <label class="f">Téléphone<input type="tel" id="coTel" autocomplete="off" inputmode="tel"></label>
-        <label class="f">Équipe / catégorie <span class="h">ex. U12, Seniors, Parent</span><input type="text" id="coEq" autocomplete="off"></label>
+        <label class="f">${canal === "club" ? "Équipe / catégorie" : "Remarque"} <span class="h">${canal === "club" ? "ex. U12, Seniors, Parent" : "ex. marché de Noël"}</span><input type="text" id="coEq" autocomplete="off"></label>
       </div>
     </fieldset>
     ${hasCmd ? `<fieldset><legend>Commande</legend>
@@ -608,7 +770,7 @@ function openCheckout(){
     <div class="paybox">
       ${t.stock ? `<div class="row"><span>Articles à emporter</span><b class="num">${eur(t.stock)}</b></div>` : ""}
       ${hasCmd ? `<div class="row"><span>Acompte sur commande</span><b class="num" id="coAcOut"></b></div>` : ""}
-      <div class="row big"><span>À encaisser</span><span class="num" id="coNow"></span></div>
+      <div class="row big"><span>À encaisser${canal === "club" ? ` pour ${esc(CLUB())}` : ""}</span><span class="num" id="coNow"></span></div>
       ${hasCmd ? `<div class="row due"><span>Reste dû à la livraison</span><span class="num" id="coRest"></span></div>` : ""}
       <label class="f">Espèces reçues<input type="text" inputmode="decimal" id="coRecu" placeholder="Pour calculer la monnaie"></label>
       <div class="row"><span>Monnaie à rendre</span><span class="change num" id="coChange">—</span></div>
@@ -636,35 +798,34 @@ function openCheckout(){
     const client = {nom, tel:$("#coTel").value.trim(), equipe:$("#coEq").value.trim()};
     const now = new Date().toISOString();
     const stockLines = S.cart.filter(l => l.mode === "stock"), cmdLines = S.cart.filter(l => l.mode === "commande");
+    const ligne = l => ({artId:l.artId, nom:l.nom, prix:l.prix, base:l.base, qte:l.qte, perso:(l.perso||"").trim()});
     const nums = [];
     if(stockLines.length){
-      const o = {id:uid(), num:S.settings.nextNum++, type:"vente", date:now, client, statut:"livree",
-        lignes:stockLines.map(l => ({artId:l.artId, nom:l.nom, prix:l.prix, qte:l.qte, perso:""})), total:t.stock,
-        paiements:[{date:now, montant:t.stock, nature:"vente"}]};
+      const o = {id:uid(), num:S.settings.nextNum++, type:"vente", canal, date:now, client, statut:"livree",
+        lignes:stockLines.map(ligne), total:t.stock, totalBase:t.stockBase, paiements:[]};
+      pay(o, t.stock, "vente", now);
       await DB.put("orders", o); nums.push(o.num);
       for(const l of stockLines){ const a = art(l.artId); if(a){ a.stock = Math.max(0, a.stock - l.qte); await DB.put("articles", a); } }
     }
     if(cmdLines.length){
-      const o = {id:uid(), num:S.settings.nextNum++, type:"commande", date:now, client, statut:"a_faire",
+      const o = {id:uid(), num:S.settings.nextNum++, type:"commande", canal, date:now, client, statut:"a_faire",
         livraison:$("#coLiv").value, note:$("#coNote").value.trim(),
-        lignes:cmdLines.map(l => ({artId:l.artId, nom:l.nom, prix:l.prix, qte:l.qte, perso:(l.perso||"").trim()})), total:t.cmd,
-        paiements: ac > 0 ? [{date:now, montant:ac, nature:"acompte"}] : []};
+        lignes:cmdLines.map(ligne), total:t.cmd, totalBase:t.cmdBase, paiements:[]};
+      if(ac > 0) pay(o, ac, "acompte", now);
       await DB.put("orders", o); nums.push(o.num);
     }
     await saveSettings();
-    S.cart = []; closeDlg(); await reload(); renderVente();
-    celebrate(cmdLines.length ? "Commande enregistrée" : "Vente enregistrée", cmdLines.length ? `n° ${nums[nums.length-1]} · ${esc(client.nom)}` : `n° ${nums[0]}`);
+    S.cart = []; S.cartCanal = null; closeDlg(); await reload(); renderVente();
+    celebrate(cmdLines.length ? "Commande enregistrée" : "Vente enregistrée", cmdLines.length ? `n° ${nums[nums.length-1]} · ${esc(client.nom)}` : `n° ${nums[0]} · ${esc(canalName(canal))}`);
   };
   setTimeout(() => { const n = $("#coNom"); if(n && hasCmd) n.focus(); }, 50);
 }
 
 /* ---------- Commandes ---------- */
-const paid = o => r2(o.paiements.reduce((s,p) => s + p.montant, 0));
-const due = o => o.statut === "annulee" ? 0 : r2(o.total - paid(o));
 function renderCommandes(){
   const F = {ouvertes:"En cours", pretes:"Prêtes", livrees:"Livrées", ventes:"Ventes directes", toutes:"Tout"};
   const q = S.q.toLowerCase();
-  let list = S.orders.filter(o => ({
+  let list = S.orders.filter(o => (S.ocanal === "tous" || o.canal === S.ocanal) && ({
     ouvertes: o.type==="commande" && ["a_faire","en_cours"].includes(o.statut),
     pretes: o.type==="commande" && o.statut==="prete",
     livrees: o.type==="commande" && ["livree","annulee"].includes(o.statut),
@@ -677,6 +838,7 @@ function renderCommandes(){
   $("#main").innerHTML = `
   <div class="head"><div><h1>${sel ? "Annuler des ventes" : "Commandes"}</h1><p>${sel ? "Touchez les ventes ou commandes à annuler, puis validez en bas" : "Suivi des pièces à fabriquer et des soldes à encaisser"}</p></div>
     ${sel ? "" : `<button class="btn danger" id="selStart">Annuler des ventes</button>`}</div>
+  ${canalTabs(S.ocanal, {all:true, compact:true})}
   <div class="toolbar">
     <div class="chips" style="margin:0">${Object.entries(F).map(([k,v]) => `<button class="chip" data-f="${k}" aria-pressed="${k===S.filter}">${v}</button>`).join("")}</div>
     <input type="search" id="oq" placeholder="Rechercher un nom, une équipe, un n°…" value="${esc(S.q)}">
@@ -684,9 +846,10 @@ function renderCommandes(){
   ${list.length ? `<div class="orders">${list.map(orderHTML).join("")}</div>` : `<div class="panel"><p class="muted">Rien dans cette liste pour l'instant.</p></div>`}
   ${sel ? `<div class="selbar"><span><b class="num">${nSel}</b> sélectionnée${nSel>1?"s":""}${selPaid ? ` · <span class="num">${eur(selPaid)}</span> encaissés` : ""}</span>
     <span class="acts"><button class="btn ghost" id="selStop">Retour</button><button class="btn danger" id="selGo" ${nSel ? "" : "disabled"}>Annuler ${nSel > 1 ? `les ${nSel}` : "la sélection"}</button></span></div>` : ""}`;
+  bindCanals(k => { S.ocanal = k; renderCommandes(); });
   $("#main").querySelectorAll("[data-f]").forEach(b => b.onclick = () => { S.filter = b.dataset.f; renderCommandes(); });
   const oq = $("#oq"); oq.oninput = () => { S.q = oq.value; const pos = oq.selectionStart; renderCommandes(); const n = $("#oq"); n.focus(); n.setSelectionRange(pos,pos); };
-  $("#main").querySelectorAll("[data-st]").forEach(b => b.onclick = () => setStatus(b.dataset.id, b.dataset.st));
+  $("#main").querySelectorAll("button[data-st]").forEach(b => b.onclick = () => setStatus(b.dataset.id, b.dataset.st));
   $("#main").querySelectorAll("[data-solde]").forEach(b => b.onclick = () => encaisserSolde(b.dataset.solde));
   $("#main").querySelectorAll("[data-cancel]").forEach(b => b.onclick = () => cancelOrders([b.dataset.cancel]));
   const ss = $("#selStart"); if(ss) ss.onclick = () => { S.sel = new Set(); if(S.filter === "ouvertes") S.filter = "toutes"; renderCommandes(); };
@@ -706,14 +869,17 @@ function orderHTML(o){
   const off = o.statut === "annulee";
   const pickable = S.sel && !off, on = pickable && S.sel.has(o.id);
   const pill = off ? `<span class="pill annulee">Annulée</span>` : `<span class="pill ${o.type==="vente" ? "vente" : o.statut}">${o.type==="vente" ? "Vente directe" : STATUTS[o.statut]}</span>`;
-  return `<article class="order${pickable ? " pick" : ""}${on ? " on" : ""}${S.sel && off ? " off" : ""}" data-st="${off ? "annulee" : o.type==="vente" ? "livree" : o.statut}"
+  const rels = [...new Set(o.paiements.map(p => p.releve).filter(Boolean))].map(releveOf).filter(Boolean);
+  return `<article class="order${pickable ? " pick" : ""}${on ? " on" : ""}${S.sel && off ? " off" : ""}" data-state="${off ? "annulee" : o.type==="vente" ? "livree" : o.statut}"
       ${pickable ? `data-pick="${o.id}" role="checkbox" aria-checked="${on}" tabindex="0"` : ""}>
     <div class="top">${pickable ? `<span class="check" aria-hidden="true">${on ? "✓" : ""}</span>` : ""}<div style="flex:1;min-width:0"><h3>${esc(o.client.nom || "Client de passage")} <span class="muted num" style="font-weight:600">n° ${o.num}</span></h3>
-      <div class="meta">${o.client.equipe ? `<span>${esc(o.client.equipe)}</span>` : ""}${o.client.tel ? `<a href="tel:${esc(o.client.tel.replace(/\s/g,""))}">${esc(o.client.tel)}</a>` : ""}<span>${frDate(o.date)} ${frTime(o.date)}</span></div></div>
+      <div class="meta">${canalPill(o.canal)}${o.client.equipe ? `<span>${esc(o.client.equipe)}</span>` : ""}${o.client.tel ? `<a href="tel:${esc(o.client.tel.replace(/\s/g,""))}">${esc(o.client.tel)}</a>` : ""}<span>${frDate(o.date)} ${frTime(o.date)}</span></div></div>
       ${pill}</div>
     <ul>${o.lignes.map(l => `<li><span>${l.qte > 1 ? l.qte+" × " : ""}${esc(l.nom)}${l.perso ? `<em>${esc(l.perso)}</em>` : ""}</span><span class="num">${eur(l.prix*l.qte)}</span></li>`).join("")}</ul>
     ${o.note ? `<div class="muted" style="font-size:14px">Note : ${esc(o.note)}</div>` : ""}
     <div class="money num"><span>Total <b>${eur(o.total)}</b></span><span>Payé <b>${eur(paid(o))}</b></span>${d > 0 ? `<span class="due">Reste ${eur(d)}</span>` : (off ? (o.annuleLe ? `<span class="muted">Annulée le ${frDate(o.annuleLe)}</span>` : "") : `<span style="color:var(--ok);font-weight:700">Soldée</span>`)}</div>
+    ${o.canal === "club" && (o.totalBase ?? o.total) !== o.total ? `<div class="meta"><span>Part Dragonne Créa ${eur(o.totalBase)} · marge club ${eur(o.total - o.totalBase)}</span></div>` : ""}
+    ${rels.length ? `<div class="meta"><span class="relnote">Sur relevé ${rels.map(r => esc(r.num)).join(", ")}</span></div>` : ""}
     ${o.type==="commande" && o.livraison && !off && o.statut !== "livree" ? `<div class="meta"><span ${late ? 'style="color:var(--danger);font-weight:700"' : ""}>Livraison prévue ${frDate(o.livraison)}${late ? " · en retard" : ""}</span></div>` : ""}
     ${!S.sel && !off ? `<div class="acts">
       ${o.type==="commande" && next ? `<button class="btn small primary" data-st="${next}" data-id="${o.id}">${nextLbl}</button>` : ""}
@@ -725,7 +891,7 @@ async function setStatus(id, st){
   const o = S.orders.find(x => x.id === id);
   if(st === "livree" && due(o) > 0){
     if(!(await ask("Encaisser le solde ?", `Il reste ${eur(due(o))} à payer sur la commande n° ${o.num}. Encaisser maintenant en espèces et remettre la commande ?`, "Encaisser et remettre"))) return;
-    o.paiements.push({date:new Date().toISOString(), montant:due(o), nature:"solde"});
+    pay(o, due(o), "solde");
   }
   o.statut = st; await DB.put("orders", o); await reload(); renderCommandes();
   toast(`Commande n° ${o.num} : ${STATUTS[st].toLowerCase()}`);
@@ -733,7 +899,7 @@ async function setStatus(id, st){
 async function encaisserSolde(id){
   const o = S.orders.find(x => x.id === id);
   if(!(await ask("Encaisser le solde", `Encaisser ${eur(due(o))} en espèces pour la commande n° ${o.num} (${esc(o.client.nom)}) ?`, "Encaisser"))) return;
-  o.paiements.push({date:new Date().toISOString(), montant:due(o), nature:"solde"});
+  pay(o, due(o), "solde");
   await DB.put("orders", o); await reload(); renderCommandes(); toast("Solde encaissé");
 }
 /* Annulation d'une ou plusieurs ventes / commandes, avec remboursement et remise en stock */
@@ -742,11 +908,13 @@ function cancelOrders(ids){
   if(!list.length) return;
   const toRefund = r2(list.reduce((t,o) => t + Math.max(0, paid(o)), 0));
   const restock = list.filter(o => o.type === "vente").reduce((t,o) => t + o.lignes.reduce((u,l) => u + l.qte, 0), 0);
+  const onRel = list.filter(o => o.paiements.some(p => p.releve));
   const one = list.length === 1;
   openDlg(`<header><h2>${one ? (list[0].type === "vente" ? `Annuler la vente n° ${list[0].num} ?` : `Annuler la commande n° ${list[0].num} ?`) : `Annuler ${list.length} ventes ?`}</h2></header>
     <div class="body">
       <ul style="margin:0;padding-left:18px;display:flex;flex-direction:column;gap:4px">${list.map(o => `<li>n° ${o.num} · ${esc(o.client.nom || "Client de passage")} · <span class="num">${eur(o.total)}</span>${paid(o) ? ` <span class="muted num">(payé ${eur(paid(o))})</span>` : ""}</li>`).join("")}</ul>
       ${toRefund ? `<label class="refund"><input type="checkbox" id="cxRefund" checked> <span><b>Rendre <span class="num">${eur(toRefund)}</span> au client</b><br><span class="muted">Le remboursement est déduit des espèces du jour dans le Bilan.</span></span></label>` : ""}
+      ${onRel.length ? `<p class="muted" style="margin:0">Déjà sur un relevé envoyé au club : le remboursement apparaîtra en déduction sur le prochain relevé.</p>` : ""}
       ${restock ? `<p class="muted" style="margin:0">${restock} article${restock>1?"s":""} en stock ${restock>1?"reviennent":"revient"} dans le catalogue.</p>` : ""}
     </div>
     <footer><button class="btn ghost" id="cxNo" type="button">Retour</button><button class="btn danger" id="cxYes" type="button">${one ? "Confirmer l'annulation" : `Annuler les ${list.length}`}</button></footer>`);
@@ -755,8 +923,8 @@ function cancelOrders(ids){
     const refund = !!($("#cxRefund") && $("#cxRefund").checked);
     const now = new Date().toISOString();
     for(const o of list){
-      const p = paid(o);
-      if(refund && p > 0) o.paiements.push({date:now, montant:-p, nature:"remboursement"});
+      const p = paid(o), pp = paidPart(o);
+      if(refund && p > 0) o.paiements.push({id:uid(), date:now, montant:-p, part:-pp, nature:"remboursement"});
       if(o.type === "vente"){
         for(const l of o.lignes){
           const a = (l.artId && art(l.artId)) || S.articles.find(x => x.nom === l.nom && x.mode === "stock");
@@ -773,17 +941,27 @@ function cancelOrders(ids){
 
 /* ---------- Catalogue ---------- */
 function renderCatalogue(){
+  if(!S.catView) S.catView = S.settings.canal;
+  const v = S.catView;
+  const list = S.articles.filter(a => v === "tous" || visibleIn(a, v));
   const nEx = S.articles.filter(a => a.exemple).length;
+  const r = {mode:S.settings.margeMode, val:S.settings.margeVal};
   $("#main").innerHTML = `
-  <div class="head"><div><h1>Catalogue</h1><p>${S.articles.length} article${S.articles.length>1?"s":""} · les articles masqués n'apparaissent pas à la vente</p></div>
+  <div class="head"><div><h1>Catalogue</h1><p>${S.articles.length} article${S.articles.length>1?"s":""} · catalogue commun, la case ${esc(CLUB())} réserve un article au club</p></div>
     <div class="acts">${nEx ? `<button class="btn ghost" id="delEx">Supprimer les ${nEx} exemples</button>` : ""}<button class="btn primary" id="newArt">Ajouter un article</button></div></div>
-  ${S.articles.length ? `<div class="list">${S.articles.map(a => `
+  ${canalTabs(v, {all:true, compact:true})}
+  ${v !== "dc" ? `<div class="rulebar"><span><b>Marge ${esc(CLUB())}</b> ${ruleText(r)} par article${+S.settings.arrondi ? ` · prix arrondi aux ${eur(S.settings.arrondi)} supérieurs` : ""}${!+S.settings.margeVal ? ` <span class="warnchip">à régler</span>` : ""}</span><button class="btn small ghost" id="ruleEdit">Modifier</button></div>` : ""}
+  ${list.length ? `<div class="list">${list.map(a => `
     <div class="item"><img src="${a.photos[0] || ""}" alt="">
       <div style="min-width:0"><div class="nm">${esc(a.nom)}</div>
-        <div class="meta"><span>${esc(a.cat)}</span><b class="num" style="color:var(--ink)">${eur(a.prix)}</b>${modeTag(a)}${a.exemple ? '<span class="tag ex">Exemple</span>' : ""}${a.actif ? "" : '<span class="tag ex">Masqué</span>'}</div></div>
+        <div class="meta">${canalPill(a.club ? "club" : "dc")}<span>${esc(a.cat)}</span>
+          ${a.club ? `<span class="num"><b style="color:var(--ink)">${eur(clubPrice(a))}</b> au club · ${eur(a.prix)} pour Dragonne Créa${a.marge ? " · marge propre" : ""}</span>` : `<b class="num" style="color:var(--ink)">${eur(a.prix)}</b>`}
+          ${modeTag(a)}${a.exemple ? '<span class="tag ex">Exemple</span>' : ""}${a.actif ? "" : '<span class="tag ex">Masqué</span>'}</div></div>
       <button class="btn small ghost" data-edit="${a.id}">Modifier</button></div>`).join("")}</div>`
-  : `<div class="panel"><p class="muted">Le catalogue est vide. Ajoutez le premier article avec sa photo et son prix.</p></div>`}`;
+  : `<div class="panel"><p class="muted">Aucun article ici. Ajoutez le premier avec sa photo et son prix.</p></div>`}`;
+  bindCanals(k => { S.catView = k; renderCatalogue(); });
   $("#newArt").onclick = () => editArticle(null);
+  const re = $("#ruleEdit"); if(re) re.onclick = () => editClubRule(renderCatalogue);
   $("#main").querySelectorAll("[data-edit]").forEach(b => b.onclick = () => editArticle(b.dataset.edit));
   const de = $("#delEx"); if(de) de.onclick = async () => {
     if(!(await ask("Supprimer les exemples ?", "Les articles marqués « Exemple » seront retirés du catalogue. Vos propres articles ne sont pas touchés.", "Supprimer", true))) return;
@@ -791,14 +969,51 @@ function renderCatalogue(){
     await reload(); renderCatalogue(); toast("Exemples supprimés");
   };
 }
+/* Règle générale de marge du club */
+function editClubRule(after){
+  const st = S.settings;
+  let mode = st.margeMode;
+  const draw = () => {
+    openDlg(`<header><h2>Marge ${esc(CLUB())}</h2></header>
+    <div class="body">
+      <p class="muted" style="margin:0">S'applique à tous les articles ${esc(CLUB())}, sauf ceux qui ont une marge propre. Les ventes déjà faites ne changent pas.</p>
+      <div class="f" style="display:flex;flex-direction:column;gap:6px;font-weight:700;font-size:14px">Type de marge
+        <div class="seg"><button type="button" data-rm="eur" aria-pressed="${mode==="eur"}">Montant fixe (€)</button><button type="button" data-rm="pct" aria-pressed="${mode==="pct"}">Pourcentage (%)</button></div></div>
+      <div class="fgrid">
+        <label class="f">${mode === "pct" ? "Pourcentage ajouté" : "Montant ajouté par article (€)"}<input type="text" inputmode="decimal" id="rVal" value="${numIn(mode === st.margeMode ? st.margeVal : "")}"></label>
+        <label class="f">Arrondi du prix club<select id="rArr">${[[0,"Aucun (au centime)"],[0.1,"Aux 10 centimes supérieurs"],[0.5,"Aux 50 centimes supérieurs"],[1,"À l'euro supérieur"]].map(([v,l]) => `<option value="${v}" ${+st.arrondi === v ? "selected" : ""}>${l}</option>`).join("")}</select></label>
+      </div>
+      <div class="example" id="rEx"></div>
+    </div>
+    <footer><button class="btn ghost" id="rNo" type="button">Annuler</button><button class="btn primary" id="rOk" type="button">Enregistrer</button></footer>`);
+    const ex = () => {
+      const old = {m:st.margeMode, v:st.margeVal, a:st.arrondi};
+      st.margeMode = mode; st.margeVal = parseNum($("#rVal").value); st.arrondi = +$("#rArr").value;
+      const p = clubPrice({prix:8, club:true, marge:null});
+      $("#rEx").innerHTML = `Exemple : un article à <b>8,00 €</b> pour Dragonne Créa est vendu <b>${eur(p)}</b> au club, qui garde <b>${eur(p - 8)}</b> et rembourse 8,00 €.`;
+      st.margeMode = old.m; st.margeVal = old.v; st.arrondi = old.a;
+    };
+    $("#rVal").oninput = ex; $("#rArr").onchange = ex; ex();
+    document.querySelectorAll("[data-rm]").forEach(b => b.onclick = () => { mode = b.dataset.rm; draw(); });
+    $("#rNo").onclick = closeDlg;
+    $("#rOk").onclick = async () => {
+      st.margeMode = mode; st.margeVal = parseNum($("#rVal").value); st.arrondi = +$("#rArr").value;
+      await saveSettings(); closeDlg(); after && after(); toast("Marge du club enregistrée");
+    };
+  };
+  draw();
+}
 function editArticle(id){
   const a0 = id ? art(id) : null;
-  const a = a0 ? JSON.parse(JSON.stringify(a0)) : {id:uid(), nom:"", cat:"", prix:"", mode:"stock", stock:1, delai:7, photos:[], exemple:false, actif:true, cree:new Date().toISOString()};
+  const a = a0 ? JSON.parse(JSON.stringify(a0)) : {id:uid(), nom:"", cat:"", prix:"", club:(S.catView || S.settings.canal) === "club", marge:null, mode:"stock", stock:1, delai:7, photos:[], exemple:false, actif:true, cree:new Date().toISOString()};
   const cats = [...new Set(S.articles.map(x => x.cat))];
   const draw = () => {
+    const own = !!a.marge;
     openDlg(`
     <header><h2>${a0 ? "Modifier l'article" : "Nouvel article"}</h2></header>
     <div class="body">
+      <label class="clubbox${a.club ? " on" : ""}"><input type="checkbox" id="aClub" ${a.club ? "checked" : ""}>
+        <span><b>${esc(CLUB())}</b> · article réservé au club<br><span class="muted">${a.club ? `Vendu uniquement dans les ventes ${esc(CLUB())}, au prix club (marge incluse).` : "Non coché : vendu uniquement par Dragonne Créa, au prix indiqué."}</span></span></label>
       <div class="f" style="display:flex;flex-direction:column;gap:10px;font-weight:700;font-size:14px">Photos <span class="h" style="font-weight:400;color:var(--muted)">jusqu'à ${MAXPH} · la première est celle affichée à la vente, touchez ★ pour en changer</span>
         <div class="photos" id="phs">${a.photos.map((p,i) => `<figure><img src="${p}" alt="Photo ${i+1}">
           ${i === 0 ? `<span class="main">Principale</span>` : `<button type="button" class="star" data-main="${i}" aria-label="Mettre en photo principale">★</button>`}
@@ -809,8 +1024,13 @@ function editArticle(id){
       <div class="fgrid">
         <label class="f">Nom de l'article *<input type="text" id="aNom" value="${esc(a.nom)}"></label>
         <label class="f">Catégorie *<input type="text" id="aCat" list="catList" value="${esc(a.cat)}" placeholder="ex. Porte-clés"><datalist id="catList">${cats.map(c => `<option value="${esc(c)}">`).join("")}</datalist></label>
-        <label class="f">Prix (€) *<input type="text" inputmode="decimal" id="aPrix" value="${a.prix === "" ? "" : String(a.prix).replace(".",",")}"></label>
+        <label class="f">Prix Dragonne Créa (€) * <span class="h">${a.club ? "ce que le club vous rembourse" : "prix de vente"}</span><input type="text" inputmode="decimal" id="aPrix" value="${a.prix === "" ? "" : numIn(a.prix)}"></label>
       </div>
+      ${a.club ? `<div class="f" style="display:flex;flex-direction:column;gap:6px;font-weight:700;font-size:14px">Marge du club sur cet article
+        <div class="seg"><button type="button" data-own="0" aria-pressed="${!own}">Règle générale (${ruleText({mode:S.settings.margeMode, val:S.settings.margeVal})})</button><button type="button" data-own="1" aria-pressed="${own}">Marge propre</button></div></div>
+        ${own ? `<div class="fgrid"><label class="f">Type<select id="aMm"><option value="eur" ${a.marge.mode==="eur"?"selected":""}>Montant fixe (€)</option><option value="pct" ${a.marge.mode==="pct"?"selected":""}>Pourcentage (%)</option></select></label>
+          <label class="f">Valeur<input type="text" inputmode="decimal" id="aMv" value="${numIn(a.marge.val)}"></label></div>` : ""}
+        <div class="example" id="aEx"></div>` : ""}
       <div class="f" style="display:flex;flex-direction:column;gap:6px;font-weight:700;font-size:14px">Disponibilité
         <div class="seg"><button type="button" data-mode="stock" aria-pressed="${a.mode==="stock"}">En stock, à emporter</button><button type="button" data-mode="commande" aria-pressed="${a.mode==="commande"}">Fabriqué sur commande</button></div></div>
       <div class="fgrid">
@@ -821,7 +1041,17 @@ function editArticle(id){
     </div>
     <footer>${a0 ? `<button class="btn danger" id="aDel" type="button" style="margin-right:auto">Supprimer</button>` : ""}<button class="btn ghost" id="aCancel" type="button">Annuler</button><button class="btn primary" id="aOk" type="button">Enregistrer</button></footer>`);
     const keep = () => { a.nom = $("#aNom").value; a.cat = $("#aCat").value; a.prix = $("#aPrix").value;
-      if($("#aStock")) a.stock = Math.max(0, parseInt($("#aStock").value)||0); if($("#aDelai")) a.delai = Math.max(0, parseInt($("#aDelai").value)||0); };
+      if($("#aStock")) a.stock = Math.max(0, parseInt($("#aStock").value)||0); if($("#aDelai")) a.delai = Math.max(0, parseInt($("#aDelai").value)||0);
+      if($("#aMm")) a.marge = {mode:$("#aMm").value, val:parseNum($("#aMv").value)}; };
+    const ex = () => { const box = $("#aEx"); if(!box) return; keep();
+      const base = parseNum(a.prix); if(!(base > 0)){ box.textContent = "Indiquez le prix pour voir le prix club."; return; }
+      const p = clubPrice({...a, prix:base});
+      box.innerHTML = `Vendu <b>${eur(p)}</b> au club · remboursé <b>${eur(base)}</b> à Dragonne Créa · marge club <b>${eur(p - base)}</b>`; };
+    ["#aPrix","#aMv"].forEach(s => { const e = $(s); if(e) e.addEventListener("input", ex); });
+    const mm = $("#aMm"); if(mm) mm.onchange = ex;
+    ex();
+    $("#aClub").onchange = e => { keep(); a.club = e.target.checked; if(!a.club) a.marge = null; draw(); };
+    document.querySelectorAll("[data-own]").forEach(b => b.onclick = () => { keep(); a.marge = b.dataset.own === "1" ? (a.marge || {mode:S.settings.margeMode, val:S.settings.margeVal}) : null; draw(); });
     document.querySelectorAll("[data-mode]").forEach(b => b.onclick = () => { keep(); a.mode = b.dataset.mode; draw(); });
     document.querySelectorAll("[data-act]").forEach(b => b.onclick = () => { keep(); a.actif = b.dataset.act === "1"; draw(); });
     document.querySelectorAll("[data-rm]").forEach(b => b.onclick = () => { keep(); a.photos.splice(+b.dataset.rm, 1); draw(); });
@@ -844,7 +1074,7 @@ function editArticle(id){
       if(!a.nom) return toast("Indiquez le nom de l'article");
       if(!a.cat) return toast("Indiquez une catégorie");
       if(!(p > 0)) return toast("Indiquez un prix");
-      a.prix = p; if(a0 && a0.exemple) a.exemple = false;
+      a.prix = p; if(!a.club) a.marge = null; if(a0 && a0.exemple) a.exemple = false;
       await DB.put("articles", a); closeDlg(); await reload(); renderCatalogue(); toast("Article enregistré");
     };
   };
@@ -861,30 +1091,283 @@ function resizeImage(file){
   });
 }
 
+/* ---------- Remboursements du club : relevés numérotés ---------- */
+function releveRows(items){
+  return items.map(({p, o}) => ({date:p.date, num:o.num, client:o.client.nom || "Client de passage", detail:detailOf(o),
+    nature:NATURES[p.nature] || p.nature, montant:r2(p.montant), part:r2(p.part)}));
+}
+const dueLabel = part => part < 0 ? ["Montant à reverser au club", -part] : ["Montant à rembourser", part];
+const relTotals = rows => { const t = r2(rows.reduce((s,r) => s + r.montant, 0)), p = r2(rows.reduce((s,r) => s + r.part, 0)); return {total:t, part:p, marge:r2(t - p)}; };
+function renderReleves(){
+  const au = S.relAu;
+  const items = pendingClub(au), rows = releveRows(items), t = relTotals(rows);
+  const later = pendingClub().length - items.length;
+  const r = {mode:S.settings.margeMode, val:S.settings.margeVal};
+  const v = S.settings.vendeur;
+  $("#main").innerHTML = `
+  <div class="head"><div><h1>Remboursements ${esc(CLUB())}</h1><p>Le club encaisse au prix club et rembourse le prix Dragonne Créa. Chaque encaissement ne figure que sur un seul relevé.</p></div></div>
+  <section class="panel next">
+    <div class="nexthead"><h2>Prochain relevé</h2><label class="f" style="min-width:190px">Encaissements jusqu'au<input type="date" id="relAu" value="${au}"></label></div>
+    ${rows.length ? `<div class="stats" style="margin:0">
+      <div class="stat"><small>Encaissements</small><b class="num">${rows.length}</b><span class="muted small">du ${dmy(rows[0].date)} au ${dmy(rows[rows.length-1].date)}</span></div>
+      <div class="stat"><small>Encaissé par le club</small><b class="num">${eur(t.total)}</b></div>
+      <div class="stat"><small>Marge du club</small><b class="num">${eur(t.marge)}</b></div>
+      <div class="stat key"><small>${t.part < 0 ? "À reverser au club" : "À rembourser"}</small><b class="num">${eur(Math.abs(t.part))}</b></div>
+    </div>
+    <div class="acts"><button class="btn primary" id="relPrev">Voir le relevé et l'envoyer</button></div>`
+    : `<p class="muted" style="margin:0">Aucun encaissement ${esc(CLUB())} à reprendre${au !== todayISO() ? " jusqu'à cette date" : ""}.${later > 0 ? ` ${later} encaissement${later>1?"s":""} plus récent${later>1?"s":""} attend${later>1?"ent":""} le prochain relevé.` : ""}</p>`}
+  </section>
+  <section class="panel"><h2>Relevés envoyés</h2>
+    ${S.releves.length ? `<div class="rels">${S.releves.map(rel => `<div class="rel">
+      <div style="min-width:0"><b class="num">${esc(rel.num)}</b> <span class="muted">· ${dmy(rel.date)} · encaissements du ${dmy(rel.du)} au ${dmy(rel.au)}</span>
+        <div class="num">${rel.rows.length} encaissement${rel.rows.length>1?"s":""} · ${rel.part < 0 ? "à reverser au club" : "à rembourser"} <b>${eur(Math.abs(rel.part))}</b></div></div>
+      <span class="pill ${rel.statut === "rembourse" ? "prete" : "a_faire"}">${rel.statut === "rembourse" ? `Remboursé le ${dmy(rel.rembourseLe)}` : "En attente"}</span>
+      <div class="acts"><button class="btn small ghost" data-rsend="${rel.id}">Renvoyer le PDF</button>
+        ${rel.statut === "rembourse" ? `<button class="btn small ghost" data-rundo="${rel.id}">Pas encore remboursé</button>` : `<button class="btn small ok" data-rpaid="${rel.id}">Marquer remboursé</button><button class="btn small danger" data-rdel="${rel.id}">Supprimer</button>`}</div>
+    </div>`).join("")}</div>` : `<p class="muted" style="margin:0">Aucun relevé pour l'instant.</p>`}
+  </section>
+  <section class="panel"><h2>Marge du club</h2>
+    <div class="rulebar" style="margin:0"><span>${ruleText(r)} par article${+S.settings.arrondi ? ` · arrondi aux ${eur(S.settings.arrondi)} supérieurs` : " · sans arrondi"}${!+S.settings.margeVal ? ` <span class="warnchip">à régler</span>` : ""}</span><button class="btn small ghost" id="ruleEdit">Modifier</button></div>
+  </section>
+  <section class="panel"><h2>Coordonnées sur les relevés</h2>
+    <div class="fgrid">
+      <label class="f">Nom de l'émetteur<input type="text" id="vNom" value="${esc(v.nom)}"></label>
+      <label class="f">Téléphone ou e-mail<input type="text" id="vContact" value="${esc(v.contact)}"></label>
+      <label class="f">Adresse<input type="text" id="vAdr" value="${esc(v.adresse)}"></label>
+      <label class="f">SIRET <span class="h">quand la micro-entreprise sera créée</span><input type="text" id="vSiret" inputmode="numeric" value="${esc(v.siret)}"></label>
+      <label class="f">Nom du club<input type="text" id="cNom" value="${esc(CLUB())}"></label>
+      <label class="f">Adresse du club<input type="text" id="cAdr" value="${esc(S.settings.clubAdresse)}"></label>
+    </div>
+  </section>`;
+  $("#relAu").onchange = e => { S.relAu = e.target.value || todayISO(); renderReleves(); };
+  const rp = $("#relPrev"); if(rp) rp.onclick = () => previewReleve(items);
+  $("#ruleEdit").onclick = () => editClubRule(renderReleves);
+  const bindF = (sel, fn) => $(sel).onchange = e => { fn(e.target.value.trim()); saveSettings(); toast("Enregistré"); };
+  bindF("#vNom", x => v.nom = x || "Dragonne Créa"); bindF("#vContact", x => v.contact = x); bindF("#vAdr", x => v.adresse = x); bindF("#vSiret", x => v.siret = x);
+  bindF("#cNom", x => S.settings.club = x || "GTO/VDB"); bindF("#cAdr", x => S.settings.clubAdresse = x);
+  $("#main").querySelectorAll("[data-rsend]").forEach(b => b.onclick = () => shareReleve(releveOf(b.dataset.rsend)));
+  $("#main").querySelectorAll("[data-rpaid]").forEach(b => b.onclick = async () => {
+    const rel = releveOf(b.dataset.rpaid);
+    if(!(await ask(`Relevé ${rel.num} remboursé ?`, rel.part < 0 ? `Dragonne Créa a reversé ${eur(-rel.part)} au club.` : `Le club a versé ${eur(rel.part)} à Dragonne Créa.`, "Oui, remboursé"))) return;
+    rel.statut = "rembourse"; rel.rembourseLe = todayISO(); await DB.put("releves", rel); await reload(); renderReleves(); });
+  $("#main").querySelectorAll("[data-rundo]").forEach(b => b.onclick = async () => {
+    const rel = releveOf(b.dataset.rundo); rel.statut = "envoye"; rel.rembourseLe = null; await DB.put("releves", rel); await reload(); renderReleves(); });
+  $("#main").querySelectorAll("[data-rdel]").forEach(b => b.onclick = async () => {
+    const rel = releveOf(b.dataset.rdel);
+    if(!(await ask(`Supprimer le relevé ${rel.num} ?`, "À faire seulement s'il n'a pas été transmis au club. Ses encaissements redeviennent disponibles pour le prochain relevé.", "Supprimer", true))) return;
+    for(const o of S.orders){ let ch = false; o.paiements.forEach(p => { if(p.releve === rel.id){ delete p.releve; ch = true; } }); if(ch) await DB.put("orders", o); }
+    await DB.del("releves", rel.id); await reload(); renderReleves(); toast(`Relevé ${rel.num} supprimé`); });
+}
+function releveHTML(rel){
+  const v = S.settings.vendeur;
+  return `<div class="paper">
+    <div class="ph1"><img src="logo.jpg" alt=""><div><h3>Relevé de remboursement</h3><div>N° <b>${esc(rel.num)}</b></div><div>Date : ${dmy(rel.date)}</div></div></div>
+    <div class="ph2"><div><small>Émetteur</small><b>${esc(v.nom)}</b>${v.adresse ? `<span>${esc(v.adresse)}</span>` : ""}${v.contact ? `<span>${esc(v.contact)}</span>` : ""}${v.siret ? `<span>SIRET ${esc(v.siret)}</span>` : ""}</div>
+      <div><small>Destinataire</small><b>${esc(CLUB())}</b>${S.settings.clubAdresse ? `<span>${esc(S.settings.clubAdresse)}</span>` : ""}</div></div>
+    <p>Encaissements réalisés par ${esc(CLUB())} du <b>${dmy(rel.du)}</b> au <b>${dmy(rel.au)}</b> pour le compte de ${esc(v.nom)}.</p>
+    <div class="tbl"><table><thead><tr><th>Encaissé le</th><th>N°</th><th>Client</th><th>Détail</th><th>Nature</th><th class="r">Encaissé club</th><th class="r">Part ${esc(v.nom)}</th></tr></thead><tbody>
+      ${rel.rows.map(r => `<tr><td class="num">${dmy(r.date)}</td><td class="num">${r.num}</td><td>${esc(r.client)}</td><td>${esc(r.detail)}</td><td>${esc(r.nature)}</td><td class="r num">${eur(r.montant)}</td><td class="r num">${eur(r.part)}</td></tr>`).join("")}
+    </tbody></table></div>
+    <div class="ptot"><div><span>Total encaissé par le club</span><b class="num">${eur(rel.total)}</b></div><div><span>Marge conservée par le club</span><b class="num">${eur(rel.marge)}</b></div><div class="big"><span>${dueLabel(rel.part)[0]}</span><b class="num">${eur(dueLabel(rel.part)[1])}</b></div></div>
+  </div>`;
+}
+function nextReleveNum(){
+  const y = new Date().getFullYear(); const seq = S.settings.relSeq || (S.settings.relSeq = {});
+  return {y, n:(seq[y] || 0) + 1, label:`R-${y}-${String((seq[y] || 0) + 1).padStart(2,"0")}`};
+}
+function previewReleve(items){
+  const rows = releveRows(items), t = relTotals(rows), nx = nextReleveNum();
+  const draft = {num:nx.label, date:new Date().toISOString(), du:rows[0].date, au:rows[rows.length-1].date, rows, ...t};
+  openDlg(`<header><h2>Relevé ${esc(nx.label)}</h2></header>
+    <div class="body">${releveHTML(draft)}
+      <p class="muted" style="margin:0">En validant, ces ${rows.length} encaissements sont marqués comme transmis : ils n'apparaîtront plus sur un prochain relevé. Le PDF s'ouvre ensuite dans le menu Partager (mail, WhatsApp, Drive, impression).</p></div>
+    <footer><button class="btn ghost" id="pvNo" type="button">Retour</button><button class="btn primary" id="pvOk" type="button">Créer le relevé et l'envoyer</button></footer>`);
+  $("#pvNo").onclick = closeDlg;
+  $("#pvOk").onclick = async () => {
+    $("#pvOk").disabled = true;
+    const rel = {id:uid(), ...draft, statut:"envoye", rembourseLe:null};
+    S.settings.relSeq[nx.y] = nx.n; await saveSettings();
+    const touched = new Set();
+    items.forEach(({p, o}) => { p.releve = rel.id; touched.add(o); });
+    for(const o of touched) await DB.put("orders", o);
+    await DB.put("releves", rel);
+    closeDlg(); await reload(); renderReleves();
+    celebrate(`Relevé ${rel.num} créé`, rel.part < 0 ? `${eur(-rel.part)} à reverser au club` : `${eur(rel.part)} à rembourser`);
+    setTimeout(() => shareReleve(rel), 900);
+  };
+}
+
+/* ---------- PDF du relevé (généré dans l'appli, sans connexion) ---------- */
+const HW = {r:[278,278,355,556,556,889,667,191,333,333,389,584,278,333,278,278,556,556,556,556,556,556,556,556,556,556,278,278,584,584,584,556,1015,667,667,722,722,667,611,778,722,278,500,667,556,833,722,778,667,778,722,667,611,722,667,944,667,667,611,278,278,278,469,556,333,556,556,500,556,556,278,556,556,222,222,500,222,833,556,556,556,556,333,500,278,556,500,722,500,500,500,334,260,334,584,761,761,761,761,761,761,761,761,761,761,761,761,761,761,761,761,761,761,761,761,761,761,761,761,761,761,761,761,761,761,761,761,761,278,333,556,556,556,556,260,556,333,737,370,556,584,333,737,333,400,584,333,333,333,556,537,278,333,333,365,556,834,834,834,611,667,667,667,667,667,667,1000,722,667,667,667,667,278,278,278,278,722,722,778,778,778,778,778,584,778,722,722,722,722,667,667,611,556,556,556,556,556,556,889,500,556,556,556,556,278,278,278,278,556,556,556,556,556,556,556,584,611,556,556,556,556,500,556,500],b:[278,333,474,556,556,889,722,238,333,333,389,584,278,333,278,278,556,556,556,556,556,556,556,556,556,556,333,333,584,584,584,611,975,722,722,722,722,667,611,778,722,278,556,722,611,833,722,778,667,778,722,667,611,722,667,944,667,667,611,333,278,333,584,556,333,556,611,556,611,556,333,611,611,278,278,556,278,889,611,611,611,611,389,556,333,611,556,778,556,556,500,389,280,389,584,761,761,761,761,761,761,761,761,761,761,761,761,761,761,761,761,761,761,761,761,761,761,761,761,761,761,761,761,761,761,761,761,761,278,333,556,556,556,556,280,556,333,737,370,556,584,333,737,333,400,584,333,333,333,611,556,278,333,333,365,556,834,834,834,611,722,722,722,722,722,722,1000,722,667,667,667,667,278,278,278,278,722,722,778,778,778,778,778,584,778,722,722,722,722,667,667,611,556,556,556,556,556,556,889,556,556,556,556,556,278,278,278,278,611,611,611,611,611,611,611,584,611,611,611,611,611,556,611,556]};
+const WIN = {0x20AC:0x80,0x201A:0x82,0x0192:0x83,0x201E:0x84,0x2026:0x85,0x2020:0x86,0x2021:0x87,0x02C6:0x88,0x2030:0x89,0x0160:0x8A,0x2039:0x8B,0x0152:0x8C,0x017D:0x8E,0x2018:0x91,0x2019:0x92,0x201C:0x93,0x201D:0x94,0x2022:0x95,0x2013:0x96,0x2014:0x97,0x02DC:0x98,0x2122:0x99,0x0161:0x9A,0x203A:0x9B,0x0153:0x9C,0x017E:0x9E,0x0178:0x9F,0x202F:0xA0,0x2009:0x20};
+const W80 = {0x80:556,0x82:222,0x83:556,0x84:333,0x85:1000,0x86:556,0x87:556,0x88:333,0x89:1000,0x8A:667,0x8B:333,0x8C:1000,0x8E:611,0x91:222,0x92:222,0x93:333,0x94:333,0x95:350,0x96:556,0x97:1000,0x98:333,0x99:1000,0x9A:500,0x9B:333,0x9C:944,0x9E:500,0x9F:667};
+function winBytes(s){ let out = ""; for(const ch of String(s)){ let c = ch.codePointAt(0); if(c > 255 || (c >= 0x80 && c < 0xA0)) c = WIN[c] ?? 0x3F; else if(c < 32) c = 32; out += String.fromCharCode(c); } return out; }
+function textW(s, size, bold){ const t = bold ? HW.b : HW.r; let w = 0; for(const ch of winBytes(s)){ const c = ch.charCodeAt(0); w += (c >= 0x80 && c < 0xA0) ? (W80[c] || 556) : (t[c - 32] || 556); } return w * size / 1000; }
+function fitText(s, size, bold, maxW){ s = String(s); if(textW(s, size, bold) <= maxW) return s; while(s.length > 1 && textW(s + "…", size, bold) > maxW) s = s.slice(0, -1); return s.trimEnd() + "…"; }
+class PdfDoc {
+  constructor(){ this.pages = []; this.img = null; this.addPage(); }
+  addPage(){ this.c = []; this.pages.push(this.c); }
+  col(rgb){ return rgb.map(v => (v / 255).toFixed(3)).join(" "); }
+  text(x, y, s, o = {}){
+    const size = o.size || 9, bold = !!o.bold; let str = o.maxW ? fitText(s, size, bold, o.maxW) : String(s);
+    const w = textW(str, size, bold), xx = o.align === "right" ? x - w : o.align === "center" ? x - w / 2 : x;
+    this.c.push(`BT /${bold ? "F2" : "F1"} ${size} Tf ${this.col(o.color || [28,27,46])} rg ${xx.toFixed(2)} ${(842 - y).toFixed(2)} Td (${winBytes(str).replace(/[\\()]/g, m => "\\" + m)}) Tj ET`);
+  }
+  rect(x, y, w, h, fill, stroke){
+    if(fill) this.c.push(`${this.col(fill)} rg ${x} ${(842 - y - h).toFixed(2)} ${w} ${h} re f`);
+    if(stroke) this.c.push(`${this.col(stroke)} RG 0.7 w ${x} ${(842 - y - h).toFixed(2)} ${w} ${h} re S`);
+  }
+  line(x1, y1, x2, y2, color, wd){ this.c.push(`${this.col(color || [210,210,220])} RG ${wd || 0.6} w ${x1} ${842 - y1} m ${x2} ${842 - y2} l S`); }
+  image(x, y, w, h){ if(this.img) this.c.push(`q ${w} 0 0 ${h} ${x} ${(842 - y - h).toFixed(2)} cm /Im1 Do Q`); }
+  build(){
+    const objs = [], add = s => (objs.push(s), objs.length);
+    const cat = add(""), pages = add("");
+    const f1 = add("<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>");
+    const f2 = add("<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold /Encoding /WinAnsiEncoding >>");
+    let im = 0;
+    if(this.img) im = add(`<< /Type /XObject /Subtype /Image /Width ${this.img.w} /Height ${this.img.h} /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length ${this.img.bin.length} >>\nstream\n${this.img.bin}\nendstream`);
+    const kids = [];
+    for(const c of this.pages){
+      const s = c.join("\n");
+      const cs = add(`<< /Length ${s.length} >>\nstream\n${s}\nendstream`);
+      kids.push(add(`<< /Type /Page /Parent ${pages} 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 ${f1} 0 R /F2 ${f2} 0 R >>${im ? ` /XObject << /Im1 ${im} 0 R >>` : ""} >> /Contents ${cs} 0 R >>`));
+    }
+    objs[cat - 1] = `<< /Type /Catalog /Pages ${pages} 0 R >>`;
+    objs[pages - 1] = `<< /Type /Pages /Kids [${kids.map(k => k + " 0 R").join(" ")}] /Count ${kids.length} >>`;
+    let out = "%PDF-1.4\n%\xE2\xE3\xCF\xD3\n"; const offs = [];
+    objs.forEach((o, i) => { offs.push(out.length); out += `${i + 1} 0 obj\n${o}\nendobj\n`; });
+    const x = out.length;
+    out += `xref\n0 ${objs.length + 1}\n0000000000 65535 f \n` + offs.map(o => String(o).padStart(10, "0") + " 00000 n \n").join("") + `trailer\n<< /Size ${objs.length + 1} /Root ${cat} 0 R >>\nstartxref\n${x}\n%%EOF\n`;
+    return out;
+  }
+}
+let LOGO = null;
+async function loadLogo(){
+  if(LOGO) return LOGO;
+  try {
+    const buf = new Uint8Array(await (await fetch("logo.jpg")).arrayBuffer());
+    let bin = ""; for(let i = 0; i < buf.length; i += 8192) bin += String.fromCharCode.apply(null, buf.subarray(i, i + 8192));
+    let w = 0, h = 0; // dimensions lues dans l'en-tête JPEG
+    for(let i = 2; i < buf.length - 9;){ if(buf[i] !== 0xFF){ i++; continue; } const m = buf[i+1];
+      if(m >= 0xC0 && m <= 0xC3){ h = buf[i+5] << 8 | buf[i+6]; w = buf[i+7] << 8 | buf[i+8]; break; }
+      i += 2 + (buf[i+2] << 8 | buf[i+3]); }
+    if(w && h) LOGO = {bin, w, h};
+  } catch(e){}
+  return LOGO;
+}
+async function relevePdf(rel){
+  const v = S.settings.vendeur, doc = new PdfDoc(), L = 40, R = 555;
+  const ink = [28,27,46], muted = [102,99,125], navy = [45,58,140], line = [214,214,224], soft = [243,243,248];
+  doc.img = await loadLogo();
+  // En-tête
+  if(doc.img){ const w = 92, h = w * doc.img.h / doc.img.w; doc.image(L, 34, w, h); }
+  doc.text(R, 58, "RELEVÉ DE REMBOURSEMENT", {size:16, bold:true, align:"right", color:navy});
+  doc.text(R, 78, `N° ${rel.num}`, {size:11, bold:true, align:"right"});
+  doc.text(R, 94, `Date : ${dmy(rel.date)}`, {size:10, align:"right", color:muted});
+  // Émetteur / destinataire
+  let y = 146;
+  doc.rect(L, y, 250, 74, soft); doc.rect(305, y, 250, 74, soft);
+  doc.text(L + 10, y + 16, "ÉMETTEUR", {size:7.5, bold:true, color:muted});
+  doc.text(315, y + 16, "DESTINATAIRE", {size:7.5, bold:true, color:muted});
+  const lines1 = [v.nom, v.adresse, v.contact, v.siret ? `SIRET ${v.siret}` : ""].filter(Boolean);
+  const lines2 = [CLUB(), S.settings.clubAdresse].filter(Boolean);
+  lines1.forEach((t, i) => doc.text(L + 10, y + 32 + i * 12, t, {size:i ? 9 : 11, bold:!i, maxW:230}));
+  lines2.forEach((t, i) => doc.text(315, y + 32 + i * 12, t, {size:i ? 9 : 11, bold:!i, maxW:230}));
+  y += 98;
+  doc.text(L, y, `Encaissements réalisés par ${CLUB()} du ${dmy(rel.du)} au ${dmy(rel.au)} pour le compte de ${v.nom}.`, {size:9.5, maxW:R - L});
+  doc.text(L, y + 13, "Le club conserve sa marge et rembourse la part indiquée dans la dernière colonne.", {size:9.5, color:muted, maxW:R - L});
+  y += 32;
+  // Tableau
+  const cols = [[L,"Encaissé le",56],[L+58,"N°",28],[L+88,"Client",86],[L+176,"Détail",150],[L+330,"Nature",62],[L+455,"Encaissé club",0,"r"],[R-2,"Part D. Créa",0,"r"]];
+  const head = () => { doc.rect(L, y, R - L, 20, navy); cols.forEach(([x, t, w, al]) => doc.text(al ? x : x + 4, y + 13.5, t, {size:8, bold:true, color:[255,255,255], align:al ? "right" : "left"})); y += 20; };
+  head();
+  rel.rows.forEach((r, i) => {
+    if(y > 742){ doc.addPage(); y = 50; head(); }
+    if(i % 2) doc.rect(L, y, R - L, 17, soft);
+    const neg = r.montant < 0 ? [179,38,30] : ink;
+    doc.text(L + 4, y + 11.5, dmy(r.date), {size:8.5});
+    doc.text(L + 62, y + 11.5, String(r.num), {size:8.5});
+    doc.text(L + 92, y + 11.5, r.client, {size:8.5, maxW:82});
+    doc.text(L + 180, y + 11.5, r.detail, {size:8.5, maxW:146});
+    doc.text(L + 334, y + 11.5, r.nature, {size:8.5, maxW:58, color:neg});
+    doc.text(L + 455, y + 11.5, eur(r.montant), {size:8.5, align:"right", color:neg});
+    doc.text(R - 2, y + 11.5, eur(r.part), {size:8.5, bold:true, align:"right", color:neg});
+    y += 17;
+  });
+  doc.line(L, y, R, y, line);
+  // Totaux
+  if(y > 640){ doc.addPage(); y = 50; }
+  y += 16;
+  const tot = [["Total encaissé par le club", rel.total], ["Marge conservée par le club", rel.marge]];
+  tot.forEach(([t, val]) => { doc.text(400, y + 10, t, {size:9.5, color:muted, align:"right"}); doc.text(R, y + 10, eur(val), {size:10, align:"right"}); y += 18; });
+  doc.rect(300, y + 2, R - 300, 30, navy);
+  const [dl, dv] = dueLabel(rel.part);
+  doc.text(310, y + 21, dl.toUpperCase(), {size:10, bold:true, color:[255,255,255]});
+  doc.text(R - 10, y + 22, eur(dv), {size:14, bold:true, align:"right", color:[255,255,255]});
+  y += 56;
+  // Validation par le club
+  doc.text(L, y, "Chaque encaissement listé ici n'apparaît que sur ce relevé ; les suivants figureront sur le prochain.", {size:8.5, color:muted, maxW:R - L});
+  y += 20;
+  doc.rect(L, y, 240, 70, null, line);
+  doc.text(L + 10, y + 16, `Bon pour remboursement – ${CLUB()}`, {size:9, bold:true, maxW:220});
+  doc.text(L + 10, y + 32, "Date et signature :", {size:8.5, color:muted});
+  doc.rect(R - 240, y, 240, 70, null, line);
+  doc.text(R - 230, y + 16, "Remboursement reçu le :", {size:9, bold:true});
+  doc.text(R - 230, y + 32, "Mode (espèces, virement, chèque) :", {size:8.5, color:muted});
+  // Pied de page
+  const n = doc.pages.length;
+  doc.pages.forEach((c, i) => { doc.c = c;
+    doc.line(L, 806, R, 806, line);
+    doc.text(L, 820, `${v.nom} · Relevé ${rel.num} · ${CLUB()}`, {size:7.5, color:muted});
+    doc.text(R, 820, `Page ${i + 1}/${n}`, {size:7.5, color:muted, align:"right"}); });
+  return doc.build();
+}
+async function shareReleve(rel){
+  try {
+    const bin = await relevePdf(rel);
+    const name = `Releve-${rel.num}-${CLUB().replace(/[^\w-]+/g, "")}.pdf`;
+    await saveBinary(name, bin, "application/pdf");
+  } catch(e){ toast("Le PDF n'a pas pu être créé"); }
+}
+async function saveBinary(name, bin, type){
+  if(IS_APP){
+    try {
+      const reg = (window.capacitorExports && window.capacitorExports.registerPlugin) || window.Capacitor.registerPlugin;
+      const FS = reg("Filesystem"), Share = reg("Share");
+      const w = await FS.writeFile({path:name, data:btoa(bin), directory:"CACHE"});
+      await Share.share({title:name, url:w.uri, dialogTitle:"Envoyer, enregistrer ou imprimer le relevé"});
+      return true;
+    } catch(err){ if(!/cancel/i.test(String(err && (err.message || err)))) toast("Le partage n'a pas fonctionné"); return false; }
+  }
+  const u8 = new Uint8Array(bin.length); for(let i = 0; i < bin.length; i++) u8[i] = bin.charCodeAt(i);
+  const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([u8], {type})); a.download = name;
+  document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
+  return true;
+}
+
 /* ---------- Bilan, export, sauvegarde ---------- */
 function renderBilan(){
   const day = S.bilanDay;
   const pays = [];
   S.orders.forEach(o => o.paiements.forEach(p => { if(dayOf(p.date) === day) pays.push({...p, o}); }));
   pays.sort((a,b) => a.date.localeCompare(b.date));
-  const sum = n => r2(pays.filter(p => !n || p.nature === n).reduce((s,p) => s + p.montant, 0));
+  const sum = (canal, f = p => p.montant) => r2(pays.filter(p => !canal || p.o.canal === canal).reduce((s,p) => s + f(p), 0));
   const open = S.orders.filter(o => o.type==="commande" && !["livree","annulee"].includes(o.statut));
   const resteDu = r2(open.reduce((s,o) => s + due(o), 0));
+  const enAttente = r2(pendingClub().reduce((s,x) => s + x.p.part, 0) + S.releves.filter(r => r.statut !== "rembourse").reduce((s,r) => s + r.part, 0));
   const first = S.orders.length ? dayOf(S.orders[S.orders.length-1].date) : todayISO();
   $("#main").innerHTML = `
   <div class="head"><div><h1>Bilan</h1><p>Espèces encaissées et commandes en attente</p></div>
     <label class="f" style="min-width:200px">Journée<input type="date" id="bDay" value="${day}"></label></div>
   <div class="stats">
-    <div class="stat key"><small>Espèces encaissées</small><b class="num">${eur(sum())}</b></div>
-    <div class="stat"><small>Ventes directes</small><b class="num">${eur(sum("vente"))}</b></div>
-    <div class="stat"><small>Acomptes</small><b class="num">${eur(sum("acompte"))}</b></div>
-    <div class="stat"><small>Soldes</small><b class="num">${eur(sum("solde"))}</b></div>
-    ${sum("remboursement") ? `<div class="stat"><small>Remboursements</small><b class="num" style="color:var(--danger)">${eur(sum("remboursement"))}</b></div>` : ""}
+    <div class="stat key c-club"><small>Encaissé ${esc(CLUB())}</small><b class="num">${eur(sum("club"))}</b><span class="small">dont marge club ${eur(sum("club", p => p.montant - (p.part ?? p.montant)))}</span></div>
+    <div class="stat key c-dc"><small>Encaissé Dragonne Créa</small><b class="num">${eur(sum("dc"))}</b><span class="small">en direct</span></div>
+    <div class="stat"><small>Le club doit (toutes dates)</small><b class="num" style="color:var(--sea)">${eur(enAttente)}</b><span class="small muted">relevés en attente compris</span></div>
     <div class="stat"><small>Reste dû · ${open.length} cde${open.length>1?"s":""}</small><b class="num" style="color:var(--warn)">${eur(resteDu)}</b></div>
   </div>
   <section class="panel"><h2>Encaissements du ${frDate(day)}</h2>
-    ${pays.length ? `<div class="tbl"><table><thead><tr><th>Heure</th><th>N°</th><th>Client</th><th>Nature</th><th class="r">Montant</th></tr></thead><tbody>
-      ${pays.map(p => `<tr><td class="num">${frTime(p.date)}</td><td class="num">${p.o.num}</td><td>${esc(p.o.client.nom || "Client de passage")}</td><td>${{vente:"Vente directe",acompte:"Acompte",solde:"Solde",remboursement:"Remboursement (annulation)"}[p.nature] || p.nature}</td><td class="r num">${eur(p.montant)}</td></tr>`).join("")}
+    ${pays.length ? `<div class="tbl"><table><thead><tr><th>Heure</th><th>N°</th><th>Circuit</th><th>Client</th><th>Nature</th><th class="r">Montant</th><th class="r">Part D. Créa</th></tr></thead><tbody>
+      ${pays.map(p => `<tr><td class="num">${frTime(p.date)}</td><td class="num">${p.o.num}</td><td>${canalPill(p.o.canal)}</td><td>${esc(p.o.client.nom || "Client de passage")}</td><td>${NATURES[p.nature] || p.nature}</td><td class="r num">${eur(p.montant)}</td><td class="r num">${eur(p.part ?? p.montant)}</td></tr>`).join("")}
       </tbody></table></div>` : `<p class="muted">Aucun encaissement ce jour-là.</p>`}
   </section>
   <section class="panel"><h2>Exporter pour Excel</h2>
@@ -896,14 +1379,13 @@ function renderBilan(){
     <div class="acts"><button class="btn" id="bkOut">Créer une sauvegarde</button><button class="btn ghost" id="bkIn">Restaurer une sauvegarde</button></div>
   </section>
   <section class="panel"><h2>Réglages</h2>
-    <div class="fgrid"><label class="f">Nom du club<input type="text" id="stClub" value="${esc(S.settings.club)}"></label>
-      <label class="f">Acompte suggéré (%)<input type="number" min="0" max="100" id="stPct" value="${S.settings.acomptePct}"></label></div>
+    <div class="fgrid"><label class="f">Acompte suggéré (%)<input type="number" min="0" max="100" id="stPct" value="${S.settings.acomptePct}"></label></div>
+    <p class="muted" style="margin:0">Nom du club, marge et coordonnées des relevés : écran Remboursements.</p>
   </section>`;
   $("#bDay").onchange = e => { S.bilanDay = e.target.value || todayISO(); renderBilan(); };
   $("#exCsv").onclick = () => exportCSV($("#exFrom").value, $("#exTo").value);
   $("#bkOut").onclick = backup;
   $("#bkIn").onclick = () => $("#jsonIn").click();
-  $("#stClub").onchange = e => { S.settings.club = e.target.value.trim() || "Club"; saveSettings(); toast("Réglage enregistré"); };
   $("#stPct").onchange = e => { S.settings.acomptePct = Math.min(100, Math.max(0, parseInt(e.target.value)||0)); saveSettings(); toast("Réglage enregistré"); };
 }
 const IS_APP = !!(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform());
@@ -936,18 +1418,20 @@ function showText(name, content){
     try { await navigator.clipboard.writeText(t.value); toast("Copié"); } catch(e){ document.execCommand("copy"); toast("Copié"); } };
 }
 function exportCSV(from, to){
-  const rows = [["N°","Date","Type","Client","Téléphone","Équipe","Article","Personnalisation","Qté","Prix unitaire","Montant ligne","Total commande","Payé","Reste dû","Statut","Livraison prévue"]];
+  const rows = [["N°","Date","Circuit","Type","Client","Téléphone","Équipe / remarque","Article","Personnalisation","Qté","Prix de vente unitaire","Prix Dragonne Créa unitaire","Montant ligne","Marge club ligne","Total","Payé","Reste dû","Statut","Livraison prévue","Relevé"]];
   const fmt = n => String(r2(n)).replace(".", ",");
   S.orders.filter(o => { const d = dayOf(o.date); return (!from || d >= from) && (!to || d <= to); })
     .sort((a,b) => a.date.localeCompare(b.date))
-    .forEach(o => o.lignes.forEach(l => rows.push([o.num, new Date(o.date).toLocaleString("fr-FR"), o.type==="vente"?"Vente directe":"Commande", o.client.nom, o.client.tel, o.client.equipe,
-      l.nom, l.perso, l.qte, fmt(l.prix), fmt(l.prix*l.qte), fmt(o.total), fmt(paid(o)), fmt(due(o)), o.statut === "annulee" ? "Annulée" : o.type==="vente" ? "Payée" : STATUTS[o.statut], o.livraison || ""])));
+    .forEach(o => { const rels = [...new Set(o.paiements.map(p => p.releve).filter(Boolean))].map(releveOf).filter(Boolean).map(r => r.num).join(" ");
+      o.lignes.forEach(l => rows.push([o.num, new Date(o.date).toLocaleString("fr-FR"), canalName(o.canal), o.type==="vente"?"Vente directe":"Commande", o.client.nom, o.client.tel, o.client.equipe,
+      l.nom, l.perso, l.qte, fmt(l.prix), fmt(l.base ?? l.prix), fmt(l.prix*l.qte), fmt((l.prix - (l.base ?? l.prix))*l.qte), fmt(o.total), fmt(paid(o)), fmt(due(o)),
+      o.statut === "annulee" ? "Annulée" : o.type==="vente" ? "Payée" : STATUTS[o.statut], o.livraison || "", rels])); });
   if(rows.length === 1) return toast("Aucune vente sur cette période");
   const csv = "﻿" + rows.map(r => r.map(v => `"${String(v ?? "").replace(/"/g,'""')}"`).join(";")).join("\r\n");
   download(`dragonne-club_${from}_${to}.csv`, csv, "text/csv;charset=utf-8").then(ok => ok && !IS_APP && toast("Export téléchargé"));
 }
 function backup(){
-  const data = {app:"dragonne-club", version:1, date:new Date().toISOString(), settings:S.settings, articles:S.articles, orders:S.orders};
+  const data = {app:"dragonne-club", version:2, date:new Date().toISOString(), settings:S.settings, articles:S.articles, orders:S.orders, releves:S.releves};
   download(`sauvegarde-dragonne-club_${todayISO()}.json`, JSON.stringify(data), "application/json").then(ok => {
     if(!ok) return;
     S.settings.lastBackup = new Date().toISOString(); saveSettings();
@@ -961,10 +1445,13 @@ $("#jsonIn").onchange = async e => {
     const d = JSON.parse(await f.text());
     if(d.app !== "dragonne-club" || !Array.isArray(d.articles) || !Array.isArray(d.orders)) throw 0;
     if(!(await ask("Restaurer cette sauvegarde ?", `Sauvegarde du ${frDate(d.date)} : ${d.articles.length} articles, ${d.orders.length} ventes et commandes. Les données actuelles de la tablette seront remplacées.`, "Restaurer", true))) return;
-    await DB.clear("articles"); await DB.clear("orders");
+    await DB.clear("articles"); await DB.clear("orders"); await DB.clear("releves");
     for(const a of d.articles) await DB.put("articles", a);
     for(const o of d.orders) await DB.put("orders", o);
-    S.settings = {...d.settings, k:"settings", seeded:true}; await saveSettings();
+    for(const r of d.releves || []) await DB.put("releves", r);
+    S.settings = Object.assign({}, DEFAULTS, d.settings, {k:"settings", seeded:true});
+    S.settings.vendeur = Object.assign({}, DEFAULTS.vendeur, S.settings.vendeur || {});
+    await saveSettings(); await migrate();
     await reload(); renderBilan(); toast("Sauvegarde restaurée");
   } catch(err){ toast("Ce fichier n'est pas une sauvegarde de l'appli"); }
 };
@@ -975,18 +1462,16 @@ function closeDlg(){ const d = $("#dlg"); if(d.open) d.close(); }
 $("#dlg").addEventListener("close", () => { const d = $("#dlg"); if(d.classList.contains("full")){ d.classList.remove("full"); if(S.view === "vente") renderVente(); } });
 function ask(title, msg, okLabel, danger){
   return new Promise(res => {
-    const prev = $("#dlg").open ? $("#dlgInner").innerHTML : null;
     openDlg(`<header><h2>${esc(title)}</h2></header><div class="body"><p style="margin:0">${msg}</p></div>
       <footer><button class="btn ghost" id="askNo" type="button">Retour</button><button class="btn ${danger ? "danger" : "primary"}" id="askYes" type="button">${esc(okLabel)}</button></footer>`);
     const done = v => { closeDlg(); res(v); };
     $("#askNo").onclick = () => done(false); $("#askYes").onclick = () => done(true);
   });
 }
-$("#dlg").addEventListener("cancel", e => { /* bouton retour Android : ferme simplement */ });
 
 /* ---------- Hors ligne ---------- */
 if(!IS_APP && "serviceWorker" in navigator && location.protocol === "https:") navigator.serviceWorker.register("sw.js").catch(() => {});
-boot().catch(err => { $("#main").innerHTML = `<div class="panel"><h2>Démarrage impossible</h2><p>Le stockage de la tablette est inaccessible (navigation privée ?). Ouvrez l'appli dans Chrome en mode normal.</p></div>`; });
+boot().catch(err => { console.error(err); $("#main").innerHTML = `<div class="panel"><h2>Démarrage impossible</h2><p>Le stockage de la tablette est inaccessible (navigation privée ?). Ouvrez l'appli dans Chrome en mode normal.</p></div>`; });
 </script>
 </body>
 </html>
