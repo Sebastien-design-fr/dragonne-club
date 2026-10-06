@@ -357,6 +357,34 @@ td.det{min-width:180px}
 .sizeed{display:flex;flex-direction:column;gap:8px;background:var(--sunk);border-radius:12px;padding:12px}
 .szrow{display:grid;grid-template-columns:minmax(0,1fr) 110px 40px;gap:8px;align-items:center}
 .pdfbar{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;background:var(--accent-soft);border-radius:14px;padding:10px 14px;margin-bottom:16px;font-weight:700;color:var(--accent)}
+.szgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(96px,1fr));gap:8px}
+.szcell{display:flex;flex-direction:column;align-items:center;gap:6px;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:10px 8px}
+.szcell b{font:800 18px/1 var(--f-display)}
+.szcell input{text-align:center;font-size:18px;font-weight:700;min-height:48px}
+dialog.wide{width:min(1000px,calc(100vw - 24px))}
+.jhead{display:flex;flex-direction:column;gap:10px}
+.jctl{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.jctl input{width:auto;min-width:170px}
+.jctl .canals{margin:0}
+.paper .logos{display:flex;align-items:center;gap:10px}
+.paper .logos img{height:70px;width:auto}
+.paper .pm{color:#66637D}
+.paper .neg{color:#B3261E}
+.paper .esp{color:#2C7A4B}
+.paper .cb{color:#2D3A8C}
+.paper h4{margin:4px 0 0;font:800 15px var(--f-display);color:#2D3A8C}
+.paper h4.tl{color:#0F7C83}
+.paper thead.tl th{background:#0F7C83}
+.paper tr.sub td{font-weight:800;border-top:2px solid #DCDAE7}
+.jboxes{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px}
+.jboxes>div{background:#F3F3F8;border-radius:8px;padding:8px 10px;display:flex;flex-direction:column;min-width:0}
+.jboxes>div.key{background:#2D3A8C;color:#fff}
+.jboxes small{font-size:10px}
+.jboxes>div.key small{color:#fff;opacity:.85}
+.jboxes b{font:800 17px var(--f-display)}
+.sheetbreak{border-top:2px dashed #C9C7D6;margin:10px 0 0;text-align:center;height:0}
+.sheetbreak span{position:relative;top:-11px;background:#fff;padding:0 10px;font-size:12px;font-weight:700;color:#9A98AE}
+@media (max-width:640px){ .jboxes{grid-template-columns:repeat(2,minmax(0,1fr))} .paper .logos img{height:48px} }
 .toast{position:fixed;left:50%;bottom:calc(24px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:12px 18px;border-radius:12px;font-weight:700;z-index:50;max-width:calc(100vw - 32px)}
 .cartfab{display:none}
 
@@ -1148,7 +1176,13 @@ function editArticle(id){
   const a0 = id ? art(id) : null;
   const a = a0 ? JSON.parse(JSON.stringify(a0)) : {id:uid(), nom:"", cat:"", prix:"", kind:S.catKind === "merch" ? "merch" : "resine", club:S.catKind === "merch" || (S.catView || S.settings.canal) === "club", marge:null, mode:"stock", stock:1, tailles:null, delai:7, photos:[], exemple:false, actif:true, cree:new Date().toISOString()};
   if(!a.kind) a.kind = "resine";
-  const PRESETS = [["Adulte", ["XS","S","M","L","XL","XXL"]], ["Enfant", ["4 ans","6 ans","8 ans","10 ans","12 ans","14 ans"]]];
+  const GAMMES = {adulte:["XS","S","M","L","XL","XXL","XXXL"], enfant:["4 ans","6 ans","8 ans","10 ans","12 ans","14 ans"]};
+  const gammeOf = t => !Array.isArray(t) ? "unique" : t.some(z => GAMMES.enfant.includes(z.t)) ? "enfant" : "adulte";
+  /* Génère toutes les tailles de la gamme, en gardant le stock déjà saisi */
+  const withGamme = (g, cur) => { const old = new Map((cur || []).map(z => [z.t, z.stock]));
+    const extra = (cur || []).filter(z => !GAMMES[g].includes(z.t) && z.stock > 0);
+    return GAMMES[g].map(t => ({t, stock: old.get(t) || 0})).concat(extra); };
+  if(Array.isArray(a.tailles)) a.tailles = withGamme(gammeOf(a.tailles), a.tailles);
   const cats = [...new Set(S.articles.map(x => x.cat))];
   const draw = () => {
     const own = !!a.marge, merch = a.kind === "merch", sized = merch && Array.isArray(a.tailles);
@@ -1172,11 +1206,11 @@ function editArticle(id){
         <label class="f">${merch ? "Prix de vente (€) *" : "Prix Dragonne Créa (€) *"} <span class="h">${merch ? "prix payé au stand" : a.club ? "ce que le club vous rembourse" : "prix de vente"}</span><input type="text" inputmode="decimal" id="aPrix" value="${a.prix === "" ? "" : numIn(a.prix)}"></label>
       </div>
       ${merch ? `<div class="f" style="display:flex;flex-direction:column;gap:6px;font-weight:700;font-size:14px">Tailles
-        <div class="seg"><button type="button" data-sized="0" aria-pressed="${!sized}">Taille unique</button><button type="button" data-sized="1" aria-pressed="${sized}">Plusieurs tailles</button></div></div>
+        <div class="seg"><button type="button" data-gamme="unique" aria-pressed="${!sized}">Taille unique</button><button type="button" data-gamme="adulte" aria-pressed="${gammeOf(a.tailles) === "adulte"}">Adulte XS → XXXL</button><button type="button" data-gamme="enfant" aria-pressed="${gammeOf(a.tailles) === "enfant"}">Enfant 4 → 14 ans</button></div></div>
         ${sized ? `<div class="sizeed">
-          ${a.tailles.map((z,i) => `<div class="szrow"><input type="text" id="tz-${i}" value="${esc(z.t)}" aria-label="Taille"><input type="number" min="0" inputmode="numeric" id="ts-${i}" value="${z.stock}" aria-label="Stock"><button type="button" class="icon-del" data-tzrm="${i}" aria-label="Retirer la taille"><svg viewBox="0 0 24 24"><path d="M5 7h14M10 7V5h4v2M7 7l1 13h8l1-13"/></svg></button></div>`).join("")}
-          <div class="acts"><button type="button" class="btn small ghost" id="tzAdd">+ Ajouter une taille</button>${PRESETS.map(([l], i) => `<button type="button" class="btn small ghost" data-preset="${i}">Tailles ${l.toLowerCase()}</button>`).join("")}</div>
-          <p class="muted small" style="margin:0">Stock total : <b id="tzTot">${totalStock(a)}</b> pièces. Chaque taille a son propre stock, décompté à chaque vente.</p></div>` : ""}` : ""}
+          <p class="muted small" style="margin:0">Saisissez le stock de chaque taille (0 si vous n'en avez pas).</p>
+          <div class="szgrid">${a.tailles.map((z,i) => `<label class="szcell"><b>${esc(z.t)}</b><input type="number" min="0" inputmode="numeric" id="ts-${i}" value="${z.stock}" aria-label="Stock taille ${esc(z.t)}"></label>`).join("")}</div>
+          <p class="muted small" style="margin:0">Stock total : <b id="tzTot">${totalStock(a)}</b> pièces, décomptées taille par taille à chaque vente.</p></div>` : ""}` : ""}
       ${a.club && !merch ? `<div class="f" style="display:flex;flex-direction:column;gap:6px;font-weight:700;font-size:14px">Marge du club sur cet article
         <div class="seg"><button type="button" data-own="0" aria-pressed="${!own}">Règle générale (${ruleText({mode:S.settings.margeMode, val:S.settings.margeVal})})</button><button type="button" data-own="1" aria-pressed="${own}">Marge propre</button></div></div>
         ${own ? `<div class="fgrid"><label class="f">Type<select id="aMm"><option value="eur" ${a.marge.mode==="eur"?"selected":""}>Montant fixe (€)</option><option value="pct" ${a.marge.mode==="pct"?"selected":""}>Pourcentage (%)</option></select></label>
@@ -1194,7 +1228,7 @@ function editArticle(id){
     const keep = () => { a.nom = $("#aNom").value; a.cat = $("#aCat").value; a.prix = $("#aPrix").value;
       if($("#aStock")) a.stock = Math.max(0, parseInt($("#aStock").value)||0); if($("#aDelai")) a.delai = Math.max(0, parseInt($("#aDelai").value)||0);
       if($("#aMm")) a.marge = {mode:$("#aMm").value, val:parseNum($("#aMv").value)};
-      if(Array.isArray(a.tailles)) a.tailles = a.tailles.map((z,i) => $("#tz-" + i) ? {t:$("#tz-" + i).value.trim(), stock:Math.max(0, parseInt($("#ts-" + i).value)||0)} : z); };
+      if(Array.isArray(a.tailles)) a.tailles = a.tailles.map((z,i) => $("#ts-" + i) ? {t:z.t, stock:Math.max(0, parseInt($("#ts-" + i).value)||0)} : z); };
     const ex = () => { const box = $("#aEx"); if(!box) return; keep();
       const base = parseNum(a.prix); if(!(base > 0)){ box.textContent = "Indiquez le prix pour voir le prix club."; return; }
       const p = clubPrice({...a, prix:base});
@@ -1205,11 +1239,8 @@ function editArticle(id){
     const ac = $("#aClub"); if(ac) ac.onchange = e => { keep(); a.club = e.target.checked; if(!a.club) a.marge = null; draw(); };
     document.querySelectorAll("[data-kd]").forEach(b => b.onclick = () => { keep(); a.kind = b.dataset.kd;
       if(a.kind === "merch"){ a.club = true; a.marge = null; a.mode = "stock"; } else { a.tailles = null; } draw(); });
-    document.querySelectorAll("[data-sized]").forEach(b => b.onclick = () => { keep(); a.tailles = b.dataset.sized === "1" ? (a.tailles || []) : null; draw(); });
-    document.querySelectorAll("[data-tzrm]").forEach(b => b.onclick = () => { keep(); a.tailles.splice(+b.dataset.tzrm, 1); draw(); });
-    const tza = $("#tzAdd"); if(tza) tza.onclick = () => { keep(); a.tailles.push({t:"", stock:0}); draw(); const i = a.tailles.length - 1; const f = $("#tz-" + i); if(f) f.focus(); };
-    document.querySelectorAll("[data-preset]").forEach(b => b.onclick = () => { keep();
-      PRESETS[+b.dataset.preset][1].forEach(t => { if(!a.tailles.some(z => z.t === t)) a.tailles.push({t, stock:0}); }); draw(); });
+    document.querySelectorAll("[data-gamme]").forEach(b => b.onclick = () => { keep(); const g = b.dataset.gamme;
+      a.tailles = g === "unique" ? null : withGamme(g, a.tailles); draw(); const f = $("#ts-0"); if(f && g !== "unique") f.focus(); });
     document.querySelectorAll("[id^=ts-]").forEach(f => f.oninput = () => { keep(); const tt = $("#tzTot"); if(tt) tt.textContent = totalStock(a); });
     document.querySelectorAll("[data-own]").forEach(b => b.onclick = () => { keep(); a.marge = b.dataset.own === "1" ? (a.marge || {mode:S.settings.margeMode, val:S.settings.margeVal}) : null; draw(); });
     document.querySelectorAll("[data-mode]").forEach(b => b.onclick = () => { keep(); a.mode = b.dataset.mode; draw(); });
@@ -1234,12 +1265,6 @@ function editArticle(id){
       if(!a.nom) return toast("Indiquez le nom de l'article");
       if(!a.cat) return toast("Indiquez une catégorie");
       if(!(p > 0)) return toast("Indiquez un prix");
-      if(Array.isArray(a.tailles)){
-        a.tailles = a.tailles.filter(z => z.t);
-        const names = a.tailles.map(z => z.t.toLowerCase());
-        if(new Set(names).size !== names.length) return toast("Deux tailles portent le même nom");
-        if(!a.tailles.length) return toast("Ajoutez au moins une taille, ou choisissez « Taille unique »");
-      }
       a.prix = p; if(!a.club || a.kind === "merch") a.marge = null; if(a0 && a0.exemple) a.exemple = false;
       await DB.put("articles", a); closeDlg(); await reload(); renderCatalogue(); toast("Article enregistré");
     };
@@ -1615,6 +1640,56 @@ async function journalPdf(du, au, cn){
     doc.text(R, 820, `Page ${i + 1}/${n}`, {size:7.5, color:muted, align:"right"}); });
   return doc.build();
 }
+/* Aperçu du journal d'une journée, identique au PDF */
+function journalHTML(day, cn){
+  const pays = bilanPays(day, day, cn), top = bestSellers(day, day, cn);
+  const S1 = (f, filt = () => true) => r2(pays.filter(filt).reduce((s,p) => s + f(p), 0));
+  const Rs = p => p.res ?? p.montant;
+  const boxes = [["Total encaissé", S1(p => p.montant), true], ["Espèces", S1(p => p.montant, p => (p.mode || "especes") === "especes")], ["Carte bancaire", S1(p => p.montant, p => p.mode === "cb")],
+    ["Résines", S1(Rs)], ["Merchandising", S1(p => p.montant - Rs(p))]];
+  const sect = (title, rows, cls) => { const q = rows.reduce((s,r) => s + r.qte, 0), ca = r2(rows.reduce((s,r) => s + r.ca, 0));
+    return `<h4 class="${cls}">${esc(title)}</h4><div class="tbl"><table><thead class="${cls}"><tr><th>Produit</th><th>Taille</th><th class="r">Quantité</th><th class="r">Montant</th></tr></thead><tbody>
+      ${rows.length ? rows.map(r => `<tr><td>${esc(r.nom)}${cn === "tous" && r.kind !== "merch" ? ` <span class="pm">· ${esc(canalName(r.canal))}</span>` : ""}</td><td>${esc(r.taille || "–")}</td><td class="r num"><b>${r.qte}</b></td><td class="r num">${eur(r.ca)}</td></tr>`).join("") : `<tr><td colspan="4" class="pm">Aucune vente.</td></tr>`}
+      <tr class="sub"><td colspan="2">Sous-total ${esc(title)}</td><td class="r num">${q}</td><td class="r num">${eur(ca)}</td></tr></tbody></table></div>`; };
+  const byQ = (a, b) => b.qte - a.qte || a.nom.localeCompare(b.nom);
+  const tq = top.reduce((s,r) => s + r.qte, 0), tca = r2(top.reduce((s,r) => s + r.ca, 0));
+  return `<div class="paper journal">
+    <div class="ph1"><div class="logos"><img src="logo.jpg" alt="Dragonne Créa">${cn !== "dc" ? `<img src="gto.png" alt="${esc(CLUB())}">` : ""}</div>
+      <div><h3>Journal des encaissements</h3><div><b>Journée du ${dmy(day)}</b></div><div class="pm">${cn === "tous" ? "Tous circuits" : esc(canalName(cn))}</div></div></div>
+    <div class="jboxes">${boxes.map(([t, v, k]) => `<div class="${k ? "key" : ""}"><small>${t}</small><b class="num">${eur(v)}</b></div>`).join("")}</div>
+    <b>${pays.length} encaissement${pays.length > 1 ? "s" : ""}</b>
+    <div class="tbl"><table><thead><tr><th>Heure</th><th>N°</th><th>Circuit</th><th>Produits achetés</th><th>Nature</th><th>Paiement</th><th class="r">Montant</th></tr></thead><tbody>
+      ${pays.length ? pays.map(p => `<tr><td class="num">${frTime(p.date)}</td><td class="num">${p.o.num}</td><td>${esc(p.o.canal === "club" ? CLUB() : "D. Créa")}</td>
+        <td>${p.o.lignes.map(l => `${l.qte > 1 ? l.qte + " × " : ""}${esc(lineName(l))}${l.kind === "merch" ? ' <span class="pm">[merch]</span>' : ""}`).join("<br>")}</td>
+        <td${p.montant < 0 ? ' class="neg"' : ""}>${NATURES[p.nature] || p.nature}</td><td><b class="${p.mode === "cb" ? "cb" : "esp"}">${MODES[p.mode] || "Espèces"}</b></td><td class="r num${p.montant < 0 ? " neg" : ""}"><b>${eur(p.montant)}</b></td></tr>`).join("")
+      : `<tr><td colspan="7" class="pm">Aucun encaissement ce jour-là.</td></tr>`}
+    </tbody></table></div>
+    <div class="ptot"><div><span>Espèces</span><b class="num">${eur(boxes[1][1])}</b></div><div><span>Carte bancaire</span><b class="num">${eur(boxes[2][1])}</b></div><div class="big"><span>Total encaissé</span><b class="num">${eur(boxes[0][1])}</b></div></div>
+    <div class="sheetbreak"><span>Feuille 2</span></div>
+    <h3>Ventes par produit</h3>
+    ${sect("Résines", top.filter(r => r.kind !== "merch").sort(byQ), "nv")}
+    ${cn === "dc" ? "" : sect(`Merchandising ${CLUB()}`, top.filter(r => r.kind === "merch").sort(byQ), "tl")}
+    <div class="ptot"><div class="big"><span>Total · ${tq} pièce${tq > 1 ? "s" : ""}</span><b class="num">${eur(tca)}</b></div></div>
+  </div>`;
+}
+function openJournal(day, cn){
+  const d = day || todayISO();
+  const days = [...new Set(S.orders.flatMap(o => o.paiements.map(p => dayOf(p.date))))].sort();
+  const prev = days.filter(x => x < d).pop(), next = days.find(x => x > d);
+  openDlg(`<header class="jhead"><h2>Journal des encaissements</h2>
+      <div class="jctl"><button class="btn small ghost" id="jPrev" ${prev ? "" : "disabled"} aria-label="Journée précédente avec des ventes">◀</button>
+        <input type="date" id="jDay" value="${d}" aria-label="Journée">
+        <button class="btn small ghost" id="jNext" ${next ? "" : "disabled"} aria-label="Journée suivante avec des ventes">▶</button>
+        ${canalTabs(cn, {all:true, compact:true})}</div></header>
+    <div class="body">${journalHTML(d, cn)}</div>
+    <footer><button class="btn ghost" id="jClose" type="button">Fermer</button><button class="btn primary" id="jSend" type="button">Envoyer le PDF</button></footer>`, false, true);
+  $("#jClose").onclick = closeDlg;
+  $("#jDay").onchange = e => openJournal(e.target.value || todayISO(), cn);
+  $("#jPrev").onclick = () => openJournal(prev, cn);
+  $("#jNext").onclick = () => openJournal(next, cn);
+  document.querySelectorAll("#dlgInner [data-canal]").forEach(b => b.onclick = () => openJournal(d, b.dataset.canal));
+  $("#jSend").onclick = () => shareJournal(d, d, cn);
+}
 async function shareJournal(du, au, cn){
   try {
     const bin = await journalPdf(du, au, cn);
@@ -1666,7 +1741,7 @@ function renderBilan(){
     <div class="fgrid range"><label class="f">Du<input type="date" id="bDu" value="${du}"></label><label class="f">Au<input type="date" id="bAu" value="${au}"></label></div></div>
   <div class="chips">${presets.map(([k,l,d1,d2]) => `<button class="chip" data-pr="${k}" aria-pressed="${d1===du && d2===au}">${l}</button>`).join("")}</div>
   ${canalTabs(cn, {all:true, compact:true})}
-  <div class="pdfbar"><span>Journal des encaissements et ventes par produit, prêt à transmettre ou imprimer.</span><button class="btn primary" id="jPdf" ${pays.length || top.length ? "" : "disabled"}>Journal PDF</button></div>
+  <div class="pdfbar"><span>Journal de caisse d'une journée : encaissements et ventes par produit, avec aperçu avant l'envoi en PDF.</span><button class="btn primary" id="jPdf">Journal du jour</button></div>
   <div class="stats">
     <div class="stat key"><small>Total encaissé</small><b class="num">${eur(sum(M))}</b><span class="small">${pays.length} encaissement${pays.length>1?"s":""}</span></div>
     <div class="stat"><small>Espèces</small><b class="num">${eur(sum(M, mode("especes")))}</b></div>
@@ -1708,7 +1783,7 @@ function renderBilan(){
   $("#bAu").onchange = e => { S.bilanAu = e.target.value || todayISO(); if(S.bilanAu < S.bilanDu) S.bilanDu = S.bilanAu; renderBilan(); };
   $("#main").querySelectorAll("[data-pr]").forEach(b => b.onclick = () => { const pr = presets.find(x => x[0] === b.dataset.pr); S.bilanDu = pr[2]; S.bilanAu = pr[3]; renderBilan(); });
   bindCanals(k => { S.bilanCanal = k; renderBilan(); });
-  $("#jPdf").onclick = () => shareJournal(du, au, cn);
+  $("#jPdf").onclick = () => openJournal(au, cn);
   const et = $("#exTop"); if(et) et.onclick = () => exportTop(du, au, cn);
   $("#exCsv").onclick = () => exportCSV(du, au, cn);
   $("#bkOut").onclick = backup;
@@ -1810,7 +1885,7 @@ $("#jsonIn").onchange = async e => {
 };
 
 /* ---------- Boîtes de dialogue ---------- */
-function openDlg(html, full){ $("#dlgInner").innerHTML = html; const d = $("#dlg"); d.classList.toggle("full", !!full); if(!d.open) d.showModal(); }
+function openDlg(html, full, wide){ $("#dlgInner").innerHTML = html; const d = $("#dlg"); d.classList.toggle("full", !!full); d.classList.toggle("wide", !!wide); if(!d.open) d.showModal(); }
 function closeDlg(){ const d = $("#dlg"); if(d.open) d.close(); }
 $("#dlg").addEventListener("close", () => { const d = $("#dlg"); if(d.classList.contains("full")){ d.classList.remove("full"); if(S.view === "vente") renderVente(); } });
 /* Choix du mode de paiement pour un encaissement isolé (solde) */
