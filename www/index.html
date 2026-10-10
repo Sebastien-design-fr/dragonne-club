@@ -387,6 +387,11 @@ dialog.wide{width:min(1000px,calc(100vw - 24px))}
 @media (max-width:640px){ .jboxes{grid-template-columns:repeat(2,minmax(0,1fr))} .paper .logos img{height:48px} }
 .size.on{border-color:var(--sea);background:var(--sea-soft);color:var(--sea)}
 .size.on b{color:var(--sea)}
+.searchbar{position:relative;display:flex;align-items:center;margin-bottom:12px}
+.searchbar svg{position:absolute;left:14px;width:22px;height:22px;stroke:var(--muted);fill:none;stroke-width:2.2;stroke-linecap:round;pointer-events:none}
+.searchbar input{padding-left:46px;padding-right:48px;min-height:52px;font-size:17px;border-radius:14px;background:var(--surface)}
+.searchbar input::-webkit-search-cancel-button{display:none}
+.sbx{position:absolute;right:8px;width:38px;height:38px;border-radius:99px;border:0;background:var(--sunk);color:var(--ink);font-size:22px;line-height:1}
 .toast{position:fixed;left:50%;bottom:calc(24px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:12px 18px;border-radius:12px;font-weight:700;z-index:50;max-width:calc(100vw - 32px)}
 .cartfab{display:none}
 
@@ -747,18 +752,21 @@ function renderVitrine(){
   const actifs = S.articles.filter(a => a.actif && visibleIn(a, canal));
   const cats = ["Tout", ...new Set(actifs.map(a => a.cat))];
   if(!cats.includes(S.cat)) S.cat = "Tout";
-  const list = actifs.filter(a => S.cat === "Tout" || a.cat === S.cat);
+  const wq = (S.wq || "").trim();
+  const list = wq ? actifs.filter(a => matchQ(a, wq)) : actifs.filter(a => S.cat === "Tout" || a.cat === S.cat);
   S.ficheList = list.map(a => a.id);
   $("#main").innerHTML = `
   <div class="head"><div><h1>Vitrine</h1><p>Touchez une pièce pour la montrer en plein écran</p></div></div>
   ${canalTabs(canal, {compact:true})}
-  <div class="chips">${cats.map(c => `<button class="chip" data-cat="${esc(c)}" aria-pressed="${c===S.cat}">${esc(c)}</button>`).join("")}</div>
+  ${searchBar("wq", S.wq || "", "Rechercher une pièce…")}
+  <div class="chips">${cats.map(c => `<button class="chip" data-cat="${esc(c)}" aria-pressed="${!wq && c===S.cat}">${esc(c)}</button>`).join("")}</div>
   ${list.length ? `<div class="show">${list.map(a => `<button data-fiche="${a.id}">
       ${a.photos[0] ? `<img src="${a.photos[0]}" alt="">` : `<span style="aspect-ratio:4/5;background:var(--sunk);display:block"></span>`}
       <span class="cap"><span><span style="font-weight:700;display:block">${esc(a.nom)}</span>${modeTag(a)}</span><b class="num">${eur(salePrice(a))}</b></span></button>`).join("")}</div>`
-    : `<div class="panel"><p class="muted">Aucune pièce ${esc(canalName(canal))} à montrer. Ajoutez des articles avec leurs photos depuis le Catalogue.</p></div>`}`;
+    : `<div class="panel"><p class="muted">${wq ? `Aucune pièce ne correspond à « ${esc(wq)} ».` : `Aucune pièce ${esc(canalName(canal))} à montrer. Ajoutez des articles avec leurs photos depuis le Catalogue.`}</p></div>`}`;
   bindCanals(setCanal);
-  $("#main").querySelectorAll("[data-cat]").forEach(b => b.onclick = () => { S.cat = b.dataset.cat; renderVitrine(); });
+  $("#main").querySelectorAll("[data-cat]").forEach(b => b.onclick = () => { S.cat = b.dataset.cat; S.wq = ""; renderVitrine(); });
+  bindSearch("wq", () => S.wq, v => S.wq = v, () => { const pos = $("#wq").selectionStart; renderVitrine(); const f = $("#wq"); f.focus(); f.setSelectionRange(pos, pos); });
   $("#main").querySelectorAll("[data-fiche]").forEach(b => b.onclick = () => openFiche(b.dataset.fiche, "vitrine"));
 }
 function openFiche(id, from){
@@ -796,13 +804,54 @@ function celebrate(title, sub){
   document.body.appendChild(y); setTimeout(() => y.remove(), 1700);
 }
 
+/* ---------- Recherche (sans tenir compte des accents ni des majuscules) ---------- */
+const norm = t => String(t || "").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
+const matchQ = (a, q) => { const hay = norm([a.nom, a.cat, KINDS[a.kind || "resine"], ...(a.tailles || []).map(z => z.t)].join(" "));
+  return norm(q).split(/\s+/).filter(Boolean).every(w => hay.includes(w)); };
+const searchBar = (id, q, ph) => `<div class="searchbar"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+  <input type="search" id="${id}" value="${esc(q)}" placeholder="${esc(ph)}" autocomplete="off" enterkeyhint="search" aria-label="${esc(ph)}">
+  <button type="button" class="sbx" id="${id}x" aria-label="Effacer la recherche" ${q ? "" : "hidden"}>×</button></div>`;
+/* Branche une barre de recherche : met à jour seulement la liste, sans perdre le clavier */
+function bindSearch(id, get, set, refresh, onEnter){
+  const inp = $("#" + id), x = $("#" + id + "x");
+  inp.oninput = () => { set(inp.value); x.hidden = !inp.value; refresh(); };
+  inp.onkeydown = e => { if(e.key === "Enter"){ e.preventDefault(); inp.blur(); onEnter && onEnter(); } };
+  x.onclick = () => { set(""); inp.value = ""; x.hidden = true; refresh(); inp.focus(); };
+}
+
 /* ---------- Vente ---------- */
+function venteList(){
+  const canal = S.settings.canal, q = (S.vq || "").trim();
+  const actifs = S.articles.filter(a => a.actif && visibleIn(a, canal));
+  return q ? actifs.filter(a => matchQ(a, q)) : actifs.filter(a => S.cat === "Tout" || a.cat === S.cat);
+}
+function venteGridHTML(list){
+  const canal = S.settings.canal, q = (S.vq || "").trim();
+  return `${q ? `<p class="muted small" style="margin:0 0 10px">${list.length} résultat${list.length>1?"s":""} pour « ${esc(q)} »${list.length === 1 ? " · appuyez sur Entrée pour l'ajouter" : ""}</p>` : ""}
+    ${list.length ? `<div class="grid">${list.map(a => {
+      const n = inCart(a.id);
+      return `<div class="card${a.mode==="stock" && totalStock(a)<=0 ? " dim":""}" role="button" tabindex="0" data-add="${a.id}" aria-label="Ajouter ${esc(a.nom)} au panier">
+        <span class="phw">${a.photos[0] ? `<img class="ph" src="${a.photos[0]}" alt="" loading="lazy">` : `<span class="ph"></span>`}
+        ${a.photos.length > 1 ? `<span class="nphotos num">${a.photos.length} photos</span>` : ""}</span>
+        <button class="zoom" data-zoom="${a.id}" aria-label="Voir les photos de ${esc(a.nom)}"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="6"/><path d="m20 20-4.5-4.5M11 8v6M8 11h6"/></svg></button>
+        ${n ? `<span class="incart num">${n}</span>` : ""}
+        <span class="bd"><span class="nm">${esc(a.nom)}</span>${isPre(a) ? `<span>${modeTag(a)}</span>${sizeChips(a)}` : hasSizes(a) ? sizeChips(a) : `<span>${modeTag(a)} ${a.exemple ? '<span class="tag ex">Exemple</span>' : ""}</span>`}
+        <span class="pr num">${eur(salePrice(a))}</span></span></div>`; }).join("")}</div>`
+    : `<div class="panel"><p class="muted">${q ? `Aucun article ${esc(canalName(canal))} ne correspond à « ${esc(q)} ».` : `Aucun article ${esc(canalName(canal))} dans cette catégorie. Ajoutez-en depuis le Catalogue.`}</p></div>`}`;
+}
+function bindVenteGrid(){
+  $("#vgrid").querySelectorAll("[data-add]").forEach(b => {
+    b.onclick = () => addToCart(b.dataset.add);
+    b.onkeydown = e => { if(e.key === "Enter" || e.key === " "){ e.preventDefault(); addToCart(b.dataset.add); } };
+  });
+  $("#vgrid").querySelectorAll("[data-zoom]").forEach(b => b.onclick = e => { e.stopPropagation(); openFiche(b.dataset.zoom, "vente"); });
+}
 function renderVente(){
   const canal = S.settings.canal;
   const actifs = S.articles.filter(a => a.actif && visibleIn(a, canal));
   const cats = ["Tout", ...new Set(actifs.map(a => a.cat))];
   if(!cats.includes(S.cat)) S.cat = "Tout";
-  const list = actifs.filter(a => S.cat === "Tout" || a.cat === S.cat);
+  const list = venteList(), searching = !!(S.vq || "").trim();
   $("#main").innerHTML = `
   <div class="head vhead"><div><h1>Vente</h1><p>Touchez un article pour l'ajouter au panier</p></div>
     <div class="duo" aria-label="${canal === "club" ? `Dragonne Créa et ${esc(CLUB())}` : "Dragonne Créa"}">
@@ -810,27 +859,19 @@ function renderVente(){
   ${canalTabs(canal, {compact:true})}
   <div class="sale">
     <section>
-      <div class="chips">${cats.map(c => `<button class="chip" data-cat="${esc(c)}" aria-pressed="${c===S.cat}">${esc(c)}</button>`).join("")}</div>
-      ${list.length ? `<div class="grid">${list.map(a => {
-        const n = inCart(a.id);
-        return `<div class="card${a.mode==="stock" && totalStock(a)<=0 ? " dim":""}" role="button" tabindex="0" data-add="${a.id}" aria-label="Ajouter ${esc(a.nom)} au panier">
-          <span class="phw">${a.photos[0] ? `<img class="ph" src="${a.photos[0]}" alt="">` : `<span class="ph"></span>`}
-          ${a.photos.length > 1 ? `<span class="nphotos num">${a.photos.length} photos</span>` : ""}</span>
-          <button class="zoom" data-zoom="${a.id}" aria-label="Voir les photos de ${esc(a.nom)}"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="6"/><path d="m20 20-4.5-4.5M11 8v6M8 11h6"/></svg></button>
-          ${n ? `<span class="incart num">${n}</span>` : ""}
-          <span class="bd"><span class="nm">${esc(a.nom)}</span>${isPre(a) ? `<span>${modeTag(a)}</span>${sizeChips(a)}` : hasSizes(a) ? sizeChips(a) : `<span>${modeTag(a)} ${a.exemple ? '<span class="tag ex">Exemple</span>' : ""}</span>`}
-          <span class="pr num">${eur(salePrice(a))}</span></span></div>`; }).join("")}</div>`
-      : `<div class="panel"><p class="muted">Aucun article ${esc(canalName(canal))} dans cette catégorie. Ajoutez-en depuis le Catalogue.</p></div>`}
+      ${searchBar("vq", S.vq || "", "Rechercher un article : nom, catégorie, taille…")}
+      <div class="chips" id="vcats">${cats.map(c => `<button class="chip" data-cat="${esc(c)}" aria-pressed="${!searching && c===S.cat}">${esc(c)}</button>`).join("")}</div>
+      <div id="vgrid">${venteGridHTML(list)}</div>
     </section>
     <aside class="cart" aria-label="Panier">${cartHTML()}</aside>
   </div>`;
   bindCanals(setCanal);
-  $("#main").querySelectorAll("[data-cat]").forEach(b => b.onclick = () => { S.cat = b.dataset.cat; renderVente(); });
-  $("#main").querySelectorAll("[data-add]").forEach(b => {
-    b.onclick = () => addToCart(b.dataset.add);
-    b.onkeydown = e => { if(e.key === "Enter" || e.key === " "){ e.preventDefault(); addToCart(b.dataset.add); } };
-  });
-  $("#main").querySelectorAll("[data-zoom]").forEach(b => b.onclick = e => { e.stopPropagation(); openFiche(b.dataset.zoom, "vente"); });
+  $("#main").querySelectorAll("[data-cat]").forEach(b => b.onclick = () => { S.cat = b.dataset.cat; S.vq = ""; renderVente(); });
+  bindVenteGrid();
+  bindSearch("vq", () => S.vq, v => S.vq = v, () => {
+    $("#vgrid").innerHTML = venteGridHTML(venteList()); bindVenteGrid();
+    $("#vcats").querySelectorAll("[data-cat]").forEach(c => c.setAttribute("aria-pressed", !(S.vq || "").trim() && c.dataset.cat === S.cat));
+  }, () => { const l = venteList(); if((S.vq || "").trim() && l.length === 1) addToCart(l[0].id); });
   bindCart();
 }
 function cartTotals(){
@@ -1007,7 +1048,7 @@ function openCheckout(){
       await DB.put("orders", o); nums.push(o.num);
     }
     await saveSettings();
-    S.cart = []; S.cartCanal = null; closeDlg(); await reload(); renderVente();
+    S.cart = []; S.cartCanal = null; S.vq = ""; closeDlg(); await reload(); renderVente();
     celebrate(cmdLines.length || preLines.length ? "Commande enregistrée" : "Vente enregistrée", cmdLines.length || preLines.length ? `n° ${nums.join(", ")} · ${esc(client.nom)}` : `n° ${nums[0]} · ${esc(canalName(canal))}`);
   };
   setTimeout(() => { const n = $("#coNom"); if(n && needName) n.focus(); }, 50);
@@ -1243,7 +1284,8 @@ function renderCatalogue(){
   if(!S.catView) S.catView = S.settings.canal;
   if(!S.catKind) S.catKind = "tous";
   const v = S.catView, k = S.catKind;
-  const list = S.articles.filter(a => (v === "tous" || visibleIn(a, v)) && (k === "tous" || (a.kind || "resine") === k));
+  const cq = (S.cq || "").trim();
+  const list = S.articles.filter(a => (v === "tous" || visibleIn(a, v)) && (k === "tous" || (a.kind || "resine") === k) && (!cq || matchQ(a, cq)));
   const nEx = S.articles.filter(a => a.exemple).length;
   const r = {mode:S.settings.margeMode, val:S.settings.margeVal};
   $("#main").innerHTML = `
@@ -1251,6 +1293,7 @@ function renderCatalogue(){
     <div class="acts">${nEx ? `<button class="btn ghost" id="delEx">Supprimer les ${nEx} exemples</button>` : ""}<button class="btn primary" id="newArt">Ajouter un article</button></div></div>
   ${canalTabs(v, {all:true, compact:true})}
   ${v !== "dc" ? `<div class="chips">${[["tous","Tous les produits"],["resine","Résines"],["merch","Merchandising " + CLUB()]].map(([x,l]) => `<button class="chip" data-kind="${x}" aria-pressed="${x===k}">${esc(l)}</button>`).join("")}</div>` : ""}
+  ${searchBar("cq", S.cq || "", "Rechercher dans le catalogue…")}
   ${v !== "dc" && k !== "merch" ? `<div class="rulebar"><span><b>Marge ${esc(CLUB())}</b> ${ruleText(r)} par article${+S.settings.arrondi ? ` · prix arrondi aux ${eur(S.settings.arrondi)} supérieurs` : ""}${!+S.settings.margeVal ? ` <span class="warnchip">à régler</span>` : ""}</span><button class="btn small ghost" id="ruleEdit">Modifier</button></div>` : ""}
   ${list.length ? `<div class="list">${list.map(a => `
     <div class="item"><img src="${a.photos[0] || ""}" alt="">
@@ -1260,8 +1303,9 @@ function renderCatalogue(){
           ${modeTag(a)}${a.exemple ? '<span class="tag ex">Exemple</span>' : ""}${a.actif ? "" : '<span class="tag ex">Masqué</span>'}</div>
         ${hasSizes(a) ? (isPre(a) ? sizeChips(a) : `<details class="szdet"><summary>Stock par taille</summary>${sizeChips(a)}</details>`) : ""}</div>
       <button class="btn small ghost" data-edit="${a.id}">Modifier</button></div>`).join("")}</div>`
-  : `<div class="panel"><p class="muted">Aucun article ici. Ajoutez le premier avec sa photo et son prix.</p></div>`}`;
+  : `<div class="panel"><p class="muted">${cq ? `Aucun article ne correspond à « ${esc(cq)} ».` : "Aucun article ici. Ajoutez le premier avec sa photo et son prix."}</p></div>`}`;
   bindCanals(x => { S.catView = x; renderCatalogue(); });
+  bindSearch("cq", () => S.cq, v => S.cq = v, () => { const pos = $("#cq").selectionStart; renderCatalogue(); const f = $("#cq"); f.focus(); f.setSelectionRange(pos, pos); });
   $("#main").querySelectorAll("[data-kind]").forEach(b => b.onclick = () => { S.catKind = b.dataset.kind; renderCatalogue(); });
   $("#newArt").onclick = () => editArticle(null);
   const re = $("#ruleEdit"); if(re) re.onclick = () => editClubRule(renderCatalogue);
