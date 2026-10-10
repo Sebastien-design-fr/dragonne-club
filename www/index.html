@@ -597,6 +597,16 @@ async function boot(){
     for(const a of await DB.all("articles")) if(a.kind === "merch"){ a.mode = "precommande"; if(a.flocage === undefined){ a.flocage = true; a.flocagePrix = 5; } await DB.put("articles", a); }
     S.settings.merchPre = true;
   }
+  if(!S.settings.sizesFull){
+    const ADULTE = ["XS","S","M","L","XL","XXL","XXXL"], ENFANT = ["4 ans","6 ans","8 ans","10 ans","12 ans","14 ans"];
+    for(const a of await DB.all("articles")){
+      if(a.kind !== "merch" || !Array.isArray(a.tailles) || a.tailles.some(z => ENFANT.includes(z.t))) continue;
+      const old = new Map(a.tailles.map(z => [z.t, z.stock || 0]));
+      a.tailles = ADULTE.map(t => ({t, stock:old.get(t) || 0})).concat(a.tailles.filter(z => !ADULTE.includes(z.t)));
+      await DB.put("articles", a);
+    }
+    S.settings.sizesFull = true;
+  }
   await saveSettings();
   await migrate();
   await reload();
@@ -1305,6 +1315,7 @@ function editArticle(id){
     const extra = (cur || []).filter(z => !GAMMES[g].includes(z.t) && z.stock > 0);
     return GAMMES[g].map(t => ({t, stock: old.get(t) || 0})).concat(extra); };
   if(Array.isArray(a.tailles)) a.tailles = withGamme(gammeOf(a.tailles), a.tailles);
+  if(!a0 && a.kind === "merch"){ a.mode = "precommande"; a.flocage = true; a.flocagePrix = 5; a.tailles = withGamme("adulte", null); }
   const cats = [...new Set(S.articles.map(x => x.cat))];
   const draw = () => {
     const own = !!a.marge, merch = a.kind === "merch", sized = merch && Array.isArray(a.tailles);
@@ -1361,7 +1372,7 @@ function editArticle(id){
     ex();
     const ac = $("#aClub"); if(ac) ac.onchange = e => { keep(); a.club = e.target.checked; if(!a.club) a.marge = null; draw(); };
     document.querySelectorAll("[data-kd]").forEach(b => b.onclick = () => { keep(); a.kind = b.dataset.kd;
-      if(a.kind === "merch"){ a.club = true; a.marge = null; a.mode = "precommande"; if(a.flocage === undefined){ a.flocage = true; a.flocagePrix = 5; } }
+      if(a.kind === "merch"){ a.club = true; a.marge = null; a.mode = "precommande"; if(a.flocage === undefined){ a.flocage = true; a.flocagePrix = 5; } if(!a0 && !Array.isArray(a.tailles)) a.tailles = withGamme("adulte", null); }
       else { a.tailles = null; if(a.mode === "precommande") a.mode = "stock"; } draw(); });
     document.querySelectorAll("[data-gamme]").forEach(b => b.onclick = () => { keep(); const g = b.dataset.gamme;
       a.tailles = g === "unique" ? null : withGamme(g, a.tailles); draw(); const f = $("#ts-0"); if(f && g !== "unique") f.focus(); });
