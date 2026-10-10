@@ -385,6 +385,8 @@ dialog.wide{width:min(1000px,calc(100vw - 24px))}
 .sheetbreak{border-top:2px dashed #C9C7D6;margin:10px 0 0;text-align:center;height:0}
 .sheetbreak span{position:relative;top:-11px;background:#fff;padding:0 10px;font-size:12px;font-weight:700;color:#9A98AE}
 @media (max-width:640px){ .jboxes{grid-template-columns:repeat(2,minmax(0,1fr))} .paper .logos img{height:48px} }
+.size.on{border-color:var(--sea);background:var(--sea-soft);color:var(--sea)}
+.size.on b{color:var(--sea)}
 .toast{position:fixed;left:50%;bottom:calc(24px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:12px 18px;border-radius:12px;font-weight:700;z-index:50;max-width:calc(100vw - 32px)}
 .cartfab{display:none}
 
@@ -475,6 +477,9 @@ const S = { articles:[], orders:[], releves:[], settings:null, cart:[], cartCana
   filter:"ouvertes", ocanal:"tous", catView:null, q:"", bilanDu:todayISO(), bilanAu:todayISO(), bilanCanal:"tous", sel:null, relDu:null, relAu:todayISO(), relExcl:new Set() };
 const MAXPH = 6;
 const STATUTS = { a_faire:"À fabriquer", en_cours:"En cours", prete:"Prête", livree:"Livrée", annulee:"Annulée" };
+/* Précommandes de merchandising : même cycle, libellés adaptés */
+const STATUTS_PRE = { a_faire:"À commander", en_cours:"Commandée", prete:"Reçue", livree:"Remise", annulee:"Annulée" };
+const statutTxt = o => (o.pre ? STATUTS_PRE : STATUTS)[o.statut];
 const MODES = { especes:"Espèces", cb:"CB" };
 const KINDS = { resine:"Résine", merch:"Merchandising" };
 const isMerch = a => a && a.kind === "merch";
@@ -482,7 +487,8 @@ const hasSizes = a => isMerch(a) && Array.isArray(a.tailles) && a.tailles.length
 const sizeOf = (a, t) => hasSizes(a) ? a.tailles.find(x => x.t === t) : null;
 const stockOf = (a, t) => hasSizes(a) ? ((sizeOf(a, t) || {}).stock || 0) : (+a.stock || 0);
 const totalStock = a => hasSizes(a) ? a.tailles.reduce((s,x) => s + (+x.stock || 0), 0) : (+a.stock || 0);
-const lineName = l => l.nom + (l.taille ? ` (${l.taille})` : "");
+const lineName = l => l.nom + (l.taille ? ` (${l.taille})` : "") + (l.floc ? " · floqué" : "");
+const isPre = a => isMerch(a) && a.mode === "precommande";
 /* Remet (ou retire) du stock sur l'article d'une ligne, taille comprise */
 function moveStock(l, delta){
   const a = l.artId && art(l.artId); if(!a || a.mode !== "stock") return null;
@@ -571,7 +577,7 @@ async function seedMerch(){
     ["Écharpe GTO", "Accessoires", 15, null, 100]
   ];
   for(const [nom, cat, prix, tailles, hue] of ex){
-    await DB.put("articles", {id:uid(), nom, cat, prix, kind:"merch", club:true, marge:null, mode:"stock",
+    await DB.put("articles", {id:uid(), nom, cat, prix, kind:"merch", club:true, marge:null, mode:"precommande", flocage:true, flocagePrix:5,
       stock: tailles ? 0 : 10, tailles: tailles ? tailles.map(([t, stock]) => ({t, stock})) : null, delai:0,
       photos:[samplePhoto("Exemple", hue, "carre")], exemple:true, actif:true, cree:new Date().toISOString()});
   }
@@ -587,6 +593,10 @@ async function boot(){
   if(!S.settings.club || S.settings.club === "Club de rugby") S.settings.club = "GTO/VDB";
   if(!S.settings.seeded){ await seed(); S.settings.seeded = true; }
   if(!S.settings.seededMerch){ await seedMerch(); S.settings.seededMerch = true; }
+  if(!S.settings.merchPre){
+    for(const a of await DB.all("articles")) if(a.kind === "merch"){ a.mode = "precommande"; if(a.flocage === undefined){ a.flocage = true; a.flocagePrix = 5; } await DB.put("articles", a); }
+    S.settings.merchPre = true;
+  }
   await saveSettings();
   await migrate();
   await reload();
@@ -629,12 +639,14 @@ function render(){ ({accueil:renderAccueil, vitrine:renderVitrine, vente:renderV
 
 const art = id => S.articles.find(a => a.id === id);
 const inCart = (id, t) => S.cart.filter(l => l.artId === id && (t === undefined || (l.taille || "") === t)).reduce((s,l) => s + l.qte, 0);
-const modeTag = a => hasSizes(a)
+const modeTag = a => isPre(a) ? `<span class="tag cmd">Précommande${a.flocage ? ` · flocage +${eur(a.flocagePrix ?? 5)}` : ""}</span>`
+  : hasSizes(a)
   ? (totalStock(a) > 0 ? `<span class="tag stock num">${totalStock(a)} en stock</span>` : `<span class="tag out">Épuisé</span>`)
   : a.mode === "stock"
   ? (a.stock > 0 ? `<span class="tag stock num">${a.stock} en stock</span>` : `<span class="tag out">Épuisé</span>`)
   : `<span class="tag cmd num">Sur commande · ${a.delai} j</span>`;
-const sizeChips = a => hasSizes(a) ? `<span class="szchips">${a.tailles.map(z => `<span class="sz${z.stock <= 0 ? " off" : z.stock <= 2 ? " low" : ""}"><b>${esc(z.t)}</b> ${z.stock}</span>`).join("")}</span>` : "";
+const sizeChips = a => isPre(a) ? (hasSizes(a) ? `<span class="szchips">${a.tailles.map(z => `<span class="sz"><b>${esc(z.t)}</b></span>`).join("")}</span>` : "")
+  : hasSizes(a) ? `<span class="szchips">${a.tailles.map(z => `<span class="sz${z.stock <= 0 ? " off" : z.stock <= 2 ? " low" : ""}"><b>${esc(z.t)}</b> ${z.stock}</span>`).join("")}</span>` : "";
 const kindPill = a => isMerch(a) ? `<span class="kpill">Merch</span>` : "";
 
 /* ---------- Argent : encaissements et part revenant à Dragonne Créa ---------- */
@@ -795,7 +807,7 @@ function renderVente(){
           ${a.photos.length > 1 ? `<span class="nphotos num">${a.photos.length} photos</span>` : ""}</span>
           <button class="zoom" data-zoom="${a.id}" aria-label="Voir les photos de ${esc(a.nom)}"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="6"/><path d="m20 20-4.5-4.5M11 8v6M8 11h6"/></svg></button>
           ${n ? `<span class="incart num">${n}</span>` : ""}
-          <span class="bd"><span class="nm">${esc(a.nom)}</span>${hasSizes(a) ? sizeChips(a) : `<span>${modeTag(a)} ${a.exemple ? '<span class="tag ex">Exemple</span>' : ""}</span>`}
+          <span class="bd"><span class="nm">${esc(a.nom)}</span>${isPre(a) ? `<span>${modeTag(a)}</span>${sizeChips(a)}` : hasSizes(a) ? sizeChips(a) : `<span>${modeTag(a)} ${a.exemple ? '<span class="tag ex">Exemple</span>' : ""}</span>`}
           <span class="pr num">${eur(salePrice(a))}</span></span></div>`; }).join("")}</div>`
       : `<div class="panel"><p class="muted">Aucun article ${esc(canalName(canal))} dans cette catégorie. Ajoutez-en depuis le Catalogue.</p></div>`}
     </section>
@@ -813,10 +825,11 @@ function renderVente(){
 function cartTotals(){
   const sum = (mode, k, f = () => true) => r2(S.cart.filter(l => l.mode === mode && f(l)).reduce((s,l) => s + l[k]*l.qte, 0));
   const res = l => l.kind !== "merch";
+  const pre = sum("precommande","prix");
   const stock = sum("stock","prix"), cmd = sum("commande","prix");
   const stockBase = sum("stock","base"), cmdBase = sum("commande","base");
   const stockRes = sum("stock","prix",res), cmdRes = sum("commande","prix",res);
-  return {stock, cmd, total:r2(stock+cmd), stockBase, cmdBase, base:r2(stockBase+cmdBase), stockRes, cmdRes, res:r2(stockRes+cmdRes)};
+  return {stock, cmd, pre, total:r2(stock+cmd+pre), stockBase, cmdBase, base:r2(stockBase+cmdBase), stockRes, cmdRes, res:r2(stockRes+cmdRes)};
 }
 function cartHTML(){
   const cc = S.cartCanal || S.settings.canal;
@@ -825,17 +838,17 @@ function cartHTML(){
   return `<header><h2>Panier</h2>${canalPill(cc)}<button class="btn small ghost" id="clearCart">Vider</button></header>
   <div class="lines">${S.cart.map((l,i) => `
     <div class="line">
-      <div class="t">${esc(l.nom)}${l.taille ? ` <span class="szbadge">${esc(l.taille)}</span>` : ""}<div>${l.mode==="commande" ? '<span class="tag cmd">Sur commande</span>' : l.kind === "merch" ? '<span class="kpill">Merch</span>' : '<span class="tag stock">À emporter</span>'}</div></div>
+      <div class="t">${esc(l.nom)}${l.taille ? ` <span class="szbadge">${esc(l.taille)}</span>` : ""}<div>${l.mode==="precommande" ? `<span class="tag cmd">Précommande</span>${l.floc ? ` <span class="kpill">Floqué${l.perso ? " : " + esc(l.perso) : ""}</span>` : ""}` : l.mode==="commande" ? '<span class="tag cmd">Sur commande</span>' : l.kind === "merch" ? '<span class="kpill">Merch</span>' : '<span class="tag stock">À emporter</span>'}</div></div>
       <div class="p num"><b>${eur(l.prix*l.qte)}</b><div class="muted">${eur(l.prix)} / u</div></div>
       <div class="qty"><button data-dec="${i}" aria-label="Retirer un">−</button><span class="num">${l.qte}</span><button data-inc="${i}" aria-label="Ajouter un">+</button></div>
       <div></div>
       ${l.mode==="commande" ? `<input type="text" id="perso-${i}" data-perso="${i}" placeholder="Personnalisation (prénom, numéro, couleurs…)" value="${esc(l.perso)}">` : ""}
     </div>`).join("")}</div>
   <div class="tot">
-    ${t.stock && t.cmd ? `<div class="row muted"><span>À emporter</span><span class="num">${eur(t.stock)}</span></div><div class="row muted"><span>Sur commande</span><span class="num">${eur(t.cmd)}</span></div>` : ""}
+    ${[t.stock, t.cmd, t.pre].filter(Boolean).length > 1 ? [["À emporter", t.stock], ["Sur commande", t.cmd], ["Précommandes", t.pre]].filter(x => x[1]).map(([l, v]) => `<div class="row muted"><span>${l}</span><span class="num">${eur(v)}</span></div>`).join("") : ""}
     <div class="row big"><span>Total</span><span class="num">${eur(t.total)}</span></div>
     ${cc === "club" && t.res !== t.total ? `<div class="row muted small"><span>dont résine / merchandising</span><span class="num">${eur(t.res)} / ${eur(t.total - t.res)}</span></div>` : ""}
-    <button class="btn primary" id="checkout">${t.cmd ? "Prendre la commande" : "Encaisser"}</button>
+    <button class="btn primary" id="checkout">${t.cmd || t.pre ? "Prendre la commande" : "Encaisser"}</button>
   </div>`;
 }
 function bindCart(){
@@ -846,22 +859,49 @@ function bindCart(){
   const c = $("#clearCart"); if(c) c.onclick = async () => { if(await ask("Vider le panier ?", "Les articles ajoutés seront retirés.", "Vider")) { S.cart = []; S.cartCanal = null; renderVente(); } };
   const k = $("#checkout"); if(k) k.onclick = openCheckout;
 }
-function addToCart(id, taille){
+function addToCart(id, taille, opt){
   const a = art(id);
   const canal = a.club ? "club" : "dc";
   if(S.cart.length && S.cartCanal && S.cartCanal !== canal) return toast(`Le panier contient des articles ${canalName(S.cartCanal)} : encaissez-les d'abord`);
-  if(hasSizes(a) && taille === undefined) return pickSize(a);
+  if(isPre(a) && !opt) return configMerch(a);
+  if(!isPre(a) && hasSizes(a) && taille === undefined) return pickSize(a);
   const t = taille || "";
   if(a.mode === "stock" && inCart(id, t) >= stockOf(a, t)) return toast(stockOf(a, t) ? "Plus de stock pour cet article" : "Article épuisé");
-  // Les articles sur commande gardent une ligne par pièce personnalisée
-  const l = a.mode === "stock" ? S.cart.find(x => x.artId === id && (x.taille || "") === t) : null;
-  if(l) l.qte++; else S.cart.push({artId:id, nom:a.nom, taille:t, kind:a.kind || "resine", prix:salePrice(a), base:isMerch(a) ? 0 : r2(a.prix), mode:a.mode, qte:1, perso:"", delai:a.delai||0});
+  const floc = !!(opt && opt.floc), txt = (opt && opt.txt || "").trim();
+  // Les articles sur commande gardent une ligne par pièce personnalisée ; les précommandes identiques se regroupent
+  const l = a.mode === "stock" ? S.cart.find(x => x.artId === id && (x.taille || "") === t)
+    : isPre(a) ? S.cart.find(x => x.artId === id && (x.taille || "") === t && !!x.floc === floc && (x.perso || "") === txt) : null;
+  const prix = r2(salePrice(a) + (floc ? (+a.flocagePrix || 0) : 0));
+  if(l) l.qte++; else S.cart.push({artId:id, nom:a.nom, taille:t, kind:a.kind || "resine", prix, base:isMerch(a) ? 0 : r2(a.prix), mode:a.mode, qte:1, perso:txt, floc, delai:a.delai||0});
   S.cartCanal = canal;
   if(S.view !== "vente") return toast(`${a.nom}${t ? " (" + t + ")" : ""} ajouté au panier`);
   renderVente();
   const c = document.querySelector(`[data-add="${id}"]`); if(c) c.classList.add("pop");
 }
-/* Choix de la taille au moment de vendre : stock affiché pour chaque taille */
+/* Précommande de merchandising : taille + flocage, prix unique de l'article */
+function configMerch(a){
+  const st = {t: hasSizes(a) ? null : "", floc:false, txt:""};
+  const fp = +a.flocagePrix || 0;
+  const draw = () => {
+    openDlg(`<header><h2>${esc(a.nom)}</h2></header>
+      <div class="body">
+        <p class="muted" style="margin:0">Précommande, payée en totalité à la commande.</p>
+        ${hasSizes(a) ? `<div class="f" style="display:flex;flex-direction:column;gap:8px;font-weight:700;font-size:14px">Taille
+          <div class="sizes">${a.tailles.map(z => `<button type="button" class="size${st.t === z.t ? " on" : ""}" data-psz="${esc(z.t)}" aria-pressed="${st.t === z.t}"><b>${esc(z.t)}</b></button>`).join("")}</div></div>` : ""}
+        ${a.flocage ? `<div class="f" style="display:flex;flex-direction:column;gap:8px;font-weight:700;font-size:14px">Flocage
+          <div class="seg"><button type="button" data-fl="0" aria-pressed="${!st.floc}">Sans flocage</button><button type="button" data-fl="1" aria-pressed="${st.floc}">Avec flocage (+${eur(fp)})</button></div></div>
+          ${st.floc ? `<label class="f">Texte à floquer <span class="h">nom, numéro… (facultatif)</span><input type="text" id="flTxt" value="${esc(st.txt)}" autocomplete="off"></label>` : ""}` : ""}
+        <div class="paybox"><div class="row big"><span>Prix</span><span class="num">${eur(salePrice(a) + (st.floc ? fp : 0))}</span></div></div>
+      </div>
+      <footer><button class="btn ghost" id="cfNo" type="button">Retour</button><button class="btn primary" id="cfOk" type="button" ${st.t === null ? "disabled" : ""}>${st.t === null ? "Choisissez une taille" : "Ajouter au panier"}</button></footer>`);
+    const keepTxt = () => { const f = $("#flTxt"); if(f) st.txt = f.value; };
+    document.querySelectorAll("[data-psz]").forEach(b => b.onclick = () => { keepTxt(); st.t = b.dataset.psz; draw(); });
+    document.querySelectorAll("[data-fl]").forEach(b => b.onclick = () => { keepTxt(); st.floc = b.dataset.fl === "1"; draw(); if(st.floc){ const f = $("#flTxt"); if(f) f.focus(); } });
+    $("#cfNo").onclick = closeDlg;
+    $("#cfOk").onclick = () => { keepTxt(); if(st.t === null) return; closeDlg(); addToCart(a.id, st.t, {floc:st.floc, txt:st.floc ? st.txt : ""}); };
+  };
+  draw();
+}
 function pickSize(a){
   openDlg(`<header><h2>${esc(a.nom)}</h2></header>
     <div class="body"><p class="muted" style="margin:0">Choisissez la taille · ${eur(salePrice(a))}</p>
@@ -873,15 +913,15 @@ function pickSize(a){
 }
 /* ---------- Encaissement / prise de commande ---------- */
 function openCheckout(){
-  const t = cartTotals(), hasCmd = t.cmd > 0, canal = S.cartCanal || S.settings.canal;
+  const t = cartTotals(), hasCmd = t.cmd > 0, hasPre = t.pre > 0, needName = hasCmd || hasPre, canal = S.cartCanal || S.settings.canal;
   const maxDelai = Math.max(0, ...S.cart.filter(l => l.mode === "commande").map(l => l.delai));
   const acompte0 = hasCmd ? Math.ceil(t.cmd * S.settings.acomptePct / 100) : 0;
   openDlg(`
-  <header><h2>${hasCmd ? "Nouvelle commande" : "Encaisser la vente"} ${canalPill(canal)}</h2></header>
+  <header><h2>${hasCmd ? "Nouvelle commande" : hasPre ? "Nouvelle précommande" : "Encaisser la vente"} ${canalPill(canal)}</h2></header>
   <form class="body" id="coForm" novalidate>
-    <fieldset><legend>Client${hasCmd ? "" : ' <span class="muted" style="font:400 14px var(--f-body)">(facultatif)</span>'}</legend>
+    <fieldset><legend>Client${needName ? "" : ' <span class="muted" style="font:400 14px var(--f-body)">(facultatif)</span>'}</legend>
       <div class="fgrid">
-        <label class="f">Nom${hasCmd ? " *" : ""}<input type="text" id="coNom" autocomplete="off" ${hasCmd ? "required" : ""}></label>
+        <label class="f">Nom${needName ? " *" : ""}<input type="text" id="coNom" autocomplete="off" ${needName ? "required" : ""}></label>
         <label class="f">Téléphone<input type="tel" id="coTel" autocomplete="off" inputmode="tel"></label>
         <label class="f">${canal === "club" ? "Équipe / catégorie" : "Remarque"} <span class="h">${canal === "club" ? "ex. U12, Seniors, Parent" : "ex. marché de Noël"}</span><input type="text" id="coEq" autocomplete="off"></label>
       </div>
@@ -897,6 +937,7 @@ function openCheckout(){
       <div class="seg paymode" role="radiogroup" aria-label="Mode de paiement"><button type="button" data-pm="especes" aria-pressed="true">Espèces</button><button type="button" data-pm="cb" aria-pressed="false">Carte bancaire</button></div>
       ${t.stock ? `<div class="row"><span>Articles à emporter</span><b class="num">${eur(t.stock)}</b></div>` : ""}
       ${hasCmd ? `<div class="row"><span>Acompte sur commande</span><b class="num" id="coAcOut"></b></div>` : ""}
+      ${hasPre ? `<div class="row"><span>Précommandes (payées en totalité)</span><b class="num">${eur(t.pre)}</b></div>` : ""}
       <div class="row big"><span>À encaisser${canal === "club" ? ` pour ${esc(CLUB())}` : ""}</span><span class="num" id="coNow"></span></div>
       ${hasCmd ? `<div class="row due"><span>Reste dû à la livraison</span><span class="num" id="coRest"></span></div>` : ""}
       <div id="cashBox" class="cashbox"><label class="f">Espèces reçues<input type="text" inputmode="decimal" id="coRecu" placeholder="Pour calculer la monnaie"></label>
@@ -904,10 +945,10 @@ function openCheckout(){
       <p id="cbNote" class="muted small" style="margin:0" hidden>Encaissez le montant sur le terminal de paiement, puis validez.</p>
     </div>
   </form>
-  <footer><button class="btn ghost" id="coCancel" type="button">Retour</button><button class="btn ok" id="coOk" type="button">${hasCmd ? "Valider la commande" : "Valider la vente"}</button></footer>`);
+  <footer><button class="btn ghost" id="coCancel" type="button">Retour</button><button class="btn ok" id="coOk" type="button">${hasCmd || hasPre ? "Valider la commande" : "Valider la vente"}</button></footer>`);
   const upd = () => {
     const ac = hasCmd ? Math.min(parseNum($("#coAc").value), t.cmd) : 0;
-    const now = r2(t.stock + ac);
+    const now = r2(t.stock + ac + t.pre);
     if(hasCmd){ $("#coAcOut").textContent = eur(ac); $("#coRest").textContent = eur(t.cmd - ac); }
     $("#coNow").textContent = eur(now);
     const recu = $("#coRecu").value.trim();
@@ -925,12 +966,13 @@ function openCheckout(){
   $("#coCancel").onclick = closeDlg;
   $("#coOk").onclick = async () => {
     const nom = $("#coNom").value.trim();
-    if(hasCmd && !nom){ $("#coNom").focus(); return toast("Indiquez le nom du client"); }
+    if(needName && !nom){ $("#coNom").focus(); return toast("Indiquez le nom du client"); }
     const {ac} = upd();
     const client = {nom, tel:$("#coTel").value.trim(), equipe:$("#coEq").value.trim()};
     const now = new Date().toISOString();
     const stockLines = S.cart.filter(l => l.mode === "stock"), cmdLines = S.cart.filter(l => l.mode === "commande");
-    const ligne = l => ({artId:l.artId, nom:l.nom, taille:l.taille || "", kind:l.kind || "resine", prix:l.prix, base:l.base, qte:l.qte, perso:(l.perso||"").trim()});
+    const preLines = S.cart.filter(l => l.mode === "precommande");
+    const ligne = l => ({artId:l.artId, nom:l.nom, taille:l.taille || "", kind:l.kind || "resine", floc:!!l.floc, prix:l.prix, base:l.base, qte:l.qte, perso:(l.perso||"").trim()});
     const nums = [];
     if(stockLines.length){
       const o = {id:uid(), num:S.settings.nextNum++, type:"vente", canal, date:now, client, statut:"livree",
@@ -946,11 +988,17 @@ function openCheckout(){
       if(ac > 0) pay(o, ac, "acompte", now, pm);
       await DB.put("orders", o); nums.push(o.num);
     }
+    if(preLines.length){
+      const o = {id:uid(), num:S.settings.nextNum++, type:"commande", pre:true, canal, date:now, client, statut:"a_faire",
+        lignes:preLines.map(ligne), total:t.pre, totalBase:0, totalRes:0, paiements:[]};
+      pay(o, t.pre, "vente", now, pm);
+      await DB.put("orders", o); nums.push(o.num);
+    }
     await saveSettings();
     S.cart = []; S.cartCanal = null; closeDlg(); await reload(); renderVente();
-    celebrate(cmdLines.length ? "Commande enregistrée" : "Vente enregistrée", cmdLines.length ? `n° ${nums[nums.length-1]} · ${esc(client.nom)}` : `n° ${nums[0]} · ${esc(canalName(canal))}`);
+    celebrate(cmdLines.length || preLines.length ? "Commande enregistrée" : "Vente enregistrée", cmdLines.length || preLines.length ? `n° ${nums.join(", ")} · ${esc(client.nom)}` : `n° ${nums[0]} · ${esc(canalName(canal))}`);
   };
-  setTimeout(() => { const n = $("#coNom"); if(n && hasCmd) n.focus(); }, 50);
+  setTimeout(() => { const n = $("#coNom"); if(n && needName) n.focus(); }, 50);
 }
 
 /* ---------- Commandes ---------- */
@@ -969,7 +1017,7 @@ function renderCommandes(){
   const selPaid = sel ? r2([...sel].reduce((t,id) => { const o = S.orders.find(x => x.id === id); return t + (o ? paid(o) : 0); }, 0)) : 0;
   $("#main").innerHTML = `
   <div class="head"><div><h1>${sel ? "Sélection" : "Commandes"}</h1><p>${sel ? "Touchez les ventes à annuler ou à supprimer, puis choisissez en bas" : "Suivi des pièces à fabriquer et des soldes à encaisser"}</p></div>
-    ${sel ? "" : `<button class="btn ghost" id="selStart">Annuler ou supprimer des ventes</button>`}</div>
+    ${sel ? "" : `<span class="acts"><button class="btn primary" id="preRecap">Récap précommandes</button><button class="btn ghost" id="selStart">Annuler ou supprimer des ventes</button></span>`}</div>
   ${canalTabs(S.ocanal, {all:true, compact:true})}
   <div class="toolbar">
     <div class="chips" style="margin:0">${Object.entries(F).map(([k,v]) => `<button class="chip" data-f="${k}" aria-pressed="${k===S.filter}">${v}</button>`).join("")}</div>
@@ -985,6 +1033,7 @@ function renderCommandes(){
   $("#main").querySelectorAll("[data-solde]").forEach(b => b.onclick = () => encaisserSolde(b.dataset.solde));
   $("#main").querySelectorAll("[data-cancel]").forEach(b => b.onclick = () => cancelOrders([b.dataset.cancel]));
   $("#main").querySelectorAll("[data-odel]").forEach(b => b.onclick = () => deleteOrders([b.dataset.odel]));
+  const pr = $("#preRecap"); if(pr) pr.onclick = () => openPreRecap("a_faire");
   const ss = $("#selStart"); if(ss) ss.onclick = () => { S.sel = new Set(); if(S.filter === "ouvertes") S.filter = "toutes"; renderCommandes(); };
   if(sel){
     $("#main").querySelectorAll("[data-pick]").forEach(c => {
@@ -999,17 +1048,18 @@ function renderCommandes(){
 function orderHTML(o){
   const d = due(o), late = o.type==="commande" && !["livree","annulee"].includes(o.statut) && o.livraison && o.livraison < todayISO();
   const next = {a_faire:"en_cours", en_cours:"prete", prete:"livree"}[o.statut];
-  const nextLbl = {en_cours:"Commencer", prete:"Marquer prête", livree:"Remettre au client"}[next];
+  const nextLbl = (o.pre ? {en_cours:"Marquer commandée", prete:"Marquer reçue", livree:"Remettre au client"} : {en_cours:"Commencer", prete:"Marquer prête", livree:"Remettre au client"})[next];
   const off = o.statut === "annulee";
   const pickable = !!S.sel, on = pickable && S.sel.has(o.id);
-  const pill = off ? `<span class="pill annulee">Annulée</span>` : `<span class="pill ${o.type==="vente" ? "vente" : o.statut}">${o.type==="vente" ? "Vente directe" : STATUTS[o.statut]}</span>`;
+  const pill = off ? `<span class="pill annulee">Annulée</span>` : `<span class="pill ${o.type==="vente" ? "vente" : o.statut}">${o.type==="vente" ? "Vente directe" : statutTxt(o)}</span>`;
   const rels = [...new Set(o.paiements.map(p => p.releve).filter(Boolean))].map(releveOf).filter(Boolean);
   return `<article class="order${pickable ? " pick" : ""}${on ? " on" : ""}${S.sel && off && !on ? " off" : ""}" data-state="${off ? "annulee" : o.type==="vente" ? "livree" : o.statut}"
       ${pickable ? `data-pick="${o.id}" role="checkbox" aria-checked="${on}" tabindex="0"` : ""}>
     <div class="top">${pickable ? `<span class="check" aria-hidden="true">${on ? "✓" : ""}</span>` : ""}<div style="flex:1;min-width:0"><h3>${esc(o.client.nom || "Client de passage")} <span class="muted num" style="font-weight:600">n° ${o.num}</span></h3>
       <div class="meta">${canalPill(o.canal)}${o.client.equipe ? `<span>${esc(o.client.equipe)}</span>` : ""}${o.client.tel ? `<a href="tel:${esc(o.client.tel.replace(/\s/g,""))}">${esc(o.client.tel)}</a>` : ""}<span>${frDate(o.date)} ${frTime(o.date)}</span></div></div>
       ${pill}</div>
-    <ul>${o.lignes.map(l => `<li><span>${l.qte > 1 ? l.qte+" × " : ""}${esc(lineName(l))}${l.kind === "merch" ? ' <span class="kpill">Merch</span>' : ""}${l.perso ? `<em>${esc(l.perso)}</em>` : ""}</span><span class="num">${eur(l.prix*l.qte)}</span></li>`).join("")}</ul>
+    ${o.pre ? `<div class="meta"><span class="kpill">Précommande merchandising · payée</span></div>` : ""}
+    <ul>${o.lignes.map(l => `<li><span>${l.qte > 1 ? l.qte+" × " : ""}${esc(lineName(l))}${l.kind === "merch" && !o.pre ? ' <span class="kpill">Merch</span>' : ""}${l.perso ? `<em>${esc(l.perso)}</em>` : ""}</span><span class="num">${eur(l.prix*l.qte)}</span></li>`).join("")}</ul>
     ${o.note ? `<div class="muted" style="font-size:14px">Note : ${esc(o.note)}</div>` : ""}
     <div class="money num"><span>Total <b>${eur(o.total)}</b></span><span>Payé <b>${eur(paid(o))}</b></span>${d > 0 ? `<span class="due">Reste ${eur(d)}</span>` : (off ? (o.annuleLe ? `<span class="muted">Annulée le ${frDate(o.annuleLe)}</span>` : "") : `<span style="color:var(--ok);font-weight:700">Soldée</span>`)}</div>
     ${o.canal === "club" && (o.totalRes ?? o.total) > 0 && (o.totalBase ?? o.total) !== (o.totalRes ?? o.total) ? `<div class="meta"><span>Résine : part Dragonne Créa ${eur(o.totalBase)} · marge club ${eur((o.totalRes ?? o.total) - o.totalBase)}</span></div>` : ""}
@@ -1030,7 +1080,7 @@ async function setStatus(id, st){
     pay(o, due(o), "solde", null, m);
   }
   o.statut = st; await DB.put("orders", o); await reload(); renderCommandes();
-  toast(`Commande n° ${o.num} : ${STATUTS[st].toLowerCase()}`);
+  toast(`Commande n° ${o.num} : ${statutTxt(o).toLowerCase()}`);
 }
 async function encaisserSolde(id){
   const o = S.orders.find(x => x.id === id);
@@ -1072,6 +1122,78 @@ function cancelOrders(ids){
     S.sel = null; closeDlg(); await reload(); render();
     toast(one ? `n° ${list[0].num} annulée` : `${list.length} ventes annulées`);
   };
+}
+
+/* Récapitulatif des précommandes à passer au fournisseur, regroupées par article, taille et flocage */
+function preRecap(statut){
+  const orders = S.orders.filter(o => o.pre && o.statut === statut);
+  const m = new Map();
+  orders.forEach(o => o.lignes.forEach(l => {
+    const k = (l.artId || l.nom) + "|" + (l.taille || "");
+    const r = m.get(k) || {nom:l.nom, taille:l.taille || "", sans:0, avec:0, flocs:[]};
+    if(l.floc){ r.avec += l.qte; r.flocs.push({txt:l.perso || "", qte:l.qte, client:o.client.nom, num:o.num}); } else r.sans += l.qte;
+    m.set(k, r); }));
+  const ORDER = ["XS","S","M","L","XL","XXL","XXXL","4 ans","6 ans","8 ans","10 ans","12 ans","14 ans"];
+  const rows = [...m.values()].sort((a,b) => a.nom.localeCompare(b.nom) || ORDER.indexOf(a.taille) - ORDER.indexOf(b.taille));
+  return {orders, rows};
+}
+function openPreRecap(statut){
+  const {orders, rows} = preRecap(statut);
+  const tot = rows.reduce((s,r) => s + r.sans + r.avec, 0);
+  const lab = {a_faire:"à commander", en_cours:"déjà commandées", prete:"reçues"};
+  openDlg(`<header class="jhead"><h2>Récap précommandes</h2>
+      <div class="chips" style="margin:0">${Object.entries(lab).map(([k,l]) => `<button class="chip" data-rs="${k}" aria-pressed="${k===statut}">${l[0].toUpperCase() + l.slice(1)}</button>`).join("")}</div></header>
+    <div class="body">
+      ${rows.length ? `<p class="muted" style="margin:0"><b>${tot}</b> pièce${tot>1?"s":""} ${lab[statut]}, sur ${orders.length} commande${orders.length>1?"s":""}.</p>
+      <div class="tbl"><table><thead><tr><th>Article</th><th>Taille</th><th class="r">Sans flocage</th><th class="r">Avec flocage</th><th class="r">Total</th></tr></thead><tbody>
+        ${rows.map(r => `<tr><td><b>${esc(r.nom)}</b></td><td>${esc(r.taille || "–")}</td><td class="r num">${r.sans || ""}</td><td class="r num">${r.avec || ""}</td><td class="r num"><b>${r.sans + r.avec}</b></td></tr>`).join("")}
+      </tbody></table></div>
+      ${rows.some(r => r.flocs.length) ? `<h3 style="font-size:16px;margin-top:6px">Flocages</h3><div class="tbl"><table><thead><tr><th>Article</th><th>Taille</th><th>Texte</th><th class="r">Qté</th><th>Client</th></tr></thead><tbody>
+        ${rows.flatMap(r => r.flocs.map(f => `<tr><td>${esc(r.nom)}</td><td>${esc(r.taille || "–")}</td><td><b>${esc(f.txt || "(sans texte)")}</b></td><td class="r num">${f.qte}</td><td>${esc(f.client)} <span class="muted">n° ${f.num}</span></td></tr>`)).join("")}
+      </tbody></table></div>` : ""}`
+      : `<p class="muted" style="margin:0">Aucune précommande ${lab[statut]}.</p>`}
+    </div>
+    <footer><button class="btn ghost" id="rcClose" type="button">Fermer</button>
+      ${rows.length ? `<button class="btn ghost" id="rcPdf" type="button">Envoyer le PDF</button>` : ""}
+      ${rows.length && statut === "a_faire" ? `<button class="btn primary" id="rcDone" type="button">Marquer tout comme commandé</button>` : ""}</footer>`, false, true);
+  $("#rcClose").onclick = closeDlg;
+  document.querySelectorAll("[data-rs]").forEach(b => b.onclick = () => openPreRecap(b.dataset.rs));
+  const pd = $("#rcPdf"); if(pd) pd.onclick = () => sharePreRecap(statut);
+  const dn = $("#rcDone"); if(dn) dn.onclick = async () => {
+    if(!(await ask("Précommandes passées au fournisseur ?", `Les ${orders.length} commande${orders.length>1?"s":""} passent en « Commandée ».`, "Oui, commandées"))) return openPreRecap(statut);
+    for(const o of orders){ o.statut = "en_cours"; await DB.put("orders", o); }
+    await reload(); if(S.view === "commandes") renderCommandes(); toast("Précommandes marquées commandées");
+  };
+}
+async function sharePreRecap(statut){
+  try {
+    const {orders, rows} = preRecap(statut);
+    const doc = new PdfDoc(), L = 40, R = 555, navy = [45,58,140], teal = [15,124,131], muted = [102,99,125], soft = [243,243,248], white = [255,255,255], line = [214,214,224];
+    const lg = await loadJpeg("logo.jpg"), gt = await loadJpeg("gto.jpg"); const lgN = doc.addImg(lg), gtN = doc.addImg(gt);
+    let x = L; if(lg){ const h = 58, w = h * lg.w / lg.h; doc.image(lgN, x, 30, w, h); x += w + 10; } if(gt){ const h = 54, w = h * gt.w / gt.h; doc.image(gtN, x, 32, w, h); }
+    doc.text(R, 52, "RÉCAPITULATIF DES PRÉCOMMANDES", {size:14, bold:true, align:"right", color:navy});
+    doc.text(R, 70, `Merchandising ${CLUB()} · ${({a_faire:"à commander", en_cours:"commandées", prete:"reçues"})[statut]}`, {size:10.5, bold:true, align:"right"});
+    doc.text(R, 85, `Édité le ${dmy(new Date().toISOString())} · ${orders.length} commande${orders.length>1?"s":""}`, {size:8.5, align:"right", color:muted});
+    let y = 112;
+    const tbl = (cols, data, color) => {
+      const hd = () => { doc.rect(L, y, R - L, 18, color); cols.forEach(([t, cx, al]) => doc.text(al ? cx : cx + 4, y + 12.5, t, {size:7.5, bold:true, color:white, align:al ? "right" : "left"})); y += 18; };
+      hd();
+      data.forEach((row, i) => { if(y > 770){ doc.addPage(); y = 50; hd(); } if(i % 2) doc.rect(L, y, R - L, 16, soft);
+        row.forEach((v, k) => { const [, cx, al, mw, b] = cols[k]; doc.text(al ? cx : cx + 4, y + 11, String(v), {size:8.5, align:al ? "right" : "left", maxW:mw, bold:b}); }); y += 16; });
+      doc.line(L, y, R, y, line); y += 22;
+    };
+    tbl([["Article", L, 0, 230, true], ["Taille", L + 240, 0, 80], ["Sans flocage", L + 380, "r"], ["Avec flocage", L + 455, "r"], ["Total", R - 4, "r", 0, true]],
+      rows.map(r => [r.nom, r.taille || "–", r.sans || "", r.avec || "", r.sans + r.avec]), navy);
+    const tot = rows.reduce((s,r) => s + r.sans + r.avec, 0);
+    doc.text(R - 4, y - 8, `Total : ${tot} pièce${tot>1?"s":""}`, {size:10, bold:true, align:"right"}); y += 10;
+    const fl = rows.flatMap(r => r.flocs.map(f => [r.nom, r.taille || "–", f.txt || "(sans texte)", f.qte, `${f.client} (n° ${f.num})`]));
+    if(fl.length){ if(y > 700){ doc.addPage(); y = 50; } doc.text(L, y, "Flocages", {size:12, bold:true, color:teal}); y += 10;
+      tbl([["Article", L, 0, 150], ["Taille", L + 155, 0, 60], ["Texte à floquer", L + 220, 0, 150, true], ["Qté", L + 400, "r"], ["Client", L + 410, 0, 100]], fl, teal); }
+    const n = doc.pages.length;
+    doc.pages.forEach((c, i) => { doc.c = c; doc.line(L, 806, R, 806, line);
+      doc.text(L, 820, `Dragonne Créa · Précommandes ${CLUB()}`, {size:7.5, color:muted}); doc.text(R, 820, `Page ${i + 1}/${n}`, {size:7.5, color:muted, align:"right"}); });
+    await saveBinary(`Precommandes-${CLUB().replace(/[^\w-]+/g, "")}_${todayISO()}.pdf`, doc.build(), "application/pdf");
+  } catch(e){ console.error(e); toast("Le PDF n'a pas pu être créé"); }
 }
 
 /* Suppression définitive (ventes d'essai, erreurs) : la vente disparaît de l'appli et de tous les comptes */
@@ -1124,7 +1246,7 @@ function renderCatalogue(){
         <div class="meta">${canalPill(a.club ? "club" : "dc")}${kindPill(a)}<span>${esc(a.cat)}</span>
           ${isMerch(a) ? `<b class="num" style="color:var(--ink)">${eur(a.prix)}</b>` : a.club ? `<span class="num"><b style="color:var(--ink)">${eur(clubPrice(a))}</b> au club · ${eur(a.prix)} pour Dragonne Créa${a.marge ? " · marge propre" : ""}</span>` : `<b class="num" style="color:var(--ink)">${eur(a.prix)}</b>`}
           ${modeTag(a)}${a.exemple ? '<span class="tag ex">Exemple</span>' : ""}${a.actif ? "" : '<span class="tag ex">Masqué</span>'}</div>
-        ${hasSizes(a) ? `<details class="szdet"><summary>Stock par taille</summary>${sizeChips(a)}</details>` : ""}</div>
+        ${hasSizes(a) ? (isPre(a) ? sizeChips(a) : `<details class="szdet"><summary>Stock par taille</summary>${sizeChips(a)}</details>`) : ""}</div>
       <button class="btn small ghost" data-edit="${a.id}">Modifier</button></div>`).join("")}</div>`
   : `<div class="panel"><p class="muted">Aucun article ici. Ajoutez le premier avec sa photo et son prix.</p></div>`}`;
   bindCanals(x => { S.catView = x; renderCatalogue(); });
@@ -1191,7 +1313,7 @@ function editArticle(id){
     <div class="body">
       <div class="f" style="display:flex;flex-direction:column;gap:6px;font-weight:700;font-size:14px">Type de produit
         <div class="seg"><button type="button" data-kd="resine" aria-pressed="${!merch}">Résine</button><button type="button" data-kd="merch" aria-pressed="${merch}">Merchandising ${esc(CLUB())}</button></div></div>
-      ${merch ? `<p class="muted small" style="margin:0">Produit du club (bonnet, écharpe, sweat…) : vendu uniquement au stand ${esc(CLUB())}, 100 % pour le club. Il n'apparaît jamais sur les relevés de remboursement.</p>` : `<label class="clubbox${a.club ? " on" : ""}"><input type="checkbox" id="aClub" ${a.club ? "checked" : ""}>
+      ${merch ? `<p class="muted small" style="margin:0">Produit du club (bonnet, écharpe, sweat…) vendu en <b>précommande</b> au stand ${esc(CLUB())}, payé en totalité à la commande, 100 % pour le club. Il n'apparaît jamais sur les relevés de remboursement.</p>` : `<label class="clubbox${a.club ? " on" : ""}"><input type="checkbox" id="aClub" ${a.club ? "checked" : ""}>
         <span><b>${esc(CLUB())}</b> · article réservé au club<br><span class="muted">${a.club ? `Vendu uniquement dans les ventes ${esc(CLUB())}, au prix club (marge incluse).` : "Non coché : vendu uniquement par Dragonne Créa, au prix indiqué."}</span></span></label>`}
       <div class="f" style="display:flex;flex-direction:column;gap:10px;font-weight:700;font-size:14px">Photos <span class="h" style="font-weight:400;color:var(--muted)">jusqu'à ${MAXPH} · la première est celle affichée à la vente, touchez ★ pour en changer</span>
         <div class="photos" id="phs">${a.photos.map((p,i) => `<figure><img src="${p}" alt="Photo ${i+1}">
@@ -1203,14 +1325,14 @@ function editArticle(id){
       <div class="fgrid">
         <label class="f">Nom de l'article *<input type="text" id="aNom" value="${esc(a.nom)}"></label>
         <label class="f">Catégorie *<input type="text" id="aCat" list="catList" value="${esc(a.cat)}" placeholder="ex. Porte-clés"><datalist id="catList">${cats.map(c => `<option value="${esc(c)}">`).join("")}</datalist></label>
-        <label class="f">${merch ? "Prix de vente (€) *" : "Prix Dragonne Créa (€) *"} <span class="h">${merch ? "prix payé au stand" : a.club ? "ce que le club vous rembourse" : "prix de vente"}</span><input type="text" inputmode="decimal" id="aPrix" value="${a.prix === "" ? "" : numIn(a.prix)}"></label>
+        <label class="f">${merch ? "Prix de vente (€) *" : "Prix Dragonne Créa (€) *"} <span class="h">${merch ? "prix unique, toutes tailles" : a.club ? "ce que le club vous rembourse" : "prix de vente"}</span><input type="text" inputmode="decimal" id="aPrix" value="${a.prix === "" ? "" : numIn(a.prix)}"></label>
       </div>
       ${merch ? `<div class="f" style="display:flex;flex-direction:column;gap:6px;font-weight:700;font-size:14px">Tailles
         <div class="seg"><button type="button" data-gamme="unique" aria-pressed="${!sized}">Taille unique</button><button type="button" data-gamme="adulte" aria-pressed="${gammeOf(a.tailles) === "adulte"}">Adulte XS → XXXL</button><button type="button" data-gamme="enfant" aria-pressed="${gammeOf(a.tailles) === "enfant"}">Enfant 4 → 14 ans</button></div></div>
-        ${sized ? `<div class="sizeed">
-          <p class="muted small" style="margin:0">Saisissez le stock de chaque taille (0 si vous n'en avez pas).</p>
-          <div class="szgrid">${a.tailles.map((z,i) => `<label class="szcell"><b>${esc(z.t)}</b><input type="number" min="0" inputmode="numeric" id="ts-${i}" value="${z.stock}" aria-label="Stock taille ${esc(z.t)}"></label>`).join("")}</div>
-          <p class="muted small" style="margin:0">Stock total : <b id="tzTot">${totalStock(a)}</b> pièces, décomptées taille par taille à chaque vente.</p></div>` : ""}` : ""}
+        ${sized ? `<div class="sizeed"><p class="muted small" style="margin:0">Tailles proposées à la commande :</p>${sizeChips({...a, mode:"precommande"})}</div>` : ""}
+        <div class="f" style="display:flex;flex-direction:column;gap:6px;font-weight:700;font-size:14px">Flocage
+          <div class="seg"><button type="button" data-flo="1" aria-pressed="${!!a.flocage}">Proposé</button><button type="button" data-flo="0" aria-pressed="${!a.flocage}">Non proposé</button></div></div>
+        ${a.flocage ? `<div class="fgrid"><label class="f">Supplément flocage (€)<input type="text" inputmode="decimal" id="aFp" value="${numIn(a.flocagePrix ?? 5)}"></label></div>` : ""}` : ""}
       ${a.club && !merch ? `<div class="f" style="display:flex;flex-direction:column;gap:6px;font-weight:700;font-size:14px">Marge du club sur cet article
         <div class="seg"><button type="button" data-own="0" aria-pressed="${!own}">Règle générale (${ruleText({mode:S.settings.margeMode, val:S.settings.margeVal})})</button><button type="button" data-own="1" aria-pressed="${own}">Marge propre</button></div></div>
         ${own ? `<div class="fgrid"><label class="f">Type<select id="aMm"><option value="eur" ${a.marge.mode==="eur"?"selected":""}>Montant fixe (€)</option><option value="pct" ${a.marge.mode==="pct"?"selected":""}>Pourcentage (%)</option></select></label>
@@ -1219,7 +1341,7 @@ function editArticle(id){
       ${merch ? "" : `<div class="f" style="display:flex;flex-direction:column;gap:6px;font-weight:700;font-size:14px">Disponibilité
         <div class="seg"><button type="button" data-mode="stock" aria-pressed="${a.mode==="stock"}">En stock, à emporter</button><button type="button" data-mode="commande" aria-pressed="${a.mode==="commande"}">Fabriqué sur commande</button></div></div>`}
       <div class="fgrid">
-        ${sized ? "" : a.mode === "stock" ? `<label class="f">Quantité en stock<input type="number" min="0" inputmode="numeric" id="aStock" value="${a.stock}"></label>`
+        ${merch ? "" : a.mode === "stock" ? `<label class="f">Quantité en stock<input type="number" min="0" inputmode="numeric" id="aStock" value="${a.stock}"></label>`
           : `<label class="f">Délai de fabrication (jours)<input type="number" min="0" inputmode="numeric" id="aDelai" value="${a.delai}"></label>`}
         <label class="f">Visible à la vente<div class="seg"><button type="button" data-act="1" aria-pressed="${a.actif}">Oui</button><button type="button" data-act="0" aria-pressed="${!a.actif}">Masqué</button></div></label>
       </div>
@@ -1228,6 +1350,7 @@ function editArticle(id){
     const keep = () => { a.nom = $("#aNom").value; a.cat = $("#aCat").value; a.prix = $("#aPrix").value;
       if($("#aStock")) a.stock = Math.max(0, parseInt($("#aStock").value)||0); if($("#aDelai")) a.delai = Math.max(0, parseInt($("#aDelai").value)||0);
       if($("#aMm")) a.marge = {mode:$("#aMm").value, val:parseNum($("#aMv").value)};
+      if($("#aFp")) a.flocagePrix = parseNum($("#aFp").value);
       if(Array.isArray(a.tailles)) a.tailles = a.tailles.map((z,i) => $("#ts-" + i) ? {t:z.t, stock:Math.max(0, parseInt($("#ts-" + i).value)||0)} : z); };
     const ex = () => { const box = $("#aEx"); if(!box) return; keep();
       const base = parseNum(a.prix); if(!(base > 0)){ box.textContent = "Indiquez le prix pour voir le prix club."; return; }
@@ -1238,10 +1361,11 @@ function editArticle(id){
     ex();
     const ac = $("#aClub"); if(ac) ac.onchange = e => { keep(); a.club = e.target.checked; if(!a.club) a.marge = null; draw(); };
     document.querySelectorAll("[data-kd]").forEach(b => b.onclick = () => { keep(); a.kind = b.dataset.kd;
-      if(a.kind === "merch"){ a.club = true; a.marge = null; a.mode = "stock"; } else { a.tailles = null; } draw(); });
+      if(a.kind === "merch"){ a.club = true; a.marge = null; a.mode = "precommande"; if(a.flocage === undefined){ a.flocage = true; a.flocagePrix = 5; } }
+      else { a.tailles = null; if(a.mode === "precommande") a.mode = "stock"; } draw(); });
     document.querySelectorAll("[data-gamme]").forEach(b => b.onclick = () => { keep(); const g = b.dataset.gamme;
       a.tailles = g === "unique" ? null : withGamme(g, a.tailles); draw(); const f = $("#ts-0"); if(f && g !== "unique") f.focus(); });
-    document.querySelectorAll("[id^=ts-]").forEach(f => f.oninput = () => { keep(); const tt = $("#tzTot"); if(tt) tt.textContent = totalStock(a); });
+    document.querySelectorAll("[data-flo]").forEach(b => b.onclick = () => { keep(); a.flocage = b.dataset.flo === "1"; if(a.flocage && a.flocagePrix === undefined) a.flocagePrix = 5; draw(); });
     document.querySelectorAll("[data-own]").forEach(b => b.onclick = () => { keep(); a.marge = b.dataset.own === "1" ? (a.marge || {mode:S.settings.margeMode, val:S.settings.margeVal}) : null; draw(); });
     document.querySelectorAll("[data-mode]").forEach(b => b.onclick = () => { keep(); a.mode = b.dataset.mode; draw(); });
     document.querySelectorAll("[data-act]").forEach(b => b.onclick = () => { keep(); a.actif = b.dataset.act === "1"; draw(); });
@@ -1757,7 +1881,7 @@ function renderBilan(){
     ${top.length ? `<p class="muted small" style="margin:0">Classés par quantité vendue (ventes et commandes de la période, hors annulations). Résines : <b>${tRes.q}</b> pièces · ${eur(tRes.ca)}. Merchandising : <b>${tMer.q}</b> pièces · ${eur(tMer.ca)}.</p>
     <div class="tbl"><table><thead><tr><th>#</th><th>Article</th><th>Taille</th><th>Type</th><th class="r">Qté</th><th class="r">Montant</th><th class="r">Stock restant</th></tr></thead><tbody>
       ${top.map((r,i) => `<tr><td class="num">${i+1}</td><td><b>${esc(r.nom)}</b></td><td>${esc(r.taille || "")}</td><td>${r.kind === "merch" ? '<span class="kpill">Merch</span>' : canalPill(r.canal)}</td><td class="r num"><b>${r.qte}</b></td><td class="r num">${eur(r.ca)}</td>
-        <td class="r num">${r.stock === null ? `<span class="muted">sur commande</span>` : r.stock <= 0 ? `<span class="tag out">Épuisé</span>` : r.stock <= 3 ? `<span class="tag cmd">${r.stock} · à réassortir</span>` : r.stock}</td></tr>`).join("")}
+        <td class="r num">${r.stock === null ? `<span class="muted">${r.kind === "merch" ? "précommande" : "sur commande"}</span>` : r.stock <= 0 ? `<span class="tag out">Épuisé</span>` : r.stock <= 3 ? `<span class="tag cmd">${r.stock} · à réassortir</span>` : r.stock}</td></tr>`).join("")}
     </tbody></table></div>` : `<p class="muted" style="margin:0">Aucun article vendu sur cette période.</p>`}
   </section>
   <section class="panel"><h2>Encaissements et produits achetés</h2>
@@ -1801,17 +1925,17 @@ function bestSellers(du, au, cn){
   const m = new Map();
   S.orders.forEach(o => { if(o.statut === "annulee") return; if(cn && cn !== "tous" && o.canal !== cn) return;
     const d = dayOf(o.date); if(d < du || d > au) return;
-    o.lignes.forEach(l => { const k = (l.artId || ("nom:" + l.nom)) + "|" + (l.taille || "");
-      const r = m.get(k) || {nom:l.nom, taille:l.taille || "", kind:l.kind || "resine", canal:o.canal, qte:0, ca:0, artId:l.artId};
+    o.lignes.forEach(l => { const k = (l.artId || ("nom:" + l.nom)) + "|" + (l.taille || "") + (l.floc ? "|f" : "");
+      const r = m.get(k) || {nom:l.nom, tz:l.taille || "", taille:(l.taille || "") + (l.floc ? (l.taille ? " · " : "") + "floqué" : ""), kind:l.kind || "resine", canal:o.canal, qte:0, ca:0, artId:l.artId};
       r.qte += l.qte; r.ca = r2(r.ca + l.prix * l.qte); m.set(k, r); }); });
   return [...m.values()].map(r => { const a = r.artId && art(r.artId);
-    return {...r, nom:a ? a.nom : r.nom, stock: a && a.mode === "stock" ? stockOf(a, r.taille) : null}; })
+    return {...r, nom:a ? a.nom : r.nom, stock: a && a.mode === "stock" ? stockOf(a, r.tz) : null}; })
     .sort((a,b) => b.qte - a.qte || b.ca - a.ca);
 }
 function exportTop(du, au, cn){
   const fmt = n => String(r2(n)).replace(".", ",");
   const rows = [["Rang","Article","Taille","Type","Circuit","Quantité vendue","Montant","Stock restant"]].concat(
-    bestSellers(du, au, cn).map((r,i) => [i+1, r.nom, r.taille, KINDS[r.kind], canalName(r.canal), r.qte, fmt(r.ca), r.stock === null ? "sur commande" : r.stock]));
+    bestSellers(du, au, cn).map((r,i) => [i+1, r.nom, r.taille, KINDS[r.kind], canalName(r.canal), r.qte, fmt(r.ca), r.stock === null ? (r.kind === "merch" ? "précommande" : "sur commande") : r.stock]));
   const csv = "﻿" + rows.map(r => r.map(v => `"${String(v ?? "").replace(/"/g,'""')}"`).join(";")).join("\r\n");
   download(`articles-vendus_${du}_${au}.csv`, csv, "text/csv;charset=utf-8").then(ok => ok && !IS_APP && toast("Export téléchargé"));
 }
@@ -1852,7 +1976,7 @@ function exportCSV(from, to, cn){
     .forEach(o => { const rels = [...new Set(o.paiements.map(p => p.releve).filter(Boolean))].map(releveOf).filter(Boolean).map(r => r.num).join(" ");
       o.lignes.forEach(l => rows.push([o.num, new Date(o.date).toLocaleString("fr-FR"), canalName(o.canal), o.type==="vente"?"Vente directe":"Commande", o.client.nom, o.client.tel, o.client.equipe,
       l.nom, l.taille || "", KINDS[l.kind || "resine"], l.perso, l.qte, fmt(l.prix), fmt(l.base ?? l.prix), fmt(l.prix*l.qte), fmt((l.prix - (l.base ?? l.prix))*l.qte), fmt(o.total), fmt(paid(o)), fmt(due(o)),
-      o.statut === "annulee" ? "Annulée" : o.type==="vente" ? "Payée" : STATUTS[o.statut], o.livraison || "",
+      o.statut === "annulee" ? "Annulée" : o.type==="vente" ? "Payée" : statutTxt(o), o.livraison || "",
       [...new Set(o.paiements.filter(p => p.montant > 0).map(p => MODES[p.mode] || "Espèces"))].join(" + "), rels])); });
   if(rows.length === 1) return toast("Aucune vente sur cette période");
   const csv = "﻿" + rows.map(r => r.map(v => `"${String(v ?? "").replace(/"/g,'""')}"`).join(";")).join("\r\n");
