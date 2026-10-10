@@ -487,7 +487,8 @@ const hasSizes = a => isMerch(a) && Array.isArray(a.tailles) && a.tailles.length
 const sizeOf = (a, t) => hasSizes(a) ? a.tailles.find(x => x.t === t) : null;
 const stockOf = (a, t) => hasSizes(a) ? ((sizeOf(a, t) || {}).stock || 0) : (+a.stock || 0);
 const totalStock = a => hasSizes(a) ? a.tailles.reduce((s,x) => s + (+x.stock || 0), 0) : (+a.stock || 0);
-const lineName = l => l.nom + (l.taille ? ` (${l.taille})` : "") + (l.floc ? " · floqué" : "");
+const lineName = l => l.nom + (l.taille ? ` (${l.taille})` : "") + (l.floc ? " · floqué" + (l.perso ? ` « ${l.perso} »` : "") : "");
+const persoTxt = l => l.floc ? "" : (l.perso || "");
 const isPre = a => isMerch(a) && a.mode === "precommande";
 /* Remet (ou retire) du stock sur l'article d'une ligne, taille comprise */
 function moveStock(l, delta){
@@ -682,7 +683,7 @@ function pendingClub(du, au){
     o.paiements.forEach(p => { const d = dayOf(p.date); if(!p.releve && ((p.res ?? p.montant) !== 0 || p.part !== 0) && (!du || d >= du) && (!au || d <= au)) rows.push({p, o}); }); });
   return rows.sort((a,b) => a.p.date.localeCompare(b.p.date));
 }
-const detailOf = (o, onlyRes) => o.lignes.filter(l => !onlyRes || l.kind !== "merch").map(l => `${l.qte > 1 ? l.qte + " × " : ""}${lineName(l)}${l.perso ? " – " + l.perso : ""}`).join(", ");
+const detailOf = (o, onlyRes) => o.lignes.filter(l => !onlyRes || l.kind !== "merch").map(l => `${l.qte > 1 ? l.qte + " × " : ""}${lineName(l)}${persoTxt(l) ? " – " + persoTxt(l) : ""}`).join(", ");
 
 /* ---------- Accueil ---------- */
 const ICONS = {
@@ -890,7 +891,7 @@ function addToCart(id, taille, opt){
 }
 /* Précommande de merchandising : taille + flocage, prix unique de l'article */
 function configMerch(a){
-  const st = {t: hasSizes(a) ? null : "", floc:false, txt:""};
+  const st = {t: hasSizes(a) ? null : "", floc:false, nom:"", num:""};
   const fp = +a.flocagePrix || 0;
   const draw = () => {
     openDlg(`<header><h2>${esc(a.nom)}</h2></header>
@@ -900,15 +901,16 @@ function configMerch(a){
           <div class="sizes">${a.tailles.map(z => `<button type="button" class="size${st.t === z.t ? " on" : ""}" data-psz="${esc(z.t)}" aria-pressed="${st.t === z.t}"><b>${esc(z.t)}</b></button>`).join("")}</div></div>` : ""}
         ${a.flocage ? `<div class="f" style="display:flex;flex-direction:column;gap:8px;font-weight:700;font-size:14px">Flocage
           <div class="seg"><button type="button" data-fl="0" aria-pressed="${!st.floc}">Sans flocage</button><button type="button" data-fl="1" aria-pressed="${st.floc}">Avec flocage (+${eur(fp)})</button></div></div>
-          ${st.floc ? `<label class="f">Texte à floquer <span class="h">nom, numéro… (facultatif)</span><input type="text" id="flTxt" value="${esc(st.txt)}" autocomplete="off"></label>` : ""}` : ""}
+          ${st.floc ? `<div class="fgrid"><label class="f">Nom à floquer<input type="text" id="flNom" value="${esc(st.nom)}" autocomplete="off" autocapitalize="characters"></label>
+            <label class="f">Numéro<input type="text" id="flNum" value="${esc(st.num)}" inputmode="numeric" autocomplete="off"></label></div>` : ""}` : ""}
         <div class="paybox"><div class="row big"><span>Prix</span><span class="num">${eur(salePrice(a) + (st.floc ? fp : 0))}</span></div></div>
       </div>
       <footer><button class="btn ghost" id="cfNo" type="button">Retour</button><button class="btn primary" id="cfOk" type="button" ${st.t === null ? "disabled" : ""}>${st.t === null ? "Choisissez une taille" : "Ajouter au panier"}</button></footer>`);
-    const keepTxt = () => { const f = $("#flTxt"); if(f) st.txt = f.value; };
+    const keepTxt = () => { const n = $("#flNom"), u = $("#flNum"); if(n) st.nom = n.value.trim(); if(u) st.num = u.value.trim(); };
     document.querySelectorAll("[data-psz]").forEach(b => b.onclick = () => { keepTxt(); st.t = b.dataset.psz; draw(); });
-    document.querySelectorAll("[data-fl]").forEach(b => b.onclick = () => { keepTxt(); st.floc = b.dataset.fl === "1"; draw(); if(st.floc){ const f = $("#flTxt"); if(f) f.focus(); } });
+    document.querySelectorAll("[data-fl]").forEach(b => b.onclick = () => { keepTxt(); st.floc = b.dataset.fl === "1"; draw(); if(st.floc){ const f = $("#flNom"); if(f) f.focus(); } });
     $("#cfNo").onclick = closeDlg;
-    $("#cfOk").onclick = () => { keepTxt(); if(st.t === null) return; closeDlg(); addToCart(a.id, st.t, {floc:st.floc, txt:st.floc ? st.txt : ""}); };
+    $("#cfOk").onclick = () => { keepTxt(); if(st.t === null) return; closeDlg(); addToCart(a.id, st.t, {floc:st.floc, txt:st.floc ? [st.nom, st.num ? "n° " + st.num : ""].filter(Boolean).join(" · ") : ""}); };
   };
   draw();
 }
@@ -1069,7 +1071,7 @@ function orderHTML(o){
       <div class="meta">${canalPill(o.canal)}${o.client.equipe ? `<span>${esc(o.client.equipe)}</span>` : ""}${o.client.tel ? `<a href="tel:${esc(o.client.tel.replace(/\s/g,""))}">${esc(o.client.tel)}</a>` : ""}<span>${frDate(o.date)} ${frTime(o.date)}</span></div></div>
       ${pill}</div>
     ${o.pre ? `<div class="meta"><span class="kpill">Précommande merchandising · payée</span></div>` : ""}
-    <ul>${o.lignes.map(l => `<li><span>${l.qte > 1 ? l.qte+" × " : ""}${esc(lineName(l))}${l.kind === "merch" && !o.pre ? ' <span class="kpill">Merch</span>' : ""}${l.perso ? `<em>${esc(l.perso)}</em>` : ""}</span><span class="num">${eur(l.prix*l.qte)}</span></li>`).join("")}</ul>
+    <ul>${o.lignes.map(l => `<li><span>${l.qte > 1 ? l.qte+" × " : ""}${esc(lineName(l))}${l.kind === "merch" && !o.pre ? ' <span class="kpill">Merch</span>' : ""}${persoTxt(l) ? `<em>${esc(persoTxt(l))}</em>` : ""}</span><span class="num">${eur(l.prix*l.qte)}</span></li>`).join("")}</ul>
     ${o.note ? `<div class="muted" style="font-size:14px">Note : ${esc(o.note)}</div>` : ""}
     <div class="money num"><span>Total <b>${eur(o.total)}</b></span><span>Payé <b>${eur(paid(o))}</b></span>${d > 0 ? `<span class="due">Reste ${eur(d)}</span>` : (off ? (o.annuleLe ? `<span class="muted">Annulée le ${frDate(o.annuleLe)}</span>` : "") : `<span style="color:var(--ok);font-weight:700">Soldée</span>`)}</div>
     ${o.canal === "club" && (o.totalRes ?? o.total) > 0 && (o.totalBase ?? o.total) !== (o.totalRes ?? o.total) ? `<div class="meta"><span>Résine : part Dragonne Créa ${eur(o.totalBase)} · marge club ${eur((o.totalRes ?? o.total) - o.totalBase)}</span></div>` : ""}
@@ -1707,23 +1709,26 @@ async function journalPdf(du, au, cn){
     doc.text(x + 8, y + 35, eur(v), {size:13, bold:true, color:key ? white : ink, maxW:bw - 12}); });
   y += 62;
   doc.text(L, y, `${pays.length} encaissement${pays.length > 1 ? "s" : ""}`, {size:11, bold:true}); y += 10;
-  const C = {date:L, num:L + 70, circ:L + 98, prod:L + 150, nat:L + 352, pay:L + 404, mt:R};
+  const oneDay = du === au;
+  const C = {date:L, num:L + (oneDay ? 34 : 56), cli:L + (oneDay ? 56 : 78), circ:L + 170, prod:L + 214, nat:L + 386, pay:L + 428, mt:R};
   const head = () => { doc.rect(L, y, R - L, 18, navy);
-    [["Date et heure", C.date], ["N°", C.num], ["Circuit", C.circ], ["Produits achetés", C.prod], ["Nature", C.nat], ["Paiement", C.pay]].forEach(([t, x]) => doc.text(x + 4, y + 12.5, t, {size:7.5, bold:true, color:white}));
+    [[oneDay ? "Heure" : "Date", C.date], ["N°", C.num], ["Client", C.cli], ["Circuit", C.circ], ["Produits et flocage", C.prod], ["Nature", C.nat], ["Paiement", C.pay]].forEach(([t, x]) => doc.text(x + 4, y + 12.5, t, {size:7.5, bold:true, color:white}));
     doc.text(C.mt - 4, y + 12.5, "Montant", {size:7.5, bold:true, color:white, align:"right"}); y += 18; };
   head();
   pays.forEach((p, i) => {
-    const prods = p.o.lignes.map(l => `${l.qte > 1 ? l.qte + " × " : ""}${lineName(l)}${l.kind === "merch" ? " [merch]" : ""}`);
-    const lines = prods.flatMap(t => wrapText(t, 8, false, 196));
-    const h = Math.max(16, lines.length * 10.5 + 6);
+    const prods = p.o.lignes.map(l => `${l.qte > 1 ? l.qte + " × " : ""}${lineName(l)}${persoTxt(l) ? " – " + persoTxt(l) : ""}`);
+    const lines = prods.flatMap(t => wrapText(t, 8, false, C.nat - C.prod - 8));
+    const cli = [p.o.client.nom || "Client de passage", p.o.client.tel].filter(Boolean).flatMap((t, k) => wrapText(t, k ? 7.5 : 8, !k, C.circ - C.cli - 8));
+    const h = Math.max(16, Math.max(lines.length, cli.length) * 10.5 + 6);
     if(y + h > 770){ doc.addPage(); y = 50; head(); }
     if(i % 2) doc.rect(L, y, R - L, h, soft);
     const neg = p.montant < 0 ? red : ink;
-    doc.text(C.date + 4, y + 11, `${dmy(p.date)} ${frTime(p.date)}`, {size:8});
+    doc.text(C.date + 4, y + 11, oneDay ? frTime(p.date) : dmy(p.date).slice(0, 5) + " " + frTime(p.date), {size:8});
     doc.text(C.num + 4, y + 11, String(p.o.num), {size:8});
-    doc.text(C.circ + 4, y + 11, p.o.canal === "club" ? CLUB() : "D. Créa", {size:8, maxW:48, color:p.o.canal === "club" ? teal : navy});
+    cli.forEach((t, k) => doc.text(C.cli + 4, y + 11 + k * 10.5, t, {size:k ? 7.5 : 8, bold:!k, color:k ? muted : ink}));
+    doc.text(C.circ + 4, y + 11, p.o.canal === "club" ? CLUB() : "D. Créa", {size:8, maxW:38, color:p.o.canal === "club" ? teal : navy});
     lines.forEach((t, k) => doc.text(C.prod + 4, y + 11 + k * 10.5, t, {size:8}));
-    doc.text(C.nat + 4, y + 11, NATURES[p.nature] || p.nature, {size:8, maxW:48, color:neg});
+    doc.text(C.nat + 4, y + 11, NATURES[p.nature] || p.nature, {size:8, maxW:38, color:neg});
     doc.text(C.pay + 4, y + 11, MODES[p.mode] || "Espèces", {size:8, bold:true, color:p.mode === "cb" ? navy : [44,122,75]});
     doc.text(C.mt - 4, y + 11, eur(p.montant), {size:8.5, bold:true, align:"right", color:neg});
     y += h;
@@ -1793,11 +1798,12 @@ function journalHTML(day, cn){
       <div><h3>Journal des encaissements</h3><div><b>Journée du ${dmy(day)}</b></div><div class="pm">${cn === "tous" ? "Tous circuits" : esc(canalName(cn))}</div></div></div>
     <div class="jboxes">${boxes.map(([t, v, k]) => `<div class="${k ? "key" : ""}"><small>${t}</small><b class="num">${eur(v)}</b></div>`).join("")}</div>
     <b>${pays.length} encaissement${pays.length > 1 ? "s" : ""}</b>
-    <div class="tbl"><table><thead><tr><th>Heure</th><th>N°</th><th>Circuit</th><th>Produits achetés</th><th>Nature</th><th>Paiement</th><th class="r">Montant</th></tr></thead><tbody>
-      ${pays.length ? pays.map(p => `<tr><td class="num">${frTime(p.date)}</td><td class="num">${p.o.num}</td><td>${esc(p.o.canal === "club" ? CLUB() : "D. Créa")}</td>
-        <td>${p.o.lignes.map(l => `${l.qte > 1 ? l.qte + " × " : ""}${esc(lineName(l))}${l.kind === "merch" ? ' <span class="pm">[merch]</span>' : ""}`).join("<br>")}</td>
+    <div class="tbl"><table><thead><tr><th>Heure</th><th>N°</th><th>Client</th><th>Circuit</th><th>Produits et flocage</th><th>Nature</th><th>Paiement</th><th class="r">Montant</th></tr></thead><tbody>
+      ${pays.length ? pays.map(p => `<tr><td class="num">${frTime(p.date)}</td><td class="num">${p.o.num}</td>
+        <td><b>${esc(p.o.client.nom || "Client de passage")}</b>${p.o.client.tel ? `<br><span class="pm">${esc(p.o.client.tel)}</span>` : ""}</td><td>${esc(p.o.canal === "club" ? CLUB() : "D. Créa")}</td>
+        <td>${p.o.lignes.map(l => `${l.qte > 1 ? l.qte + " × " : ""}${esc(l.nom)}${l.taille ? ` (${esc(l.taille)})` : ""}${l.floc ? ` · <b>floqué${l.perso ? ` « ${esc(l.perso)} »` : ""}</b>` : ""}${persoTxt(l) ? ` <span class="pm">– ${esc(persoTxt(l))}</span>` : ""}`).join("<br>")}</td>
         <td${p.montant < 0 ? ' class="neg"' : ""}>${NATURES[p.nature] || p.nature}</td><td><b class="${p.mode === "cb" ? "cb" : "esp"}">${MODES[p.mode] || "Espèces"}</b></td><td class="r num${p.montant < 0 ? " neg" : ""}"><b>${eur(p.montant)}</b></td></tr>`).join("")
-      : `<tr><td colspan="7" class="pm">Aucun encaissement ce jour-là.</td></tr>`}
+      : `<tr><td colspan="8" class="pm">Aucun encaissement ce jour-là.</td></tr>`}
     </tbody></table></div>
     <div class="ptot"><div><span>Espèces</span><b class="num">${eur(boxes[1][1])}</b></div><div><span>Carte bancaire</span><b class="num">${eur(boxes[2][1])}</b></div><div class="big"><span>Total encaissé</span><b class="num">${eur(boxes[0][1])}</b></div></div>
     <div class="sheetbreak"><span>Feuille 2</span></div>
@@ -1898,7 +1904,7 @@ function renderBilan(){
   <section class="panel"><h2>Encaissements et produits achetés</h2>
     ${pays.length ? `<div class="tbl"><table><thead><tr><th>${oneDay ? "Heure" : "Date"}</th><th>N°</th><th>Circuit</th><th>Client</th><th>Produits</th><th>Nature</th><th>Paiement</th><th class="r">Montant</th></tr></thead><tbody>
       ${pays.map(p => `<tr><td class="num">${oneDay ? frTime(p.date) : `${dmy(p.date)} ${frTime(p.date)}`}</td><td class="num">${p.o.num}</td><td>${canalPill(p.o.canal)}</td><td>${esc(p.o.client.nom || "Client de passage")}</td>
-        <td class="det">${p.o.lignes.map(l => `${l.qte > 1 ? l.qte + " × " : ""}${esc(lineName(l))}${l.kind === "merch" ? ' <span class="kpill">Merch</span>' : ""}${l.perso ? ` <span class="muted">(${esc(l.perso)})</span>` : ""}`).join("<br>")}</td>
+        <td class="det">${p.o.lignes.map(l => `${l.qte > 1 ? l.qte + " × " : ""}${esc(lineName(l))}${l.kind === "merch" ? ' <span class="kpill">Merch</span>' : ""}${persoTxt(l) ? ` <span class="muted">(${esc(persoTxt(l))})</span>` : ""}`).join("<br>")}</td>
         <td>${NATURES[p.nature] || p.nature}</td><td>${modePill(p.mode)}</td><td class="r num">${eur(p.montant)}</td></tr>`).join("")}
       </tbody></table></div>` : `<p class="muted" style="margin:0">Aucun encaissement sur cette période.</p>`}
   </section>
