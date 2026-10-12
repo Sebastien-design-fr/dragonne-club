@@ -426,6 +426,8 @@ dialog.wide{width:min(1000px,calc(100vw - 24px))}
 @media (max-width:640px){ .cfhead{grid-template-columns:96px minmax(0,1fr)} .cfhead img{width:96px;height:96px} .zoomer .zstage.big img{height:160vh} }
 .toast{position:fixed;left:50%;bottom:calc(24px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:12px 18px;border-radius:12px;font-weight:700;z-index:50;max-width:calc(100vw - 32px)}
 .cartfab{display:none}
+.bonlist{display:flex;flex-direction:column;gap:8px;margin-top:10px}
+.bonrow{display:flex;justify-content:space-between;align-items:center;gap:12px;border:1px solid var(--line);border-radius:12px;padding:10px 12px}
 /* Bandeau figé (onglets, recherche, filtres) + panier toujours accessible */
 .stick{position:sticky;top:-26px;z-index:6;background:var(--bg);margin:-16px -20px 0;padding:16px 20px 2px;box-shadow:0 8px 10px -10px rgba(20,18,40,.25)}
 .stick .canals{margin-bottom:10px}
@@ -1256,6 +1258,7 @@ function renderCommandes(){
   $("#main").querySelectorAll("[data-solde]").forEach(b => b.onclick = () => encaisserSolde(b.dataset.solde));
   $("#main").querySelectorAll("[data-cancel]").forEach(b => b.onclick = () => cancelOrders([b.dataset.cancel]));
   $("#main").querySelectorAll("[data-odel]").forEach(b => b.onclick = () => deleteOrders([b.dataset.odel]));
+  $("#main").querySelectorAll("[data-bon]").forEach(b => b.onclick = () => shareBons(S.orders.find(o => o.id === b.dataset.bon)));
   const ss = $("#selStart"); if(ss) ss.onclick = () => { S.sel = new Set(); if(S.filter === "ouvertes") S.filter = "toutes"; renderCommandes(); };
   if(sel){
     $("#main").querySelectorAll("[data-pick]").forEach(c => {
@@ -1290,6 +1293,7 @@ function orderHTML(o){
     ${!S.sel && !off ? `<div class="acts">
       ${o.type==="commande" && next ? `<button class="btn small primary" data-st="${next}" data-id="${o.id}">${nextLbl}</button>` : ""}
       ${o.type==="commande" && d > 0 ? `<button class="btn small ghost" data-solde="${o.id}">Encaisser ${eur(d)}</button>` : ""}
+      ${o.pre ? `<button class="btn small ghost" data-bon="${o.id}">Bon de commande</button>` : ""}
       <button class="btn small danger" data-cancel="${o.id}">${o.type==="vente" ? "Annuler la vente" : "Annuler"}</button></div>` : ""}
     ${!S.sel && off ? `<div class="acts"><button class="btn small ghost" data-odel="${o.id}">Supprimer définitivement</button></div>` : ""}
   </article>`;
@@ -1646,6 +1650,7 @@ function renderReleves(){
   $("#relAu").onchange = e => { S.relAu = e.target.value || todayISO(); renderReleves(); };
   $("#main").querySelectorAll(".rck").forEach(c => c.onchange = () => { c.checked ? S.relExcl.delete(c.dataset.pid) : S.relExcl.add(c.dataset.pid); renderReleves(); });
   $("#main").querySelectorAll("[data-odel]").forEach(b => b.onclick = () => deleteOrders([b.dataset.odel]));
+  $("#main").querySelectorAll("[data-bon]").forEach(b => b.onclick = () => shareBons(S.orders.find(o => o.id === b.dataset.bon)));
   const rp = $("#relPrev"); if(rp) rp.onclick = () => previewReleve(items, du, au);
   $("#ruleEdit").onclick = () => editClubRule(renderReleves);
   const bindF = (sel, fn) => $(sel).onchange = e => { fn(e.target.value.trim()); saveSettings(); toast("Enregistré"); };
@@ -1841,6 +1846,91 @@ async function relevePdf(rel){
     doc.text(R, 820, `Page ${i + 1}/${n}`, {size:7.5, color:muted, align:"right"}); });
   return doc.build();
 }
+const BDC = {"gto":{"img":"bdc/gto.jpg","cols":[38,220.5,256.5,293.2,328.5,356,406.4,441.8,491.5,526.8,557],"hdr":{"cat":[76,84.5],"nom":[243,84.5],"date":[427,84.5]},"rows":[{"k":"maillot-match","p":45.0,"t":106.1,"b":123.8,"bg":["#ffffff","#ffffff","#000000","#ffffff","#ffffff","#ffffff","#ffffff","#000000","#ffffff","#ffffff"]},{"k":"bali","p":43.0,"t":123.8,"b":141.4,"bg":["#f2f2f2","#f2f2f2","#000000","#f2f2f2","#f2f2f2","#f2f2f2","#f2f2f2","#f2f2f2","#f2f2f2","#f2f2f2"]},{"k":"gaggio","p":33.0,"t":141.4,"b":158.9,"bg":["#ffffff","#ffffff","#000000","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff"]},{"k":"banto","p":51.0,"t":158.9,"b":176.4,"bg":["#f2f2f2","#f2f2f2","#000000","#f2f2f2","#f2f2f2","#f2f2f2","#f2f2f2","#f2f2f2","#f2f2f2","#f2f2f2"]},{"k":"bemic","p":37.0,"t":176.4,"b":193.9,"bg":["#ffffff","#ffffff","#000000","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff"]},{"k":"dolve","p":41.0,"t":193.9,"b":211.5,"bg":["#f2f2f2","#f2f2f2","#000000","#f2f2f2","#f2f2f2","#f2f2f2","#f2f2f2","#f2f2f2","#f2f2f2","#f2f2f2"]},{"k":"dolvole","p":33.0,"t":211.5,"b":229.0,"bg":["#ffffff","#ffffff","#000000","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff"]},{"k":"dolvano","p":31.0,"t":229.0,"b":246.5,"bg":["#f2f2f2","#f2f2f2","#000000","#f2f2f2","#f2f2f2","#f2f2f2","#f2f2f2","#f2f2f2","#f2f2f2","#f2f2f2"]},{"k":"dalci","p":29.0,"t":246.5,"b":264.0,"bg":["#ffffff","#ffffff","#000000","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff"]},{"k":"dalcito","p":54.0,"t":264.0,"b":281.5,"bg":["#f2f2f2","#f2f2f2","#000000","#f2f2f2","#f2f2f2","#f2f2f2","#f2f2f2","#f2f2f2","#f2f2f2","#f2f2f2"]},{"k":"vianetto","p":72.0,"t":281.5,"b":299.1,"bg":["#ffffff","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff","#000000","#ffffff","#ffffff"]},{"k":"vianetta","p":72.0,"t":299.1,"b":316.6,"bg":["#f2f2f2","#f2f2f2","#000000","#f2f2f2","#f2f2f2","#f2f2f2","#f2f2f2","#000000","#f2f2f2","#f2f2f2"]},{"k":"fianta","p":60.0,"t":316.6,"b":334.1,"bg":["#ffffff","#ffffff","#000000","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff"]},{"k":"fievola","p":44.0,"t":334.1,"b":351.6,"bg":["#f2f2f2","#f2f2f2","#000000","#f2f2f2","#f2f2f2","#f2f2f2","#f2f2f2","#f2f2f2","#f2f2f2","#f2f2f2"]},{"k":"brizza","p":23.0,"t":351.6,"b":369.2,"bg":["#ffffff","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff"]},{"k":"barla","p":29.0,"t":369.2,"b":386.7,"bg":["#f2f2f2","#f2f2f2","#f2f2f2","#f2f2f2","#f2f2f2","#f2f2f2","#f2f2f2","#f2f2f2","#f2f2f2","#f2f2f2"]},{"k":"wister","p":30.0,"t":386.7,"b":404.2,"bg":["#ffffff","#ffffff","#000000","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff"]},{"k":"martio","p":39.0,"t":404.2,"b":421.7,"bg":["#f2f2f2","#f2f2f2","#000000","#f2f2f2","#f2f2f2","#f2f2f2","#f2f2f2","#f2f2f2","#f2f2f2","#f2f2f2"]},{"k":"fianto","p":60.0,"t":421.7,"b":439.2,"bg":["#ffffff","#ffffff","#000000","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff"]},{"k":"fievolo","p":44.0,"t":439.2,"b":456.8,"bg":["#f2f2f2","#f2f2f2","#000000","#f2f2f2","#f2f2f2","#f2f2f2","#f2f2f2","#f2f2f2","#f2f2f2","#f2f2f2"]},{"k":"brizzo","p":21.0,"t":456.8,"b":474.3,"bg":["#ffffff","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff"]},{"k":"dovo","p":21.0,"t":474.3,"b":491.8,"bg":["#f2f2f2","#f2f2f2","#000000","#f2f2f2","#f2f2f2","#f2f2f2","#f2f2f2","#f2f2f2","#f2f2f2","#f2f2f2"]},{"k":"borgo","p":19.0,"t":491.8,"b":509.3,"bg":["#ffffff","#ffffff","#000000","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff"]},{"k":"barli","p":29.0,"t":509.3,"b":526.9,"bg":["#f2f2f2","#f2f2f2","#f2f2f2","#f2f2f2","#f2f2f2","#f2f2f2","#f2f2f2","#f2f2f2","#f2f2f2","#f2f2f2"]},{"k":"danca","p":25.0,"t":526.9,"b":544.4,"bg":["#ffffff","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff"]},{"k":"danco","p":25.0,"t":544.4,"b":561.9,"bg":["#f2f2f2","#f2f2f2","#f2f2f2","#f2f2f2","#f2f2f2","#f2f2f2","#f2f2f2","#f2f2f2","#f2f2f2","#f2f2f2"]},{"k":"passo","p":29.0,"t":561.9,"b":579.4,"bg":["#ffffff","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff"]},{"k":"blive","p":30.0,"t":579.4,"b":596.9,"bg":["#f2f2f2","#f2f2f2","#000000","#f2f2f2","#f2f2f2","#f2f2f2","#f2f2f2","#f2f2f2","#f2f2f2","#f2f2f2"]},{"k":"giambolo","p":76.0,"t":596.9,"b":614.5,"bg":["#ffffff","#ffffff","#000000","#ffffff","#ffffff","#ffffff","#ffffff","#000000","#ffffff","#ffffff"]},{"k":"diolo","p":107.0,"t":614.5,"b":632.0,"bg":["#f2f2f2","#f2f2f2","#000000","#f2f2f2","#f2f2f2","#f2f2f2","#f2f2f2","#000000","#f2f2f2","#f2f2f2"]},{"k":"valas","p":68.0,"t":632.0,"b":649.5,"bg":["#ffffff","#ffffff","#000000","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff"]},{"k":"viatto","p":61.0,"t":649.5,"b":667.1,"bg":["#f2f2f2","#f2f2f2","#000000","#f2f2f2","#f2f2f2","#f2f2f2","#f2f2f2","#f2f2f2","#f2f2f2","#f2f2f2"]},{"k":"odolon","p":80.0,"t":667.1,"b":684.6,"bg":["#ffffff","#ffffff","#000000","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff"]},{"k":"garcisio-60","p":63.0,"t":684.6,"b":702.1,"bg":["#f2f2f2","#f2f2f2","#f2f2f2","#f2f2f2","#f2f2f2","#f2f2f2","#f2f2f2","#f2f2f2","#f2f2f2","#f2f2f2"]},{"k":"garcisio-90","p":70.0,"t":702.1,"b":719.6,"bg":["#ffffff","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff"]},{"k":"backpack","p":35.0,"t":719.6,"b":737.1,"bg":["#f2f2f2","#f2f2f2","#f2f2f2","#f2f2f2","#f2f2f2","#f2f2f2","#f2f2f2","#f2f2f2","#f2f2f2","#f2f2f2"]},{"k":"fxv-haut","p":41.0,"t":737.1,"b":754.7,"bg":["#ffffff","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff"]},{"k":"fxv-bas","p":37.0,"t":754.7,"b":772.2,"bg":["#f2f2f2","#f2f2f2","#000000","#f2f2f2","#f2f2f2","#f2f2f2","#f2f2f2","#f2f2f2","#f2f2f2","#f2f2f2"]},{"k":"echarpe","p":16.0,"t":772.2,"b":789.7,"bg":["#ffffff","#ffffff","#000000","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff"]},{"k":"bonnet","p":16.0,"t":789.7,"b":807.2,"bg":["#f2f2f2","#f2f2f2","#000000","#f2f2f2","#f2f2f2","#f2f2f2","#f2f2f2","#f2f2f2","#f2f2f2","#f2f2f2"]}],"tot":{"t":807.2,"b":823.9,"bg":["#ffffff","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff","#d9d9d9","#d9d9d9","#ffffff"]}},"vdb":{"img":"bdc/vdb.jpg","cols":[21,209.4,244.4,280.1,312.8,340.3,394,460,512.6,543.8,574],"hdr":{"cat":[58,85.4],"nom":[230,85.4],"date":[413,85.4]},"rows":[{"k":"pack","p":110.0,"t":102.7,"b":119.9,"bg":["#ffffff","#ffffff","#000000","#ffffff","#ffffff","#ffffff","#ffffff","#000000","#ffffff","#ffffff"]},{"k":"trainer","p":27.0,"t":119.9,"b":136.6,"bg":["#f2f2f2","#f2f2f2","#000000","#f2f2f2","#f2f2f2","#f2f2f2","#f2f2f2","#000000","#f2f2f2","#f2f2f2"]},{"k":"bali","p":43.0,"t":136.6,"b":153.3,"bg":["#ffffff","#ffffff","#000000","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff"]},{"k":"burner","p":33.0,"t":153.3,"b":169.9,"bg":["#f2f2f2","#f2f2f2","#000000","#f2f2f2","#f2f2f2","#f2f2f2","#f2f2f2","#f2f2f2","#f2f2f2","#f2f2f2"]},{"k":"banto","p":51.0,"t":169.9,"b":186.6,"bg":["#ffffff","#ffffff","#000000","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff"]},{"k":"bemic","p":37.0,"t":186.6,"b":203.3,"bg":["#f2f2f2","#f2f2f2","#000000","#f2f2f2","#f2f2f2","#f2f2f2","#f2f2f2","#f2f2f2","#f2f2f2","#f2f2f2"]},{"k":"dolve","p":41.0,"t":203.3,"b":220.0,"bg":["#ffffff","#ffffff","#000000","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff"]},{"k":"dolvole","p":33.0,"t":220.0,"b":236.7,"bg":["#f2f2f2","#f2f2f2","#000000","#f2f2f2","#f2f2f2","#f2f2f2","#f2f2f2","#f2f2f2","#f2f2f2","#f2f2f2"]},{"k":"dolvano","p":31.0,"t":236.7,"b":253.3,"bg":["#ffffff","#ffffff","#000000","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff"]},{"k":"dalci","p":29.0,"t":253.3,"b":270.0,"bg":["#f2f2f2","#f2f2f2","#000000","#f2f2f2","#f2f2f2","#f2f2f2","#f2f2f2","#f2f2f2","#f2f2f2","#f2f2f2"]},{"k":"dalcito","p":54.0,"t":270.0,"b":286.7,"bg":["#ffffff","#ffffff","#000000","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff"]},{"k":"vianetto","p":72.0,"t":286.7,"b":303.4,"bg":["#f2f2f2","#f2f2f2","#f2f2f2","#f2f2f2","#f2f2f2","#f2f2f2","#f2f2f2","#000000","#f2f2f2","#f2f2f2"]},{"k":"vianetta","p":72.0,"t":303.4,"b":320.1,"bg":["#ffffff","#ffffff","#000000","#ffffff","#ffffff","#ffffff","#ffffff","#000000","#ffffff","#ffffff"]},{"k":"fianta","p":60.0,"t":320.1,"b":336.8,"bg":["#f2f2f2","#f2f2f2","#000000","#f2f2f2","#f2f2f2","#f2f2f2","#f2f2f2","#f2f2f2","#f2f2f2","#f2f2f2"]},{"k":"fievola","p":44.0,"t":336.8,"b":353.4,"bg":["#ffffff","#ffffff","#000000","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff"]},{"k":"brizza","p":23.0,"t":353.4,"b":370.1,"bg":["#f2f2f2","#f2f2f2","#f2f2f2","#f2f2f2","#f2f2f2","#f2f2f2","#f2f2f2","#f2f2f2","#f2f2f2","#f2f2f2"]},{"k":"barla","p":29.0,"t":370.1,"b":386.8,"bg":["#ffffff","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff"]},{"k":"wister","p":30.0,"t":386.8,"b":403.5,"bg":["#f2f2f2","#f2f2f2","#000000","#f2f2f2","#f2f2f2","#f2f2f2","#f2f2f2","#f2f2f2","#f2f2f2","#f2f2f2"]},{"k":"martio","p":39.0,"t":403.5,"b":420.2,"bg":["#ffffff","#ffffff","#000000","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff"]},{"k":"fianto","p":60.0,"t":420.2,"b":436.8,"bg":["#f2f2f2","#f2f2f2","#000000","#f2f2f2","#f2f2f2","#f2f2f2","#f2f2f2","#f2f2f2","#f2f2f2","#f2f2f2"]},{"k":"fievolo","p":44.0,"t":436.8,"b":453.5,"bg":["#ffffff","#ffffff","#000000","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff"]},{"k":"brizzo","p":21.0,"t":453.5,"b":470.2,"bg":["#f2f2f2","#f2f2f2","#f2f2f2","#f2f2f2","#f2f2f2","#f2f2f2","#f2f2f2","#f2f2f2","#f2f2f2","#f2f2f2"]},{"k":"dovo","p":21.0,"t":470.2,"b":486.9,"bg":["#ffffff","#ffffff","#000000","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff"]},{"k":"borgo","p":19.0,"t":486.9,"b":503.6,"bg":["#f2f2f2","#f2f2f2","#000000","#f2f2f2","#f2f2f2","#f2f2f2","#f2f2f2","#f2f2f2","#f2f2f2","#f2f2f2"]},{"k":"barli","p":29.0,"t":503.6,"b":520.3,"bg":["#ffffff","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff"]},{"k":"danca","p":25.0,"t":520.3,"b":536.9,"bg":["#f2f2f2","#f2f2f2","#f2f2f2","#f2f2f2","#f2f2f2","#f2f2f2","#f2f2f2","#f2f2f2","#f2f2f2","#f2f2f2"]},{"k":"danco","p":25.0,"t":536.9,"b":553.6,"bg":["#ffffff","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff"]},{"k":"passo","p":29.0,"t":553.6,"b":570.3,"bg":["#f2f2f2","#f2f2f2","#f2f2f2","#f2f2f2","#f2f2f2","#f2f2f2","#f2f2f2","#f2f2f2","#f2f2f2","#f2f2f2"]},{"k":"blive","p":30.0,"t":570.3,"b":587.0,"bg":["#ffffff","#ffffff","#000000","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff"]},{"k":"giambolo","p":76.0,"t":587.0,"b":603.7,"bg":["#f2f2f2","#f2f2f2","#000000","#f2f2f2","#f2f2f2","#f2f2f2","#f2f2f2","#000000","#f2f2f2","#f2f2f2"]},{"k":"diolo","p":107.0,"t":603.7,"b":620.4,"bg":["#ffffff","#ffffff","#000000","#ffffff","#ffffff","#ffffff","#ffffff","#000000","#ffffff","#ffffff"]},{"k":"valas","p":68.0,"t":620.4,"b":637.1,"bg":["#f2f2f2","#f2f2f2","#000000","#f2f2f2","#f2f2f2","#f2f2f2","#f2f2f2","#f2f2f2","#f2f2f2","#f2f2f2"]},{"k":"viatto","p":61.0,"t":637.1,"b":653.7,"bg":["#ffffff","#ffffff","#000000","#ffffff","#ffffff","#ffffff","#ffffff","#000000","#ffffff","#ffffff"]},{"k":"odolon","p":80.0,"t":653.7,"b":670.4,"bg":["#f2f2f2","#f2f2f2","#000000","#f2f2f2","#f2f2f2","#f2f2f2","#f2f2f2","#000000","#f2f2f2","#f2f2f2"]},{"k":"garcisio-60","p":63.0,"t":670.4,"b":687.1,"bg":["#ffffff","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff"]},{"k":"garcisio-90","p":70.0,"t":687.1,"b":703.8,"bg":["#f2f2f2","#f2f2f2","#f2f2f2","#f2f2f2","#f2f2f2","#f2f2f2","#f2f2f2","#f2f2f2","#f2f2f2","#f2f2f2"]},{"k":"backpack","p":35.0,"t":703.8,"b":720.5,"bg":["#ffffff","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff"]},{"k":"fxv-haut","p":41.0,"t":720.5,"b":737.1,"bg":["#f2f2f2","#f2f2f2","#f2f2f2","#f2f2f2","#f2f2f2","#f2f2f2","#f2f2f2","#f2f2f2","#f2f2f2","#f2f2f2"]},{"k":"fxv-bas","p":37.0,"t":737.1,"b":753.8,"bg":["#ffffff","#ffffff","#000000","#ffffff","#ffffff","#ffffff","#ffffff","#000000","#ffffff","#ffffff"]},{"k":"echarpe","p":16.0,"t":753.8,"b":770.5,"bg":["#f2f2f2","#f2f2f2","#000000","#f2f2f2","#f2f2f2","#f2f2f2","#f2f2f2","#f2f2f2","#f2f2f2","#f2f2f2"]},{"k":"bonnet","p":16.0,"t":770.5,"b":787.2,"bg":["#ffffff","#ffffff","#000000","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff"]},{"k":"badge","p":2.0,"t":787.2,"b":803.9,"bg":["#f2f2f2","#f2f2f2","#f2f2f2","#f2f2f2","#f2f2f2","#f2f2f2","#f2f2f2","#f2f2f2","#f2f2f2","#f2f2f2"]}],"tot":{"t":803.9,"b":820.1,"bg":["#ffffff","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff","#ffffff","#d9d9d9","#d9d9d9","#ffffff"]}}};
+BDC.gto.hdrEnd = [218, 404, 556]; BDC.vdb.hdrEnd = [206, 391, 573];
+/* Bons de commande officiels des clubs, remplis automatiquement pour chaque précommande */
+function bdcTarget(l){
+  const a = art(l.artId), m = /^kappa26-(gto|vdb)-(.+)$/.exec((a && a.ref) || "");
+  if(m) return {club:m[1], k:m[1] === "vdb" && m[2] === "gaggio" ? "burner" : m[2]};
+  const n = norm((a && a.nom) || l.nom);
+  return {club:/\bvdb\b|val de brie/.test(n) ? "vdb" : "gto",
+    k:/echarpe/.test(n) ? "echarpe" : /bonnet/.test(n) ? "bonnet" : /badge|sticker/.test(n) ? "badge" : /maillot de match/.test(n) ? "maillot-match" : ""};
+}
+/* Lignes d'une commande regroupées par bon (GTO / VDB) et par ligne du bon */
+function bdcGroups(o){
+  const g = {};
+  o.lignes.filter(l => l.kind === "merch" || l.mode === "precommande").forEach(l => {
+    const {club, k} = bdcTarget(l), F = BDC[club];
+    const G = g[club] || (g[club] = {club, rows:new Map(), autres:[], total:0});
+    const i = F.rows.findIndex(r => r.k === k);
+    if(i < 0) G.autres.push(l); else G.rows.set(i, [...(G.rows.get(i) || []), l]);
+    G.total = r2(G.total + l.prix * l.qte);
+  });
+  return ["gto", "vdb"].filter(c => g[c]).map(c => g[c]);
+}
+function bdcFlocPrix(l){ const a = art(l.artId); return l.floc ? (+(a && a.flocagePrix) || 5) : 0; }
+async function bdcImgs(doc){ const r = {}; for(const c of ["gto", "vdb"]) r[c] = doc.addImg(await loadJpeg(BDC[c].img)); return r; }
+function bdcPage(doc, imgs, o, G){
+  const F = BDC[G.club], C = F.cols, ink = [22,38,120];
+  if(doc.pages.length > 1 || doc.c.length) doc.addPage();
+  doc.image(imgs[G.club], 0, 0, 595, 842);
+  const rgb = h => [1,3,5].map(i => parseInt(h.substr(i, 2), 16));
+  const black = h => h === "#000000";
+  const cover = (r, c) => doc.rect(C[c] + 1, r.t + 1, C[c + 1] - C[c] - 2, r.b - r.t - 2, rgb(r.bg[c]));
+  // En-tête : catégorie, nom du client, date
+  const [cat, nom, dat] = ["cat", "nom", "date"].map(k => F.hdr[k]);
+  doc.text(cat[0], cat[1], o.client.equipe || "", {size:9, bold:true, color:ink, maxW:F.hdrEnd[0] - cat[0]});
+  doc.text(nom[0], nom[1], [o.client.nom, o.client.tel].filter(Boolean).join(" · "), {size:9, bold:true, color:ink, maxW:F.hdrEnd[1] - nom[0]});
+  doc.text(dat[0], dat[1], `${dmy(o.date)} · n° ${o.num}`, {size:9, bold:true, color:ink, maxW:F.hdrEnd[2] - dat[0]});
+  const mode = MODES[(o.paiements[0] || {}).mode] || "Espèces";
+  G.rows.forEach((ls, i) => {
+    const r = F.rows[i], h = r.b - r.t;
+    const cw = c => C[c + 1] - C[c] - 3, fitS = (t, c, s0, bold) => { let z = s0; while(z > 4.6 && textW(t, z, bold) > cw(c)) z -= 0.25; return z; };
+    // Bloc de lignes centré verticalement dans une cellule (texte réduit si besoin pour tenir dans la case)
+    const block = (c, lines, s0, bold) => { if(black(r.bg[c])) return; lines = lines.filter(x => x !== "" && x != null).map(String); if(!lines.length) return;
+      const z = Math.min(...lines.map(t => fitS(t, c, s0, bold))), lh = Math.min(z + 1.1, (h - 2) / lines.length), y0 = r.t + h / 2 - lines.length * lh / 2 + lh * 0.78;
+      lines.forEach((t, j) => doc.text((C[c] + C[c + 1]) / 2, y0 + j * lh, t, {size:z, bold, color:ink, align:"center", maxW:cw(c)})); };
+    const persoOf = l => l.floc ? (l.perso || "Oui") : "";
+    if(ls.length <= 2){
+      // Une ou deux lignes : une ligne d'écriture par article (coloris, taille, nombre, flocage alignés)
+      const z = ls.length === 1 ? 7.5 : 6.5;
+      block(2, ls.map(l => l.color || " "), z); block(3, ls.map(l => l.taille || " "), z);
+      block(4, ls.map(l => l.qte), z, true); if(ls.some(l => l.floc)) block(5, ls.map(l => persoOf(l) || " "), z);
+    } else {
+      // Plusieurs tailles : regroupées comme sur un bon rempli à la main (« 2 M, 1 XL »)
+      const pack = (items, z, c, sep) => { const out = []; let cur = ""; items.forEach(it => { const t = cur ? cur + sep + it : it; if(!cur || textW(t, z, false) <= cw(c)) cur = t; else { out.push(cur + sep.trim()); cur = it; } }); if(cur) out.push(cur); return out; };
+      const wrapIn = (items, c, sep = ", ") => { for(const z of [6.5, 5.6, 4.8]){ const w = pack(items, z, c, sep); if(w.length * (z + 1.1) <= h - 2) return [w, z]; } return [pack(items, 4.8, c, sep), 4.8]; };
+      const bySize = new Map(); ls.forEach(l => { const k = (l.taille || "TU") + (l.color && new Set(ls.map(x => x.color)).size > 1 ? " " + l.color.slice(0, 1) : ""); bySize.set(k, (bySize.get(k) || 0) + l.qte); });
+      const sz = [...bySize].sort((x, y) => SIZE_ORDER.indexOf(x[0].split(" ")[0]) - SIZE_ORDER.indexOf(y[0].split(" ")[0])).map(([k, q]) => `${q} ${k}`);
+      const cols = [...new Set(ls.map(l => l.color).filter(Boolean))];
+      const [wl, wz] = wrapIn(sz, 3); block(3, wl, wz);
+      if(cols.length){ const [cl, cz] = wrapIn(cols, 2); block(2, cl, cz); }
+      block(4, [ls.reduce((t, l) => t + l.qte, 0)], 7.5, true);
+      const fl = ls.filter(l => l.floc).map(persoOf);
+      if(fl.length){ const [pl, pz] = wrapIn(fl, 5, " / "); block(5, pl, pz); }
+    }
+    // Prix unitaire : réécrit seulement s'il diffère du prix imprimé
+    const base = r2(ls[0].prix - bdcFlocPrix(ls[0]));
+    if(r.p != null && Math.abs(base - r.p) > 0.004 && !black(r.bg[6])){ cover(r, 6); doc.text(C[7] - 3, r.t + h / 2 + 2.6, eur(base), {size:7.5, color:ink, align:"right"}); }
+    const flocM = r2(ls.reduce((s, l) => s + bdcFlocPrix(l) * l.qte, 0));
+    if(flocM && !black(r.bg[7])){ cover(r, 7); doc.text(C[8] - 3, r.t + h / 2 + 2.6, eur(flocM), {size:7.5, color:ink, align:"right"}); }
+    cover(r, 8); doc.text(C[9] - 3, r.t + h / 2 + 2.6, eur(r2(ls.reduce((s, l) => s + l.prix * l.qte, 0))), {size:7.5, bold:true, color:ink, align:"right"});
+    doc.text((C[9] + C[10]) / 2, r.t + h / 2 + 2.4, mode, {size:6.5, bold:true, color:ink, align:"center", maxW:C[10] - C[9] - 2});
+  });
+  // Total général
+  const T = F.tot; cover(T, 8);
+  doc.text(C[9] - 3, T.t + (T.b - T.t) / 2 + 2.8, eur(G.total), {size:8, bold:true, color:ink, align:"right"});
+  if(G.autres.length) doc.text(C[0] + 2, T.b + 10, "Autres articles : " + G.autres.map(l => `${l.qte} × ${lineName(l)}${l.floc ? " floqué " + (l.perso || "") : ""}`).join(" ; "), {size:6.5, color:ink, maxW:C[10] - C[0] - 4});
+}
+async function bonsPdf(o){
+  const doc = new PdfDoc(), imgs = await bdcImgs(doc);
+  bdcGroups(o).forEach(G => bdcPage(doc, imgs, o, G));
+  return doc.build();
+}
+async function shareBons(o){
+  try { await saveBinary(`Bon-de-commande_${o.num}_${(o.client.nom || "client").replace(/[^\w-]+/g, "-")}.pdf`, await bonsPdf(o), "application/pdf"); }
+  catch(e){ console.error(e); toast("Le PDF n'a pas pu être créé"); }
+}
 /* Journal des encaissements (page 1 et suivantes) + ventes par produit (feuille séparée) */
 async function journalPdf(du, au, cn){
   const doc = new PdfDoc(), L = 40, R = 555;
@@ -1962,9 +2052,15 @@ async function journalPdf(du, au, cn){
     tbl("Détail par client", [["Client", L, 0, 92, true], ["N°", L + 96, 0, 20], ["Article", L + 118, 0, 98], ["Coloris", L + 218, 0, 46], ["Taille", L + 266, 0, 40], ["Flocage (nom · n°)", L + 308, 0, 112, true], ["Qté", L + 446, "r"], ["Montant", R - 4, "r"]],
       det.map(r => r));
   }
-  // Pied de page
-  const n = doc.pages.length;
-  doc.pages.forEach((c, i) => { doc.c = c; doc.line(L, 806, R, 806, line);
+  // Bons de commande officiels, un par précommande et par club, à la suite du journal
+  const formPages = new Set();
+  if(pres.length){
+    const imgs = await bdcImgs(doc);
+    pres.forEach(o => bdcGroups(o).forEach(G => { bdcPage(doc, imgs, o, G); formPages.add(doc.pages.length - 1); }));
+  }
+  // Pied de page (sauf sur les bons de commande, qui gardent leur mise en page d'origine)
+  const n = doc.pages.length - formPages.size;
+  doc.pages.forEach((c, i) => { if(formPages.has(i)) return; doc.c = c; doc.line(L, 806, R, 806, line);
     doc.text(L, 820, `Dragonne Créa · ${circuit} · ${period}`, {size:7.5, color:muted});
     doc.text(R, 820, `Page ${i + 1}/${n}`, {size:7.5, color:muted, align:"right"}); });
   return doc.build();
@@ -2012,7 +2108,13 @@ function journalHTML(day, cn){
       <h4 class="tl">Détail par client</h4>
       <div class="tbl"><table><thead class="tl"><tr><th>Client</th><th>N°</th><th>Article</th><th>Coloris</th><th>Taille</th><th>Flocage (nom · n°)</th><th class="r">Qté</th><th class="r">Montant</th></tr></thead><tbody>
         ${pres.flatMap(o => o.lignes.map(l => `<tr><td><b>${esc(o.client.nom || "Client")}</b>${o.client.tel ? `<br><span class="pm">${esc(o.client.tel)}</span>` : ""}</td><td class="num">${o.num}</td><td>${esc(l.nom)}</td><td>${esc(l.color || "–")}</td><td>${esc(l.taille || "–")}</td><td>${l.floc ? `<b>${esc(l.perso || "oui, sans texte")}</b>` : "–"}</td><td class="r num">${l.qte}</td><td class="r num">${eur(l.prix * l.qte)}</td></tr>`)).join("")}
-      </tbody></table></div>`; })()}
+      </tbody></table></div>
+      <div class="sheetbreak"><span>Bons de commande</span></div>
+      <h3>Bons de commande des clubs</h3>
+      <p class="pm" style="margin:0">Un bon officiel par précommande et par club, rempli automatiquement et ajouté à la fin du PDF.</p>
+      <div class="bonlist">${pres.map(o => `<div class="bonrow"><div><b>n° ${o.num} · ${esc(o.client.nom || "Client")}</b>${o.client.equipe ? ` <span class="pm">· ${esc(o.client.equipe)}</span>` : ""}
+        <div class="pm">${bdcGroups(o).map(G => `Bon ${G.club.toUpperCase()} · ${eur(G.total)}`).join(" · ")}</div></div>
+        <button class="btn small ghost" type="button" data-bon="${o.id}">PDF du bon</button></div>`).join("")}</div>`; })()}
   </div>`;
 }
 function openJournal(day, cn){
@@ -2032,6 +2134,7 @@ function openJournal(day, cn){
   $("#jNext").onclick = () => openJournal(next, cn);
   document.querySelectorAll("#dlgInner [data-canal]").forEach(b => b.onclick = () => openJournal(d, b.dataset.canal));
   $("#jSend").onclick = () => shareJournal(d, d, cn);
+  document.querySelectorAll("#dlgInner [data-bon]").forEach(b => b.onclick = () => shareBons(S.orders.find(o => o.id === b.dataset.bon)));
 }
 async function shareJournal(du, au, cn){
   try {
