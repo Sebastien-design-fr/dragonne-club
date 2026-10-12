@@ -426,8 +426,8 @@ dialog.wide{width:min(1000px,calc(100vw - 24px))}
 @media (max-width:640px){ .cfhead{grid-template-columns:96px minmax(0,1fr)} .cfhead img{width:96px;height:96px} .zoomer .zstage.big img{height:160vh} }
 .toast{position:fixed;left:50%;bottom:calc(24px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:12px 18px;border-radius:12px;font-weight:700;z-index:50;max-width:calc(100vw - 32px)}
 .cartfab{display:none}
-.bonlist{display:flex;flex-direction:column;gap:8px;margin-top:10px}
-.bonrow{display:flex;justify-content:space-between;align-items:center;gap:12px;border:1px solid var(--line);border-radius:12px;padding:10px 12px}
+.bonprev{width:100%;max-width:760px;margin:6px auto 0;background:#fff;border:1px solid var(--line);box-shadow:0 2px 10px rgba(20,18,40,.12)}
+.bonprev canvas{display:block;width:100%;height:auto}
 /* Bandeau figé (onglets, recherche, filtres) + panier toujours accessible */
 .stick{position:sticky;top:-26px;z-index:6;background:var(--bg);margin:-16px -20px 0;padding:16px 20px 2px;box-shadow:0 8px 10px -10px rgba(20,18,40,.25)}
 .stick .canals{margin-bottom:10px}
@@ -1922,6 +1922,33 @@ function bdcPage(doc, imgs, o, G){
   doc.text(C[9] - 3, T.t + (T.b - T.t) / 2 + 2.8, eur(G.total), {size:8, bold:true, color:ink, align:"right"});
   if(G.autres.length) doc.text(C[0] + 2, T.b + 10, "Autres articles : " + G.autres.map(l => `${l.qte} × ${lineName(l)}${l.floc ? " floqué " + (l.perso || "") : ""}`).join(" ; "), {size:6.5, color:ink, maxW:C[10] - C[0] - 4});
 }
+/* Même dessin que le PDF, sur un canevas, pour l'aperçu du journal */
+class CanvasDoc {
+  constructor(k = 2){ this.k = k; this.cv = document.createElement("canvas"); this.cv.width = 595 * k; this.cv.height = 842 * k;
+    this.x = this.cv.getContext("2d"); this.x.scale(k, k); this.pages = [[]]; this.c = []; }
+  addPage(){}
+  col(rgb){ return `rgb(${rgb.join(",")})`; }
+  text(x, y, s, o = {}){
+    const size = o.size || 9, bold = !!o.bold, str = o.maxW ? fitText(s, size, bold, o.maxW) : String(s);
+    const w = textW(str, size, bold), xx = o.align === "right" ? x - w : o.align === "center" ? x - w / 2 : x;
+    this.x.font = `${bold ? "bold " : ""}${size}px Helvetica, Arial, sans-serif`; this.x.fillStyle = this.col(o.color || [28,27,46]); this.x.fillText(str, xx, y);
+  }
+  rect(x, y, w, h, fill, stroke){ if(fill){ this.x.fillStyle = this.col(fill); this.x.fillRect(x, y, w, h); } if(stroke){ this.x.strokeStyle = this.col(stroke); this.x.lineWidth = .7; this.x.strokeRect(x, y, w, h); } }
+  line(){}
+  image(img, x, y, w, h){ if(img) this.x.drawImage(img, x, y, w, h); }
+}
+const BDC_IMG = {};
+function bdcImgEl(club){ return BDC_IMG[club] || (BDC_IMG[club] = new Promise(res => { const i = new Image(); i.onload = () => res(i); i.onerror = () => res(null); i.src = BDC[club].img; })); }
+async function drawBonPreviews(){
+  for(const box of document.querySelectorAll("#dlgInner [data-bonprev]")){
+    const o = S.orders.find(x => x.id === box.dataset.bonprev), G = o && bdcGroups(o).find(g => g.club === box.dataset.club);
+    if(!G) continue;
+    const img = await bdcImgEl(G.club); if(!box.isConnected) return;
+    const d = new CanvasDoc(2); bdcPage(d, {[G.club]:img}, o, G);
+    d.cv.setAttribute("role", "img"); d.cv.setAttribute("aria-label", `Bon de commande ${G.club.toUpperCase()} de ${o.client.nom || "client"}`);
+    box.replaceChildren(d.cv);
+  }
+}
 async function bonsPdf(o){
   const doc = new PdfDoc(), imgs = await bdcImgs(doc);
   bdcGroups(o).forEach(G => bdcPage(doc, imgs, o, G));
@@ -2109,12 +2136,8 @@ function journalHTML(day, cn){
       <div class="tbl"><table><thead class="tl"><tr><th>Client</th><th>N°</th><th>Article</th><th>Coloris</th><th>Taille</th><th>Flocage (nom · n°)</th><th class="r">Qté</th><th class="r">Montant</th></tr></thead><tbody>
         ${pres.flatMap(o => o.lignes.map(l => `<tr><td><b>${esc(o.client.nom || "Client")}</b>${o.client.tel ? `<br><span class="pm">${esc(o.client.tel)}</span>` : ""}</td><td class="num">${o.num}</td><td>${esc(l.nom)}</td><td>${esc(l.color || "–")}</td><td>${esc(l.taille || "–")}</td><td>${l.floc ? `<b>${esc(l.perso || "oui, sans texte")}</b>` : "–"}</td><td class="r num">${l.qte}</td><td class="r num">${eur(l.prix * l.qte)}</td></tr>`)).join("")}
       </tbody></table></div>
-      <div class="sheetbreak"><span>Bons de commande</span></div>
-      <h3>Bons de commande des clubs</h3>
-      <p class="pm" style="margin:0">Un bon officiel par précommande et par club, rempli automatiquement et ajouté à la fin du PDF.</p>
-      <div class="bonlist">${pres.map(o => `<div class="bonrow"><div><b>n° ${o.num} · ${esc(o.client.nom || "Client")}</b>${o.client.equipe ? ` <span class="pm">· ${esc(o.client.equipe)}</span>` : ""}
-        <div class="pm">${bdcGroups(o).map(G => `Bon ${G.club.toUpperCase()} · ${eur(G.total)}`).join(" · ")}</div></div>
-        <button class="btn small ghost" type="button" data-bon="${o.id}">PDF du bon</button></div>`).join("")}</div>`; })()}
+      ${pres.flatMap(o => bdcGroups(o).map(G => `<div class="sheetbreak"><span>Bon de commande ${G.club.toUpperCase()} · n° ${o.num} · ${esc(o.client.nom || "Client")}</span></div>
+      <div class="bonprev" data-bonprev="${o.id}" data-club="${G.club}" style="aspect-ratio:595/842"></div>`)).join("")}`; })()}
   </div>`;
 }
 function openJournal(day, cn){
@@ -2134,7 +2157,7 @@ function openJournal(day, cn){
   $("#jNext").onclick = () => openJournal(next, cn);
   document.querySelectorAll("#dlgInner [data-canal]").forEach(b => b.onclick = () => openJournal(d, b.dataset.canal));
   $("#jSend").onclick = () => shareJournal(d, d, cn);
-  document.querySelectorAll("#dlgInner [data-bon]").forEach(b => b.onclick = () => shareBons(S.orders.find(o => o.id === b.dataset.bon)));
+  drawBonPreviews();
 }
 async function shareJournal(du, au, cn){
   try {
