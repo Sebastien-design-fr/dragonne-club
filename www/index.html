@@ -392,6 +392,20 @@ dialog.wide{width:min(1000px,calc(100vw - 24px))}
 .searchbar input{padding-left:46px;padding-right:48px;min-height:52px;font-size:17px;border-radius:14px;background:var(--surface)}
 .searchbar input::-webkit-search-cancel-button{display:none}
 .sbx{position:absolute;right:8px;width:38px;height:38px;border-radius:99px;border:0;background:var(--sunk);color:var(--ink);font-size:22px;line-height:1}
+.eyebrow{font-size:11px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--sea)}
+.card .dsc,.item .dsc{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;font-size:13px;color:var(--muted);line-height:1.35}
+.item .dsc{-webkit-line-clamp:1}
+.cline{display:inline-flex;flex-wrap:wrap;align-items:center;gap:2px 8px;font-size:12px;font-weight:700;color:var(--muted)}
+.cdot{display:inline-block;width:11px;height:11px;border-radius:99px;border:1px solid rgba(0,0,0,.25);margin-right:3px;vertical-align:-1px}
+.cfhead{display:grid;grid-template-columns:120px minmax(0,1fr);gap:14px;align-items:start}
+.cfhead img{width:120px;height:120px;object-fit:contain;background:#fff;border-radius:12px;border:1px solid var(--line)}
+.colors{display:flex;flex-wrap:wrap;gap:8px}
+.colbtn{border:2px solid var(--line);background:var(--surface);border-radius:12px;padding:10px 14px;font-weight:700;min-height:48px;display:inline-flex;align-items:center;gap:4px}
+.colbtn.on{border-color:var(--sea);background:var(--sea-soft);color:var(--sea)}
+.colbtn .cdot{width:16px;height:16px}
+.szgroup{font-size:12px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin-top:2px}
+.card .ph[src^="merch/"],.show img[src^="merch/"]{object-fit:contain;background:#fff}
+@media (max-width:640px){ .cfhead{grid-template-columns:84px minmax(0,1fr)} .cfhead img{width:84px;height:84px} }
 .toast{position:fixed;left:50%;bottom:calc(24px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:12px 18px;border-radius:12px;font-weight:700;z-index:50;max-width:calc(100vw - 32px)}
 .cartfab{display:none}
 
@@ -492,7 +506,13 @@ const hasSizes = a => isMerch(a) && Array.isArray(a.tailles) && a.tailles.length
 const sizeOf = (a, t) => hasSizes(a) ? a.tailles.find(x => x.t === t) : null;
 const stockOf = (a, t) => hasSizes(a) ? ((sizeOf(a, t) || {}).stock || 0) : (+a.stock || 0);
 const totalStock = a => hasSizes(a) ? a.tailles.reduce((s,x) => s + (+x.stock || 0), 0) : (+a.stock || 0);
-const lineName = l => l.nom + (l.taille ? ` (${l.taille})` : "") + (l.floc ? " · floqué" + (l.perso ? ` « ${l.perso} »` : "") : "");
+const GAMMES = {enfant:["4 ans","6 ans","8 ans","10 ans","12 ans","14 ans"], adulte:["XS","S","M","L","XL","XXL","XXXL"]};
+GAMMES.mixte = GAMMES.enfant.concat(GAMMES.adulte);
+const gammeOf = t => !Array.isArray(t) ? "unique" : t.some(z => GAMMES.enfant.includes(z.t)) ? (t.some(z => GAMMES.adulte.includes(z.t)) ? "mixte" : "enfant") : "adulte";
+const COLORS = {Noir:"#1c1c1e", Blanc:"#ffffff", Gris:"#8d8f96", Marine:"#1f2a4d", Rose:"#d6285a", Rouge:"#c62828", Bleu:"#1e5bb8", Vert:"#2e7d4f", Orange:"#ef7d1a", Jaune:"#f2c230"};
+const dot = c => `<i class="cdot" style="background:${COLORS[c] || "#bbb"}"></i>`;
+const colorLine = a => (a.coloris || []).length ? `<span class="cline">${a.coloris.map(c => `${dot(c)}${esc(c)}`).join(" ")}</span>` : "";
+const lineName = l => l.nom + (l.taille ? ` (${l.taille})` : "") + (l.color ? ` · ${l.color}` : "") + (l.floc ? " · floqué" + (l.perso ? ` « ${l.perso} »` : "") : "");
 const persoTxt = l => l.floc ? "" : (l.perso || "");
 const isPre = a => isMerch(a) && a.mode === "precommande";
 /* Remet (ou retire) du stock sur l'article d'une ligne, taille comprise */
@@ -589,6 +609,9 @@ async function seedMerch(){
   }
 }
 
+/* Catalogue Kappa 2026-2027 (GTO et Val de Brie), extrait des catalogues officiels du club */
+const KAPPA26 = [{"club":"GTO","type":"T-shirt","cat":"Hauts","desc":"T-shirt en jersey, coupe regular, col côtelé et manches courtes. Respirant et agréable, aussi bien à l'entraînement qu'au quotidien.","matiere":"100 % coton","sizes":"mixte","floc":true,"coloris":["Noir","Blanc"],"photo":"merch/gto-brizzo.jpg","ref":"kappa26-gto-brizzo","nom":"Brizzo GTO","prix":21},{"club":"GTO","type":"Maillot d'entraînement","cat":"Hauts","desc":"Maillot en interlock, coupe regular, col rond. Empiècements en mesh sur les manches pour la ventilation. Conçu pour le match comme pour l'entraînement.","matiere":"100 % polyester","sizes":"mixte","floc":true,"coloris":["Noir"],"photo":"merch/gto-dovo.jpg","ref":"kappa26-gto-dovo","nom":"Dovo GTO","prix":21},{"club":"GTO","type":"Polo","cat":"Hauts","desc":"Polo en maille piquée, coupe regular, col et bords de manches côtelés, patte de boutonnage. La tenue de sortie du club.","matiere":"100 % coton","sizes":"mixte","floc":true,"coloris":["Noir","Blanc"],"photo":"merch/gto-barli.jpg","ref":"kappa26-gto-barli","nom":"Barli GTO","prix":29},{"club":"GTO","type":"Débardeur","cat":"Hauts","desc":"Débardeur en tissu texturé, coupe regular, col rond, finitions en biais au col et aux emmanchures. Léger, il laisse une totale liberté de mouvement.","matiere":"100 % polyester","sizes":"mixte","floc":true,"coloris":["Noir","Blanc"],"photo":"merch/gto-danco.jpg","ref":"kappa26-gto-danco","nom":"Danco GTO","prix":25},{"club":"GTO","type":"Haut 1/4 zip","cat":"Hauts","desc":"Haut d'entraînement à col zippé 1/4, coupe ajustée, empiècements contrastés sur les manches. Idéal en échauffement.","matiere":"100 % polyester","sizes":"mixte","floc":true,"coloris":["Noir"],"photo":"merch/gto-dolvole.jpg","ref":"kappa26-gto-dolvole","nom":"Dolvole GTO","prix":33},{"club":"GTO","type":"Sweat d'entraînement","cat":"Hauts","desc":"Sweat col rond en interlock, col côtelé, empiècements sur les manches et poignets élastiqués. Logo Omini brodé.","matiere":"100 % polyester","sizes":"mixte","floc":true,"coloris":["Noir"],"photo":"merch/gto-dolvano.jpg","ref":"kappa26-gto-dolvano","nom":"Dolvano GTO","prix":31},{"club":"GTO","type":"Sweat à capuche","cat":"Sweats & vestes","desc":"Sweat à capuche en molleton gratté, coupe regular. Poches latérales, bas et poignets côtelés, logo Omini imprimé en relief.","matiere":"60 % coton, 40 % polyester","sizes":"mixte","floc":true,"coloris":["Noir"],"photo":"merch/gto-bali.jpg","ref":"kappa26-gto-bali","nom":"Bali GTO","prix":43},{"club":"GTO","type":"Sweat zippé à capuche","cat":"Sweats & vestes","desc":"La version zippée du Bali : molleton gratté, capuche, ouverture zip intégrale, poches et bords côtes. Chaud et souple.","matiere":"60 % coton, 40 % polyester","sizes":"mixte","floc":true,"coloris":["Noir"],"photo":"merch/gto-banto.jpg","ref":"kappa26-gto-banto","nom":"Banto GTO","prix":51},{"club":"GTO","type":"Veste à capuche","cat":"Sweats & vestes","desc":"Veste en interlock, coupe ajustée, capuche et zip intégral. Poches zippées, empiècements sur les manches, poignets élastiqués, Omini brodé.","matiere":"100 % polyester","sizes":"mixte","floc":true,"coloris":["Noir"],"photo":"merch/gto-dolve.jpg","ref":"kappa26-gto-dolve","nom":"Dolve GTO","prix":41},{"club":"GTO","type":"Coupe-pluie à enfiler","cat":"Sweats & vestes","desc":"Coupe-pluie à col rond, bas élastiqué avec cordon de serrage, badge Omini brodé. Imperméable et coupe-vent.","matiere":"100 % polyester","sizes":"mixte","floc":true,"coloris":["Noir"],"photo":"merch/gto-gaggio.jpg","ref":"kappa26-gto-gaggio","nom":"Gaggio GTO","prix":33},{"club":"GTO","type":"Veste de pluie","cat":"Sweats & vestes","desc":"Veste d'entraînement en tissu tissé, capuche rangée dans le col, zip intégral, poignets élastiqués et cordon de serrage en bas.","matiere":"100 % polyester","sizes":"mixte","floc":true,"coloris":["Noir"],"photo":"merch/gto-wister.jpg","ref":"kappa26-gto-wister","nom":"Wister GTO","prix":30},{"club":"GTO","type":"Survêtement complet","cat":"Sweats & vestes","desc":"Veste zippée col montant et pantalon assorti, coupe slim. Taille élastique à cordon, poches latérales, Omini brodés. Sèche rapidement.","matiere":"100 % polyester (piqué)","sizes":"mixte","floc":true,"coloris":["Noir"],"photo":"merch/gto-dalcito.jpg","ref":"kappa26-gto-dalcito","nom":"Dalcito GTO","prix":54},{"club":"GTO","type":"Doudoune à capuche","cat":"Vestes & doudounes","desc":"Doudoune en popeline déperlante, coupe slim. Capuche, zip intégral, poches zippées, poignets élastiqués, Omini brodé.","matiere":"Extérieur 100 % nylon · doublure et garnissage 100 % polyester","sizes":"mixte","floc":true,"coloris":["Noir","Gris"],"photo":"merch/gto-vianetto.jpg","ref":"kappa26-gto-vianetto","nom":"Vianetto GTO","prix":72},{"club":"GTO","type":"Doudoune sans manches","cat":"Vestes & doudounes","desc":"Doudoune sans manches, coupe slim, zip intégral et poches zippées, Omini brodé. Parfaite en superposition sur un sweat.","matiere":"Extérieur 100 % nylon · doublure 100 % polyester","sizes":"mixte","floc":true,"coloris":["Noir"],"photo":"merch/gto-viatto.jpg","ref":"kappa26-gto-viatto","nom":"Viatto GTO","prix":61},{"club":"GTO","type":"Veste hybride","cat":"Vestes & doudounes","desc":"Veste à capuche qui associe softshell et rembourrage matelassé. Col montant, capuche réglable, fermeture et poches zippées.","matiere":"100 % polyamide","sizes":"mixte","floc":true,"coloris":["Noir"],"photo":"merch/gto-odolon.jpg","ref":"kappa26-gto-odolon","nom":"Odolon GTO","prix":80},{"club":"GTO","type":"Softshell","cat":"Vestes & doudounes","desc":"Softshell en tissu contrecollé avec enduction imperméable. Capuche amovible zippée, trois poches zippées, logo Kappa brodé.","matiere":"100 % polyester","sizes":"mixte","floc":true,"coloris":["Noir"],"photo":"merch/gto-valas.jpg","ref":"kappa26-gto-valas","nom":"Valas GTO","prix":68},{"club":"GTO","type":"Coupe-vent","cat":"Vestes & doudounes","desc":"Coupe-vent imperméable avec capuche intégrée dans le col. Léger, il se range facilement dans le sac pour les jours de pluie.","matiere":"100 % polyester","sizes":"mixte","floc":true,"coloris":["Noir"],"photo":"merch/gto-martio.jpg","ref":"kappa26-gto-martio","nom":"Martio GTO","prix":39},{"club":"GTO","type":"Veste à capuche","cat":"Vestes & doudounes","desc":"Veste d'entraînement à capuche, col montant et manches raglan. Zip intégral, poches, empiècement bicolore sur le haut.","matiere":"","sizes":"mixte","floc":true,"coloris":["Noir"],"photo":"merch/gto-fianto.jpg","ref":"kappa26-gto-fianto","nom":"Fianto GTO","prix":60},{"club":"GTO","type":"Parka matelassée","cat":"Parkas & pantalons","desc":"Parka à capuche isolante et imperméable, pensée pour l'automne et l'hiver au bord du terrain. Lavable en machine à 30 °C.","matiere":"Extérieur 100 % nylon · doublure 100 % polyester","sizes":"mixte","floc":true,"coloris":["Noir"],"photo":"merch/gto-diolo.jpg","ref":"kappa26-gto-diolo","nom":"Diolo GTO","prix":107},{"club":"GTO","type":"Doudoune longue","cat":"Parkas & pantalons","desc":"Doudoune longue à capuche, col montant, zip intégral et poches latérales zippées. Imperméable, idéale par mauvais temps.","matiere":"","sizes":"mixte","floc":true,"coloris":["Noir"],"photo":"merch/gto-giambolo.jpg","ref":"kappa26-gto-giambolo","nom":"Giambolo GTO","prix":76},{"club":"GTO","type":"Pantalon molleton","cat":"Parkas & pantalons","desc":"Pantalon en molleton, coupe droite et taille élastiquée. Le bas confortable pour les sorties et les déplacements.","matiere":"60 % coton, 40 % polyester","sizes":"mixte","floc":true,"coloris":["Noir"],"photo":"merch/gto-bemic.jpg","ref":"kappa26-gto-bemic","nom":"Bemic GTO","prix":37},{"club":"GTO","type":"Pantalon d'entraînement","cat":"Parkas & pantalons","desc":"Pantalon d'entraînement multisport à coupe ajustée, Omini et logo du club sur les jambes. Pensé pour l'échauffement et les séances. Kappa recommande un lavage en machine à 30 °C pour la grande majorité de ces articles. Évitez le sèche-linge pour les maillots techniques et l'assouplissant pour les vestes matelassées. En cas de doute, suivez toujours l'étiquette du vêtement.","matiere":"","sizes":"mixte","floc":true,"coloris":["Noir"],"photo":"merch/gto-dalci.jpg","ref":"kappa26-gto-dalci","nom":"Dalci GTO","prix":29},{"club":"GTO","type":"Pantalon de sortie","cat":"Parkas & pantalons","desc":"Pantalon en interlock, coupe ajustée, taille élastique à cordon intérieur et poches latérales zippées. Élégant pour les sorties d'équipe.","matiere":"75 % polyester, 25 % coton","sizes":"mixte","floc":true,"coloris":["Noir"],"photo":"merch/gto-fievolo.jpg","ref":"kappa26-gto-fievolo","nom":"Fievolo GTO","prix":44},{"club":"GTO","type":"T-shirt femme","cat":"Collection femme","desc":"T-shirt en jersey extensible, coupe slim qui suit la silhouette, col V et manches courtes. Confortable et facile à porter.","matiere":"95 % coton, 5 % élasthanne","sizes":"adulte","floc":true,"coloris":["Noir","Blanc","Rose"],"photo":"merch/gto-brizza.jpg","ref":"kappa26-gto-brizza","nom":"Brizza GTO","prix":23},{"club":"GTO","type":"Polo femme","cat":"Collection femme","desc":"Polo à manches courtes avec liseré contrasté, col à deux boutons, Omini sur la poitrine et dans le dos.","matiere":"100 % coton","sizes":"adulte","floc":true,"coloris":["Noir","Blanc","Rose"],"photo":"merch/gto-barla.jpg","ref":"kappa26-gto-barla","nom":"Barla GTO","prix":29},{"club":"GTO","type":"Débardeur femme","cat":"Collection femme","desc":"Débardeur d'entraînement en mesh respirant qui évacue la transpiration. Sans manches, col rond, coupe regular.","matiere":"100 % polyester","sizes":"adulte","floc":true,"coloris":["Noir","Blanc"],"photo":"merch/gto-danca.jpg","ref":"kappa26-gto-danca","nom":"Danca GTO","prix":25},{"club":"GTO","type":"Veste à capuche femme","cat":"Collection femme","desc":"Veste en interlock, coupe ajustée, capuche et zip intégral. Poches latérales zippées, empiècements sur le devant et les manches.","matiere":"75 % polyester, 25 % coton","sizes":"adulte","floc":true,"coloris":["Noir"],"photo":"merch/gto-fianta.jpg","ref":"kappa26-gto-fianta","nom":"Fianta GTO","prix":60},{"club":"GTO","type":"Doudoune femme","cat":"Collection femme","desc":"Version femme de la Vianetto : doudoune à capuche et manches longues, fermeture zippée, coupe cintrée.","matiere":"","sizes":"adulte","floc":true,"coloris":["Noir"],"photo":"merch/gto-vianetta.jpg","ref":"kappa26-gto-vianetta","nom":"Vianetta GTO","prix":72},{"club":"GTO","type":"Pantalon femme","cat":"Collection femme","desc":"Pantalon en interlock, coupe slim, taille élastique à cordon intérieur, poches latérales zippées et bas de jambe en côte.","matiere":"75 % polyester, 25 % coton","sizes":"adulte","floc":true,"coloris":["Noir"],"photo":"merch/gto-fievola.jpg","ref":"kappa26-gto-fievola","nom":"Fievola GTO","prix":44},{"club":"GTO","type":"Short","cat":"Shorts & bagagerie","desc":"Short de sport à taille élastique, pour l'entraînement comme pour les moments de détente.","matiere":"","sizes":"mixte","floc":true,"coloris":["Noir"],"photo":"merch/gto-blive.jpg","ref":"kappa26-gto-blive","nom":"Blive GTO","prix":30},{"club":"GTO","type":"Short d'entraînement","cat":"Shorts & bagagerie","desc":"Short en interlock, coupe regular, taille élastique à cordon intérieur. Évacue la transpiration et sèche rapidement.","matiere":"100 % polyester","sizes":"mixte","floc":true,"coloris":["Noir"],"photo":"merch/gto-borgo.jpg","ref":"kappa26-gto-borgo","nom":"Borgo GTO","prix":19},{"club":"GTO","type":"Short à poches","cat":"Shorts & bagagerie","desc":"Short avec poches, coupe regular. Aussi à l'aise à l'entraînement qu'en tenue de sortie.","matiere":"","sizes":"mixte","floc":true,"coloris":["Noir","Gris"],"photo":"merch/gto-passo.jpg","ref":"kappa26-gto-passo","nom":"Passo GTO","prix":29},{"club":"GTO","type":"Sac à dos","cat":"Shorts & bagagerie","desc":"Sac à dos avec un compartiment inférieur séparé, pratique pour isoler les chaussures ou la tenue de match.","matiere":"","sizes":"unique","floc":false,"coloris":["Noir"],"photo":"merch/gto-backpack.jpg","ref":"kappa26-gto-backpack","nom":"Backpack GTO","prix":35},{"club":"GTO","type":"Sac à roulettes","cat":"Shorts & bagagerie","desc":"Sac de sport à roulettes avec poignée télescopique, en deux contenances. Pour tout l'équipement de match et les déplacements. Contenance 60 L.","matiere":"","sizes":"unique","floc":false,"coloris":["Noir"],"photo":"merch/gto-garcisio.jpg","ref":"kappa26-gto-garcisio-60","nom":"Garcisio 60 L GTO","prix":63},{"club":"GTO","type":"Sac à roulettes","cat":"Shorts & bagagerie","desc":"Sac de sport à roulettes avec poignée télescopique, en deux contenances. Pour tout l'équipement de match et les déplacements. Contenance 90 L.","matiere":"","sizes":"unique","floc":false,"coloris":["Noir"],"photo":"merch/gto-garcisio.jpg","ref":"kappa26-gto-garcisio-90","nom":"Garcisio 90 L GTO","prix":70},{"club":"VDB","type":"T-shirt","cat":"Hauts","desc":"T-shirt en jersey, coupe regular, col côtelé et manches courtes. Respirant et agréable, aussi bien à l'entraînement qu'au quotidien.","matiere":"100 % coton","sizes":"mixte","floc":true,"coloris":["Marine","Noir","Blanc"],"photo":"merch/vdb-brizzo.jpg","ref":"kappa26-vdb-brizzo","nom":"Brizzo VDB","prix":21},{"club":"VDB","type":"Maillot d'entraînement","cat":"Hauts","desc":"Maillot en interlock, coupe regular, col rond. Empiècements en mesh sur les manches pour la ventilation. Conçu pour le match comme pour l'entraînement.","matiere":"100 % polyester","sizes":"mixte","floc":true,"coloris":["Marine"],"photo":"merch/vdb-dovo.jpg","ref":"kappa26-vdb-dovo","nom":"Dovo VDB","prix":21},{"club":"VDB","type":"Polo","cat":"Hauts","desc":"Polo en maille piquée, coupe regular, col et bords de manches côtelés, patte de boutonnage. La tenue de sortie du club.","matiere":"100 % coton","sizes":"mixte","floc":true,"coloris":["Marine","Noir","Blanc"],"photo":"merch/vdb-barli.jpg","ref":"kappa26-vdb-barli","nom":"Barli VDB","prix":29},{"club":"VDB","type":"Débardeur","cat":"Hauts","desc":"Débardeur en tissu texturé, coupe regular, col rond, finitions en biais au col et aux emmanchures. Léger, il laisse une totale liberté de mouvement.","matiere":"100 % polyester","sizes":"mixte","floc":true,"coloris":["Marine","Noir","Blanc"],"photo":"merch/vdb-danco.jpg","ref":"kappa26-vdb-danco","nom":"Danco VDB","prix":25},{"club":"VDB","type":"Haut 1/4 zip","cat":"Hauts","desc":"Haut d'entraînement à col zippé 1/4, coupe ajustée, empiècements contrastés sur les manches. Idéal en échauffement.","matiere":"100 % polyester","sizes":"mixte","floc":true,"coloris":["Marine"],"photo":"merch/vdb-dolvole.jpg","ref":"kappa26-vdb-dolvole","nom":"Dolvole VDB","prix":33},{"club":"VDB","type":"Sweat d'entraînement","cat":"Hauts","desc":"Sweat col rond en interlock, col côtelé, empiècements sur les manches et poignets élastiqués. Logo Omini brodé.","matiere":"100 % polyester","sizes":"mixte","floc":true,"coloris":["Marine"],"photo":"merch/vdb-dolvano.jpg","ref":"kappa26-vdb-dolvano","nom":"Dolvano VDB","prix":31},{"club":"VDB","type":"Sweat à capuche","cat":"Sweats & vestes","desc":"Sweat à capuche en molleton gratté, coupe regular. Poches latérales, bas et poignets côtelés, logo Omini imprimé en relief.","matiere":"60 % coton, 40 % polyester","sizes":"mixte","floc":true,"coloris":["Marine"],"photo":"merch/vdb-bali.jpg","ref":"kappa26-vdb-bali","nom":"Bali VDB","prix":43},{"club":"VDB","type":"Sweat zippé à capuche","cat":"Sweats & vestes","desc":"La version zippée du Bali : molleton gratté, capuche, ouverture zip intégrale, poches et bords côtes. Chaud et souple.","matiere":"60 % coton, 40 % polyester","sizes":"mixte","floc":true,"coloris":["Marine"],"photo":"merch/vdb-banto.jpg","ref":"kappa26-vdb-banto","nom":"Banto VDB","prix":51},{"club":"VDB","type":"Veste à capuche","cat":"Sweats & vestes","desc":"Veste en interlock, coupe ajustée, capuche et zip intégral. Poches zippées, empiècements sur les manches, poignets élastiqués, Omini brodé.","matiere":"100 % polyester","sizes":"mixte","floc":true,"coloris":["Marine"],"photo":"merch/vdb-dolve.jpg","ref":"kappa26-vdb-dolve","nom":"Dolve VDB","prix":41},{"club":"VDB","type":"Coupe-pluie à enfiler","cat":"Sweats & vestes","desc":"Coupe-pluie à col rond, bas élastiqué avec cordon de serrage, badge Omini brodé. Imperméable et coupe-vent.","matiere":"100 % polyester","sizes":"mixte","floc":true,"coloris":["Marine"],"photo":"merch/vdb-gaggio.jpg","ref":"kappa26-vdb-gaggio","nom":"Gaggio VDB","prix":29},{"club":"VDB","type":"Veste de pluie","cat":"Sweats & vestes","desc":"Veste d'entraînement en tissu tissé, capuche rangée dans le col, zip intégral, poignets élastiqués et cordon de serrage en bas.","matiere":"100 % polyester","sizes":"mixte","floc":true,"coloris":["Marine"],"photo":"merch/vdb-wister.jpg","ref":"kappa26-vdb-wister","nom":"Wister VDB","prix":30},{"club":"VDB","type":"Survêtement complet","cat":"Sweats & vestes","desc":"Veste zippée col montant et pantalon assorti, coupe slim. Taille élastique à cordon, poches latérales, Omini brodés. Sèche rapidement.","matiere":"100 % polyester (piqué)","sizes":"mixte","floc":true,"coloris":["Marine"],"photo":"merch/vdb-dalcito.jpg","ref":"kappa26-vdb-dalcito","nom":"Dalcito VDB","prix":54},{"club":"VDB","type":"Doudoune à capuche","cat":"Vestes & doudounes","desc":"Doudoune en popeline déperlante, coupe slim. Capuche, zip intégral, poches zippées, poignets élastiqués, Omini brodé.","matiere":"Extérieur 100 % nylon · doublure et garnissage 100 % polyester","sizes":"mixte","floc":true,"coloris":["Marine","Noir","Gris"],"photo":"merch/vdb-vianetto.jpg","ref":"kappa26-vdb-vianetto","nom":"Vianetto VDB","prix":72},{"club":"VDB","type":"Doudoune sans manches","cat":"Vestes & doudounes","desc":"Doudoune sans manches, coupe slim, zip intégral et poches zippées, Omini brodé. Parfaite en superposition sur un sweat.","matiere":"Extérieur 100 % nylon · doublure 100 % polyester","sizes":"mixte","floc":true,"coloris":["Marine"],"photo":"merch/vdb-viatto.jpg","ref":"kappa26-vdb-viatto","nom":"Viatto VDB","prix":61},{"club":"VDB","type":"Veste hybride","cat":"Vestes & doudounes","desc":"Veste à capuche qui associe softshell et rembourrage matelassé. Col montant, capuche réglable, fermeture et poches zippées.","matiere":"100 % polyamide","sizes":"mixte","floc":true,"coloris":["Marine"],"photo":"merch/vdb-odolon.jpg","ref":"kappa26-vdb-odolon","nom":"Odolon VDB","prix":80},{"club":"VDB","type":"Softshell","cat":"Vestes & doudounes","desc":"Softshell en tissu contrecollé avec enduction imperméable. Capuche amovible zippée, trois poches zippées, logo Kappa brodé.","matiere":"100 % polyester","sizes":"mixte","floc":true,"coloris":["Noir"],"photo":"merch/vdb-valas.jpg","ref":"kappa26-vdb-valas","nom":"Valas VDB","prix":68},{"club":"VDB","type":"Coupe-vent","cat":"Vestes & doudounes","desc":"Coupe-vent imperméable avec capuche intégrée dans le col. Léger, il se range facilement dans le sac pour les jours de pluie.","matiere":"100 % polyester","sizes":"mixte","floc":true,"coloris":["Marine"],"photo":"merch/vdb-martio.jpg","ref":"kappa26-vdb-martio","nom":"Martio VDB","prix":39},{"club":"VDB","type":"Veste à capuche","cat":"Vestes & doudounes","desc":"Veste d'entraînement à capuche, col montant et manches raglan. Zip intégral, poches, empiècement bicolore sur le haut.","matiere":"","sizes":"mixte","floc":true,"coloris":["Noir"],"photo":"merch/vdb-fianto.jpg","ref":"kappa26-vdb-fianto","nom":"Fianto VDB","prix":60},{"club":"VDB","type":"Parka matelassée","cat":"Parkas & pantalons","desc":"Parka à capuche isolante et imperméable, pensée pour l'automne et l'hiver au bord du terrain. Lavable en machine à 30 °C.","matiere":"Extérieur 100 % nylon · doublure 100 % polyester","sizes":"mixte","floc":true,"coloris":["Marine"],"photo":"merch/vdb-diolo.jpg","ref":"kappa26-vdb-diolo","nom":"Diolo VDB","prix":107},{"club":"VDB","type":"Doudoune longue","cat":"Parkas & pantalons","desc":"Doudoune longue à capuche, col montant, zip intégral et poches latérales zippées. Imperméable, idéale par mauvais temps.","matiere":"","sizes":"mixte","floc":true,"coloris":["Marine"],"photo":"merch/vdb-giambolo.jpg","ref":"kappa26-vdb-giambolo","nom":"Giambolo VDB","prix":76},{"club":"VDB","type":"Pantalon molleton","cat":"Parkas & pantalons","desc":"Pantalon en molleton, coupe droite et taille élastiquée. Le bas confortable pour les sorties et les déplacements.","matiere":"60 % coton, 40 % polyester","sizes":"mixte","floc":true,"coloris":["Marine"],"photo":"merch/vdb-bemic.jpg","ref":"kappa26-vdb-bemic","nom":"Bemic VDB","prix":37},{"club":"VDB","type":"Pantalon d'entraînement","cat":"Parkas & pantalons","desc":"Pantalon d'entraînement multisport à coupe ajustée, Omini et logo du club sur les jambes. Pensé pour l'échauffement et les séances. Kappa recommande un lavage en machine à 30 °C pour la grande majorité de ces articles. Évitez le sèche-linge pour les maillots techniques et l'assouplissant pour les vestes matelassées. En cas de doute, suivez toujours l'étiquette du vêtement.","matiere":"","sizes":"mixte","floc":true,"coloris":["Marine"],"photo":"merch/vdb-dalci.jpg","ref":"kappa26-vdb-dalci","nom":"Dalci VDB","prix":29},{"club":"VDB","type":"Pantalon de sortie","cat":"Parkas & pantalons","desc":"Pantalon en interlock, coupe ajustée, taille élastique à cordon intérieur et poches latérales zippées. Élégant pour les sorties d'équipe.","matiere":"75 % polyester, 25 % coton","sizes":"mixte","floc":true,"coloris":["Noir"],"photo":"merch/vdb-fievolo.jpg","ref":"kappa26-vdb-fievolo","nom":"Fievolo VDB","prix":44},{"club":"VDB","type":"T-shirt femme","cat":"Collection femme","desc":"T-shirt en jersey extensible, coupe slim qui suit la silhouette, col V et manches courtes. Confortable et facile à porter.","matiere":"95 % coton, 5 % élasthanne","sizes":"adulte","floc":true,"coloris":["Marine","Noir","Blanc","Rose"],"photo":"merch/vdb-brizza.jpg","ref":"kappa26-vdb-brizza","nom":"Brizza VDB","prix":23},{"club":"VDB","type":"Polo femme","cat":"Collection femme","desc":"Polo à manches courtes avec liseré contrasté, col à deux boutons, Omini sur la poitrine et dans le dos.","matiere":"100 % coton","sizes":"adulte","floc":true,"coloris":["Marine","Noir","Blanc","Rose"],"photo":"merch/vdb-barla.jpg","ref":"kappa26-vdb-barla","nom":"Barla VDB","prix":29},{"club":"VDB","type":"Débardeur femme","cat":"Collection femme","desc":"Débardeur d'entraînement en mesh respirant qui évacue la transpiration. Sans manches, col rond, coupe regular.","matiere":"100 % polyester","sizes":"adulte","floc":true,"coloris":["Noir","Blanc"],"photo":"merch/vdb-danca.jpg","ref":"kappa26-vdb-danca","nom":"Danca VDB","prix":25},{"club":"VDB","type":"Veste à capuche femme","cat":"Collection femme","desc":"Veste en interlock, coupe ajustée, capuche et zip intégral. Poches latérales zippées, empiècements sur le devant et les manches.","matiere":"75 % polyester, 25 % coton","sizes":"adulte","floc":true,"coloris":["Marine"],"photo":"merch/vdb-fianta.jpg","ref":"kappa26-vdb-fianta","nom":"Fianta VDB","prix":60},{"club":"VDB","type":"Doudoune femme","cat":"Collection femme","desc":"Version femme de la Vianetto : doudoune à capuche et manches longues, fermeture zippée, coupe cintrée.","matiere":"","sizes":"adulte","floc":true,"coloris":["Marine"],"photo":"merch/vdb-vianetta.jpg","ref":"kappa26-vdb-vianetta","nom":"Vianetta VDB","prix":72},{"club":"VDB","type":"Pantalon femme","cat":"Collection femme","desc":"Pantalon en interlock, coupe slim, taille élastique à cordon intérieur, poches latérales zippées et bas de jambe en côte.","matiere":"75 % polyester, 25 % coton","sizes":"adulte","floc":true,"coloris":["Marine"],"photo":"merch/vdb-fievola.jpg","ref":"kappa26-vdb-fievola","nom":"Fievola VDB","prix":44},{"club":"VDB","type":"Short","cat":"Shorts & bagagerie","desc":"Short de sport à taille élastique, pour l'entraînement comme pour les moments de détente.","matiere":"","sizes":"mixte","floc":true,"coloris":["Marine"],"photo":"merch/vdb-blive.jpg","ref":"kappa26-vdb-blive","nom":"Blive VDB","prix":30},{"club":"VDB","type":"Short d'entraînement","cat":"Shorts & bagagerie","desc":"Short en interlock, coupe regular, taille élastique à cordon intérieur. Évacue la transpiration et sèche rapidement.","matiere":"100 % polyester","sizes":"mixte","floc":true,"coloris":["Marine"],"photo":"merch/vdb-borgo.jpg","ref":"kappa26-vdb-borgo","nom":"Borgo VDB","prix":19},{"club":"VDB","type":"Short à poches","cat":"Shorts & bagagerie","desc":"Short avec poches, coupe regular. Aussi à l'aise à l'entraînement qu'en tenue de sortie.","matiere":"","sizes":"mixte","floc":true,"coloris":["Noir","Gris"],"photo":"merch/vdb-passo.jpg","ref":"kappa26-vdb-passo","nom":"Passo VDB","prix":29},{"club":"VDB","type":"Sac à dos","cat":"Shorts & bagagerie","desc":"Sac à dos avec un compartiment inférieur séparé, pratique pour isoler les chaussures ou la tenue de match.","matiere":"","sizes":"unique","floc":false,"coloris":["Marine"],"photo":"merch/vdb-backpack.jpg","ref":"kappa26-vdb-backpack","nom":"Backpack VDB","prix":35},{"club":"VDB","type":"Sac à roulettes","cat":"Shorts & bagagerie","desc":"Sac de sport à roulettes avec poignée télescopique, en deux contenances. Pour tout l'équipement de match et les déplacements. Contenance 60 L.","matiere":"","sizes":"unique","floc":false,"coloris":["Marine"],"photo":"merch/vdb-garcisio.jpg","ref":"kappa26-vdb-garcisio-60","nom":"Garcisio 60 L VDB","prix":63},{"club":"VDB","type":"Sac à roulettes","cat":"Shorts & bagagerie","desc":"Sac de sport à roulettes avec poignée télescopique, en deux contenances. Pour tout l'équipement de match et les déplacements. Contenance 90 L.","matiere":"","sizes":"unique","floc":false,"coloris":["Marine"],"photo":"merch/vdb-garcisio.jpg","ref":"kappa26-vdb-garcisio-90","nom":"Garcisio 90 L VDB","prix":70}];
+
 /* ---------- Démarrage et mise à niveau des données existantes ---------- */
 async function boot(){
   await DB.open();
@@ -610,6 +633,19 @@ async function boot(){
       await DB.put("orders", o);
     }
     S.settings.preAsSale = true;
+  }
+  if(!S.settings.kappa26){
+    const all = await DB.all("articles"), refs = new Set(all.map(a => a.ref).filter(Boolean));
+    for(const a of all) if(a.kind === "merch" && !a.ref){
+      if(a.exemple) await DB.del("articles", a.id);            // exemples de démonstration
+      else { a.actif = false; a.ancien = true; await DB.put("articles", a); }   // saisies manuelles : masquées, pas supprimées
+    }
+    for(const k of KAPPA26) if(!refs.has(k.ref)){
+      await DB.put("articles", {id:uid(), ref:k.ref, nom:k.nom, type:k.type, cat:k.cat, desc:k.desc, matiere:k.matiere, coloris:k.coloris, clubTag:k.club,
+        prix:k.prix, kind:"merch", club:true, marge:null, mode:"precommande", flocage:k.floc, flocagePrix:5,
+        tailles:k.sizes === "unique" ? null : GAMMES[k.sizes].map(t => ({t, stock:0})), stock:0, delai:0, photos:[k.photo], exemple:false, actif:true, cree:new Date().toISOString()});
+    }
+    S.settings.kappa26 = true;
   }
   if(!S.settings.sizesFull){
     const ADULTE = ["XS","S","M","L","XL","XXL","XXXL"], ENFANT = ["4 ans","6 ans","8 ans","10 ans","12 ans","14 ans"];
@@ -669,7 +705,7 @@ const modeTag = a => isPre(a) ? `<span class="tag cmd">Précommande${a.flocage ?
   : a.mode === "stock"
   ? (a.stock > 0 ? `<span class="tag stock num">${a.stock} en stock</span>` : `<span class="tag out">Épuisé</span>`)
   : `<span class="tag cmd num">Sur commande · ${a.delai} j</span>`;
-const sizeChips = a => isPre(a) ? (hasSizes(a) ? `<span class="szchips">${a.tailles.map(z => `<span class="sz"><b>${esc(z.t)}</b></span>`).join("")}</span>` : "")
+const sizeChips = a => isPre(a) ? (hasSizes(a) ? (a.tailles.length > 7 ? `<span class="szchips"><span class="sz"><b>${esc(a.tailles[0].t)} → ${esc(a.tailles[a.tailles.length - 1].t)}</b></span></span>` : `<span class="szchips">${a.tailles.map(z => `<span class="sz"><b>${esc(z.t)}</b></span>`).join("")}</span>`) : "")
   : hasSizes(a) ? `<span class="szchips">${a.tailles.map(z => `<span class="sz${z.stock <= 0 ? " off" : z.stock <= 2 ? " low" : ""}"><b>${esc(z.t)}</b> ${z.stock}</span>`).join("")}</span>` : "";
 const kindPill = a => isMerch(a) ? `<span class="kpill">Merch</span>` : "";
 
@@ -790,8 +826,9 @@ function openFiche(id, from){
     </div>
     <div class="info">
       <span class="muted" style="font-weight:700;text-transform:uppercase;letter-spacing:.06em;font-size:13px">${esc(a.cat)}</span>
-      <h2>${esc(a.nom)}</h2>
+      <h2>${esc(a.nom)}</h2>${a.type ? `<div class="muted" style="font-weight:700">${esc(a.type)}</div>` : ""}
       <div class="price num">${eur(salePrice(a))}</div>
+      ${a.desc ? `<p style="margin:0">${esc(a.desc)}</p>` : ""}${a.matiere ? `<p class="muted small" style="margin:0">Matière : ${esc(a.matiere)}</p>` : ""}${colorLine(a)}
       <div>${hasSizes(a) ? sizeChips(a) : modeTag(a)}</div>
       ${a.mode === "commande" ? `<p class="muted" style="margin:0">Fabriqué à la demande et personnalisable (prénom, numéro, couleurs). Prêt en ${a.delai} jour${a.delai>1?"s":""} environ.</p>` : ""}
       <button class="btn primary" id="fAdd" ${out ? "disabled" : ""}>${out ? "Plus de stock" : "Ajouter au panier"}</button>
@@ -814,7 +851,7 @@ function celebrate(title, sub){
 
 /* ---------- Recherche (sans tenir compte des accents ni des majuscules) ---------- */
 const norm = t => String(t || "").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
-const matchQ = (a, q) => { const hay = norm([a.nom, a.cat, KINDS[a.kind || "resine"], ...(a.tailles || []).map(z => z.t)].join(" "));
+const matchQ = (a, q) => { const hay = norm([a.nom, a.cat, a.type, a.desc, a.matiere, KINDS[a.kind || "resine"], ...(a.coloris || []), ...(a.tailles || []).map(z => z.t)].join(" "));
   return norm(q).split(/\s+/).filter(Boolean).every(w => hay.includes(w)); };
 const searchBar = (id, q, ph) => `<div class="searchbar"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
   <input type="search" id="${id}" value="${esc(q)}" placeholder="${esc(ph)}" autocomplete="off" enterkeyhint="search" aria-label="${esc(ph)}">
@@ -843,7 +880,7 @@ function venteGridHTML(list){
         ${a.photos.length > 1 ? `<span class="nphotos num">${a.photos.length} photos</span>` : ""}</span>
         <button class="zoom" data-zoom="${a.id}" aria-label="Voir les photos de ${esc(a.nom)}"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="6"/><path d="m20 20-4.5-4.5M11 8v6M8 11h6"/></svg></button>
         ${n ? `<span class="incart num">${n}</span>` : ""}
-        <span class="bd"><span class="nm">${esc(a.nom)}</span>${isPre(a) ? `<span>${modeTag(a)}</span>${sizeChips(a)}` : hasSizes(a) ? sizeChips(a) : `<span>${modeTag(a)} ${a.exemple ? '<span class="tag ex">Exemple</span>' : ""}</span>`}
+        <span class="bd">${a.type ? `<span class="eyebrow">${esc(a.type)}</span>` : ""}<span class="nm">${esc(a.nom)}</span>${isPre(a) ? `${colorLine(a)}${a.desc ? `<span class="dsc">${esc(a.desc)}</span>` : ""}${sizeChips(a)}` : hasSizes(a) ? sizeChips(a) : `<span>${modeTag(a)} ${a.exemple ? '<span class="tag ex">Exemple</span>' : ""}</span>`}
         <span class="pr num">${eur(salePrice(a))}</span></span></div>`; }).join("")}</div>`
     : `<div class="panel"><p class="muted">${q ? `Aucun article ${esc(canalName(canal))} ne correspond à « ${esc(q)} ».` : `Aucun article ${esc(canalName(canal))} dans cette catégorie. Ajoutez-en depuis le Catalogue.`}</p></div>`}`;
 }
@@ -898,7 +935,7 @@ function cartHTML(){
   return `<header><h2>Panier</h2>${canalPill(cc)}<button class="btn small ghost" id="clearCart">Vider</button></header>
   <div class="lines">${S.cart.map((l,i) => `
     <div class="line">
-      <div class="t">${esc(l.nom)}${l.taille ? ` <span class="szbadge">${esc(l.taille)}</span>` : ""}<div>${l.mode==="precommande" ? `<span class="tag cmd">Précommande</span>${l.floc ? ` <span class="kpill">Floqué${l.perso ? " : " + esc(l.perso) : ""}</span>` : ""}` : l.mode==="commande" ? '<span class="tag cmd">Sur commande</span>' : l.kind === "merch" ? '<span class="kpill">Merch</span>' : '<span class="tag stock">À emporter</span>'}</div></div>
+      <div class="t">${esc(l.nom)}${l.taille ? ` <span class="szbadge">${esc(l.taille)}</span>` : ""}${l.color ? ` <span class="cline">${dot(l.color)}${esc(l.color)}</span>` : ""}<div>${l.mode==="precommande" ? `<span class="tag cmd">Précommande</span>${l.floc ? ` <span class="kpill">Floqué${l.perso ? " : " + esc(l.perso) : ""}</span>` : ""}` : l.mode==="commande" ? '<span class="tag cmd">Sur commande</span>' : l.kind === "merch" ? '<span class="kpill">Merch</span>' : '<span class="tag stock">À emporter</span>'}</div></div>
       <div class="p num"><b>${eur(l.prix*l.qte)}</b><div class="muted">${eur(l.prix)} / u</div></div>
       <div class="qty"><button data-dec="${i}" aria-label="Retirer un">−</button><span class="num">${l.qte}</span><button data-inc="${i}" aria-label="Ajouter un">+</button></div>
       <div></div>
@@ -927,12 +964,12 @@ function addToCart(id, taille, opt){
   if(!isPre(a) && hasSizes(a) && taille === undefined) return pickSize(a);
   const t = taille || "";
   if(a.mode === "stock" && inCart(id, t) >= stockOf(a, t)) return toast(stockOf(a, t) ? "Plus de stock pour cet article" : "Article épuisé");
-  const floc = !!(opt && opt.floc), txt = (opt && opt.txt || "").trim();
+  const floc = !!(opt && opt.floc), txt = (opt && opt.txt || "").trim(), color = (opt && opt.color) || "";
   // Les articles sur commande gardent une ligne par pièce personnalisée ; les précommandes identiques se regroupent
   const l = a.mode === "stock" ? S.cart.find(x => x.artId === id && (x.taille || "") === t)
-    : isPre(a) ? S.cart.find(x => x.artId === id && (x.taille || "") === t && !!x.floc === floc && (x.perso || "") === txt) : null;
+    : isPre(a) ? S.cart.find(x => x.artId === id && (x.taille || "") === t && (x.color || "") === color && !!x.floc === floc && (x.perso || "") === txt) : null;
   const prix = r2(salePrice(a) + (floc ? (+a.flocagePrix || 0) : 0));
-  if(l) l.qte++; else S.cart.push({artId:id, nom:a.nom, taille:t, kind:a.kind || "resine", prix, base:isMerch(a) ? 0 : r2(a.prix), mode:a.mode, qte:1, perso:txt, floc, delai:a.delai||0});
+  if(l) l.qte++; else S.cart.push({artId:id, nom:a.nom, taille:t, kind:a.kind || "resine", prix, base:isMerch(a) ? 0 : r2(a.prix), mode:a.mode, qte:1, perso:txt, floc, color, delai:a.delai||0});
   S.cartCanal = canal;
   if(S.view !== "vente") return toast(`${a.nom}${t ? " (" + t + ")" : ""} ajouté au panier`);
   renderVente();
@@ -940,26 +977,39 @@ function addToCart(id, taille, opt){
 }
 /* Précommande de merchandising : taille + flocage, prix unique de l'article */
 function configMerch(a){
-  const st = {t: hasSizes(a) ? null : "", floc:false, nom:"", num:""};
+  const cols = a.coloris || [];
+  const st = {t: hasSizes(a) ? null : "", c: cols.length > 1 ? null : (cols[0] || ""), floc:false, nom:"", num:""};
   const fp = +a.flocagePrix || 0;
+  const szBtn = z => `<button type="button" class="size${st.t === z.t ? " on" : ""}" data-psz="${esc(z.t)}" aria-pressed="${st.t === z.t}"><b>${esc(z.t)}</b></button>`;
   const draw = () => {
+    const enf = hasSizes(a) ? a.tailles.filter(z => GAMMES.enfant.includes(z.t)) : [], adu = hasSizes(a) ? a.tailles.filter(z => !GAMMES.enfant.includes(z.t)) : [];
+    const missing = st.c === null ? "Choisissez un coloris" : st.t === null ? "Choisissez une taille" : "";
     openDlg(`<header><h2>${esc(a.nom)}</h2></header>
       <div class="body">
-        <p class="muted" style="margin:0">Précommande, payée en totalité à la commande.</p>
+        <div class="cfhead">${a.photos[0] ? `<img src="${a.photos[0]}" alt="">` : ""}<div>
+          ${a.type ? `<div class="eyebrow">${esc(a.type)}</div>` : ""}
+          ${a.desc ? `<p style="margin:2px 0 6px">${esc(a.desc)}</p>` : ""}
+          ${a.matiere ? `<p class="muted small" style="margin:0">Matière : ${esc(a.matiere)}</p>` : ""}
+          <p class="muted small" style="margin:6px 0 0">Précommande, payée en totalité à la commande.</p></div></div>
+        ${cols.length > 1 ? `<div class="f" style="display:flex;flex-direction:column;gap:8px;font-weight:700;font-size:14px">Coloris
+          <div class="colors">${cols.map(c => `<button type="button" class="colbtn${st.c === c ? " on" : ""}" data-col="${esc(c)}" aria-pressed="${st.c === c}">${dot(c)}${esc(c)}</button>`).join("")}</div></div>` : ""}
         ${hasSizes(a) ? `<div class="f" style="display:flex;flex-direction:column;gap:8px;font-weight:700;font-size:14px">Taille
-          <div class="sizes">${a.tailles.map(z => `<button type="button" class="size${st.t === z.t ? " on" : ""}" data-psz="${esc(z.t)}" aria-pressed="${st.t === z.t}"><b>${esc(z.t)}</b></button>`).join("")}</div></div>` : ""}
+          ${enf.length ? `<span class="szgroup">Enfant</span><div class="sizes">${enf.map(szBtn).join("")}</div>` : ""}
+          ${adu.length ? `${enf.length ? `<span class="szgroup">Adulte</span>` : ""}<div class="sizes">${adu.map(szBtn).join("")}</div>` : ""}</div>` : ""}
         ${a.flocage ? `<div class="f" style="display:flex;flex-direction:column;gap:8px;font-weight:700;font-size:14px">Flocage
           <div class="seg"><button type="button" data-fl="0" aria-pressed="${!st.floc}">Sans flocage</button><button type="button" data-fl="1" aria-pressed="${st.floc}">Avec flocage (+${eur(fp)})</button></div></div>
           ${st.floc ? `<div class="fgrid"><label class="f">Nom à floquer<input type="text" id="flNom" value="${esc(st.nom)}" autocomplete="off" autocapitalize="characters"></label>
             <label class="f">Numéro<input type="text" id="flNum" value="${esc(st.num)}" inputmode="numeric" autocomplete="off"></label></div>` : ""}` : ""}
         <div class="paybox"><div class="row big"><span>Prix</span><span class="num">${eur(salePrice(a) + (st.floc ? fp : 0))}</span></div></div>
       </div>
-      <footer><button class="btn ghost" id="cfNo" type="button">Retour</button><button class="btn primary" id="cfOk" type="button" ${st.t === null ? "disabled" : ""}>${st.t === null ? "Choisissez une taille" : "Ajouter au panier"}</button></footer>`);
+      <footer><button class="btn ghost" id="cfNo" type="button">Retour</button><button class="btn primary" id="cfOk" type="button" ${missing ? "disabled" : ""}>${missing || "Ajouter au panier"}</button></footer>`);
     const keepTxt = () => { const n = $("#flNom"), u = $("#flNum"); if(n) st.nom = n.value.trim(); if(u) st.num = u.value.trim(); };
     document.querySelectorAll("[data-psz]").forEach(b => b.onclick = () => { keepTxt(); st.t = b.dataset.psz; draw(); });
+    document.querySelectorAll("[data-col]").forEach(b => b.onclick = () => { keepTxt(); st.c = b.dataset.col; draw(); });
     document.querySelectorAll("[data-fl]").forEach(b => b.onclick = () => { keepTxt(); st.floc = b.dataset.fl === "1"; draw(); if(st.floc){ const f = $("#flNom"); if(f) f.focus(); } });
     $("#cfNo").onclick = closeDlg;
-    $("#cfOk").onclick = () => { keepTxt(); if(st.t === null) return; closeDlg(); addToCart(a.id, st.t, {floc:st.floc, txt:st.floc ? [st.nom, st.num ? "n° " + st.num : ""].filter(Boolean).join(" · ") : ""}); };
+    $("#cfOk").onclick = () => { keepTxt(); if(st.t === null || st.c === null) return; closeDlg();
+      addToCart(a.id, st.t, {floc:st.floc, color:cols.length > 1 ? st.c : "", txt:st.floc ? [st.nom, st.num ? "n° " + st.num : ""].filter(Boolean).join(" · ") : ""}); };
   };
   draw();
 }
@@ -1033,7 +1083,7 @@ function openCheckout(){
     const now = new Date().toISOString();
     const stockLines = S.cart.filter(l => l.mode === "stock"), cmdLines = S.cart.filter(l => l.mode === "commande");
     const preLines = S.cart.filter(l => l.mode === "precommande");
-    const ligne = l => ({artId:l.artId, nom:l.nom, taille:l.taille || "", kind:l.kind || "resine", floc:!!l.floc, prix:l.prix, base:l.base, qte:l.qte, perso:(l.perso||"").trim()});
+    const ligne = l => ({artId:l.artId, nom:l.nom, taille:l.taille || "", color:l.color || "", kind:l.kind || "resine", floc:!!l.floc, prix:l.prix, base:l.base, qte:l.qte, perso:(l.perso||"").trim()});
     const nums = [];
     if(stockLines.length){
       const o = {id:uid(), num:S.settings.nextNum++, type:"vente", canal, date:now, client, statut:"livree",
@@ -1185,17 +1235,17 @@ function cancelOrders(ids){
 }
 
 /* Précommandes de merchandising d'une période (pour la page dédiée du journal) */
-const SIZE_ORDER = ["XS","S","M","L","XL","XXL","XXXL","4 ans","6 ans","8 ans","10 ans","12 ans","14 ans"];
+const SIZE_ORDER = ["4 ans","6 ans","8 ans","10 ans","12 ans","14 ans","XS","S","M","L","XL","XXL","XXXL"];
 function preOrders(du, au){
   return S.orders.filter(o => o.pre && o.statut !== "annulee" && dayOf(o.date) >= du && dayOf(o.date) <= au).sort((a,b) => a.date.localeCompare(b.date));
 }
 function preSynth(orders){
   const m = new Map();
   orders.forEach(o => o.lignes.forEach(l => {
-    const k = (l.artId || l.nom) + "|" + (l.taille || "");
-    const r = m.get(k) || {nom:l.nom, taille:l.taille || "", sans:0, avec:0};
+    const k = (l.artId || l.nom) + "|" + (l.taille || "") + "|" + (l.color || "");
+    const r = m.get(k) || {nom:l.nom, taille:l.taille || "", color:l.color || "", sans:0, avec:0};
     if(l.floc) r.avec += l.qte; else r.sans += l.qte; m.set(k, r); }));
-  return [...m.values()].sort((a,b) => a.nom.localeCompare(b.nom) || SIZE_ORDER.indexOf(a.taille) - SIZE_ORDER.indexOf(b.taille));
+  return [...m.values()].sort((a,b) => a.nom.localeCompare(b.nom) || a.color.localeCompare(b.color) || SIZE_ORDER.indexOf(a.taille) - SIZE_ORDER.indexOf(b.taille));
 }
 const flocTxt = l => l.floc ? (l.perso || "oui, sans texte") : "–";
 
@@ -1247,11 +1297,12 @@ function renderCatalogue(){
   ${v !== "dc" && k !== "merch" ? `<div class="rulebar"><span><b>Marge ${esc(CLUB())}</b> ${ruleText(r)} par article${+S.settings.arrondi ? ` · prix arrondi aux ${eur(S.settings.arrondi)} supérieurs` : ""}${!+S.settings.margeVal ? ` <span class="warnchip">à régler</span>` : ""}</span><button class="btn small ghost" id="ruleEdit">Modifier</button></div>` : ""}
   ${list.length ? `<div class="list">${list.map(a => `
     <div class="item"><img src="${a.photos[0] || ""}" alt="">
-      <div style="min-width:0"><div class="nm">${esc(a.nom)}</div>
+      <div style="min-width:0">${a.type ? `<div class="eyebrow">${esc(a.type)}</div>` : ""}<div class="nm">${esc(a.nom)}</div>
+        ${a.desc ? `<div class="dsc">${esc(a.desc)}</div>` : ""}
         <div class="meta">${canalPill(a.club ? "club" : "dc")}${kindPill(a)}<span>${esc(a.cat)}</span>
           ${isMerch(a) ? `<b class="num" style="color:var(--ink)">${eur(a.prix)}</b>` : a.club ? `<span class="num"><b style="color:var(--ink)">${eur(clubPrice(a))}</b> au club · ${eur(a.prix)} pour Dragonne Créa${a.marge ? " · marge propre" : ""}</span>` : `<b class="num" style="color:var(--ink)">${eur(a.prix)}</b>`}
           ${modeTag(a)}${a.exemple ? '<span class="tag ex">Exemple</span>' : ""}${a.actif ? "" : '<span class="tag ex">Masqué</span>'}</div>
-        ${hasSizes(a) ? (isPre(a) ? sizeChips(a) : `<details class="szdet"><summary>Stock par taille</summary>${sizeChips(a)}</details>`) : ""}</div>
+        ${colorLine(a)}${hasSizes(a) ? (isPre(a) ? sizeChips(a) : `<details class="szdet"><summary>Stock par taille</summary>${sizeChips(a)}</details>`) : ""}</div>
       <button class="btn small ghost" data-edit="${a.id}">Modifier</button></div>`).join("")}</div>`
   : `<div class="panel"><p class="muted">${cq ? `Aucun article ne correspond à « ${esc(cq)} ».` : "Aucun article ici. Ajoutez le premier avec sa photo et son prix."}</p></div>`}`;
   bindCanals(x => { S.catView = x; renderCatalogue(); });
@@ -1304,14 +1355,12 @@ function editArticle(id){
   const a0 = id ? art(id) : null;
   const a = a0 ? JSON.parse(JSON.stringify(a0)) : {id:uid(), nom:"", cat:"", prix:"", kind:S.catKind === "merch" ? "merch" : "resine", club:S.catKind === "merch" || (S.catView || S.settings.canal) === "club", marge:null, mode:"stock", stock:1, tailles:null, delai:7, photos:[], exemple:false, actif:true, cree:new Date().toISOString()};
   if(!a.kind) a.kind = "resine";
-  const GAMMES = {adulte:["XS","S","M","L","XL","XXL","XXXL"], enfant:["4 ans","6 ans","8 ans","10 ans","12 ans","14 ans"]};
-  const gammeOf = t => !Array.isArray(t) ? "unique" : t.some(z => GAMMES.enfant.includes(z.t)) ? "enfant" : "adulte";
   /* Génère toutes les tailles de la gamme, en gardant le stock déjà saisi */
   const withGamme = (g, cur) => { const old = new Map((cur || []).map(z => [z.t, z.stock]));
     const extra = (cur || []).filter(z => !GAMMES[g].includes(z.t) && z.stock > 0);
     return GAMMES[g].map(t => ({t, stock: old.get(t) || 0})).concat(extra); };
   if(Array.isArray(a.tailles)) a.tailles = withGamme(gammeOf(a.tailles), a.tailles);
-  if(!a0 && a.kind === "merch"){ a.mode = "precommande"; a.flocage = true; a.flocagePrix = 5; a.tailles = withGamme("adulte", null); }
+  if(!a0 && a.kind === "merch"){ a.mode = "precommande"; a.flocage = true; a.flocagePrix = 5; a.tailles = withGamme("mixte", null); }
   const cats = [...new Set(S.articles.map(x => x.cat))];
   const draw = () => {
     const own = !!a.marge, merch = a.kind === "merch", sized = merch && Array.isArray(a.tailles);
@@ -1334,8 +1383,12 @@ function editArticle(id){
         <label class="f">Catégorie *<input type="text" id="aCat" list="catList" value="${esc(a.cat)}" placeholder="ex. Porte-clés"><datalist id="catList">${cats.map(c => `<option value="${esc(c)}">`).join("")}</datalist></label>
         <label class="f">${merch ? "Prix de vente (€) *" : "Prix Dragonne Créa (€) *"} <span class="h">${merch ? "prix unique, toutes tailles" : a.club ? "ce que le club vous rembourse" : "prix de vente"}</span><input type="text" inputmode="decimal" id="aPrix" value="${a.prix === "" ? "" : numIn(a.prix)}"></label>
       </div>
-      ${merch ? `<div class="f" style="display:flex;flex-direction:column;gap:6px;font-weight:700;font-size:14px">Tailles
-        <div class="seg"><button type="button" data-gamme="unique" aria-pressed="${!sized}">Taille unique</button><button type="button" data-gamme="adulte" aria-pressed="${gammeOf(a.tailles) === "adulte"}">Adulte XS → XXXL</button><button type="button" data-gamme="enfant" aria-pressed="${gammeOf(a.tailles) === "enfant"}">Enfant 4 → 14 ans</button></div></div>
+      ${merch ? `<div class="fgrid"><label class="f">Modèle <span class="h">ex. T-shirt, Polo, Sac à dos</span><input type="text" id="aType" value="${esc(a.type || "")}"></label>
+          <label class="f">Matière<input type="text" id="aMat" value="${esc(a.matiere || "")}"></label>
+          <label class="f">Coloris <span class="h">séparés par des virgules</span><input type="text" id="aCol" value="${esc((a.coloris || []).join(", "))}" placeholder="ex. Noir, Blanc"></label></div>
+        <label class="f">Description<textarea id="aDesc" rows="3">${esc(a.desc || "")}</textarea></label>
+        <div class="f" style="display:flex;flex-direction:column;gap:6px;font-weight:700;font-size:14px">Tailles
+        <div class="seg"><button type="button" data-gamme="unique" aria-pressed="${!sized}">Taille unique</button><button type="button" data-gamme="mixte" aria-pressed="${gammeOf(a.tailles) === "mixte"}">Enfant + adulte</button><button type="button" data-gamme="adulte" aria-pressed="${gammeOf(a.tailles) === "adulte"}">Adulte XS → XXXL</button><button type="button" data-gamme="enfant" aria-pressed="${gammeOf(a.tailles) === "enfant"}">Enfant 4 → 14 ans</button></div></div>
         ${sized ? `<div class="sizeed"><p class="muted small" style="margin:0">Tailles proposées à la commande :</p>${sizeChips({...a, mode:"precommande"})}</div>` : ""}
         <div class="f" style="display:flex;flex-direction:column;gap:6px;font-weight:700;font-size:14px">Flocage
           <div class="seg"><button type="button" data-flo="1" aria-pressed="${!!a.flocage}">Proposé</button><button type="button" data-flo="0" aria-pressed="${!a.flocage}">Non proposé</button></div></div>
@@ -1358,6 +1411,8 @@ function editArticle(id){
       if($("#aStock")) a.stock = Math.max(0, parseInt($("#aStock").value)||0); if($("#aDelai")) a.delai = Math.max(0, parseInt($("#aDelai").value)||0);
       if($("#aMm")) a.marge = {mode:$("#aMm").value, val:parseNum($("#aMv").value)};
       if($("#aFp")) a.flocagePrix = parseNum($("#aFp").value);
+      if($("#aType")){ a.type = $("#aType").value.trim(); a.matiere = $("#aMat").value.trim(); a.desc = $("#aDesc").value.trim();
+        a.coloris = $("#aCol").value.split(",").map(x => x.trim()).filter(Boolean).map(x => x[0].toUpperCase() + x.slice(1)); }
       if(Array.isArray(a.tailles)) a.tailles = a.tailles.map((z,i) => $("#ts-" + i) ? {t:z.t, stock:Math.max(0, parseInt($("#ts-" + i).value)||0)} : z); };
     const ex = () => { const box = $("#aEx"); if(!box) return; keep();
       const base = parseNum(a.prix); if(!(base > 0)){ box.textContent = "Indiquez le prix pour voir le prix club."; return; }
@@ -1368,7 +1423,7 @@ function editArticle(id){
     ex();
     const ac = $("#aClub"); if(ac) ac.onchange = e => { keep(); a.club = e.target.checked; if(!a.club) a.marge = null; draw(); };
     document.querySelectorAll("[data-kd]").forEach(b => b.onclick = () => { keep(); a.kind = b.dataset.kd;
-      if(a.kind === "merch"){ a.club = true; a.marge = null; a.mode = "precommande"; if(a.flocage === undefined){ a.flocage = true; a.flocagePrix = 5; } if(!a0 && !Array.isArray(a.tailles)) a.tailles = withGamme("adulte", null); }
+      if(a.kind === "merch"){ a.club = true; a.marge = null; a.mode = "precommande"; if(a.flocage === undefined){ a.flocage = true; a.flocagePrix = 5; } if(!a0 && !Array.isArray(a.tailles)) a.tailles = withGamme("mixte", null); }
       else { a.tailles = null; if(a.mode === "precommande") a.mode = "stock"; } draw(); });
     document.querySelectorAll("[data-gamme]").forEach(b => b.onclick = () => { keep(); const g = b.dataset.gamme;
       a.tailles = g === "unique" ? null : withGamme(g, a.tailles); draw(); const f = $("#ts-0"); if(f && g !== "unique") f.focus(); });
@@ -1787,10 +1842,10 @@ async function journalPdf(du, au, cn){
       doc.line(L, y, R, y, line); y += 24;
     };
     const syn = preSynth(pres);
-    tbl("Synthèse par article et taille", [["Article", L, 0, 230, true], ["Taille", L + 250, 0, 70], ["Sans flocage", L + 390, "r"], ["Avec flocage", L + 460, "r"], ["Total", R - 4, "r", 0, true]],
-      syn.map(r => [r.nom, r.taille || "–", r.sans || "", r.avec || "", r.sans + r.avec]));
-    const det = pres.flatMap(o => o.lignes.map(l => [`${o.client.nom || "Client"}\n${o.client.tel || ""}`, o.num, l.nom, l.taille || "–", flocTxt(l), l.qte, eur(l.prix * l.qte)]));
-    tbl("Détail par client", [["Client", L, 0, 100, true], ["N°", L + 108, 0, 24], ["Article", L + 134, 0, 120], ["Taille", L + 258, 0, 48], ["Flocage (nom · n°)", L + 306, 0, 110, true], ["Qté", L + 446, "r"], ["Montant", R - 4, "r"]],
+    tbl("Synthèse par article, coloris et taille", [["Article", L, 0, 190, true], ["Coloris", L + 200, 0, 70], ["Taille", L + 275, 0, 60], ["Sans flocage", L + 400, "r"], ["Avec flocage", L + 465, "r"], ["Total", R - 4, "r", 0, true]],
+      syn.map(r => [r.nom, r.color || "–", r.taille || "–", r.sans || "", r.avec || "", r.sans + r.avec]));
+    const det = pres.flatMap(o => o.lignes.map(l => [`${o.client.nom || "Client"}\n${o.client.tel || ""}`, o.num, l.nom, l.color || "–", l.taille || "–", flocTxt(l), l.qte, eur(l.prix * l.qte)]));
+    tbl("Détail par client", [["Client", L, 0, 92, true], ["N°", L + 96, 0, 20], ["Article", L + 118, 0, 98], ["Coloris", L + 218, 0, 46], ["Taille", L + 266, 0, 40], ["Flocage (nom · n°)", L + 308, 0, 112, true], ["Qté", L + 446, "r"], ["Montant", R - 4, "r"]],
       det.map(r => r));
   }
   // Pied de page
@@ -1821,7 +1876,7 @@ function journalHTML(day, cn){
     <div class="tbl"><table><thead><tr><th>Heure</th><th>N°</th><th>Client</th><th>Circuit</th><th>Produits et flocage</th><th>Nature</th><th>Paiement</th><th class="r">Montant</th></tr></thead><tbody>
       ${pays.length ? pays.map(p => `<tr><td class="num">${frTime(p.date)}</td><td class="num">${p.o.num}</td>
         <td><b>${esc(p.o.client.nom || "Client de passage")}</b>${p.o.client.tel ? `<br><span class="pm">${esc(p.o.client.tel)}</span>` : ""}</td><td>${esc(p.o.canal === "club" ? CLUB() : "D. Créa")}</td>
-        <td>${p.o.lignes.map(l => `${l.qte > 1 ? l.qte + " × " : ""}${esc(l.nom)}${l.taille ? ` (${esc(l.taille)})` : ""}${l.floc ? ` · <b>floqué${l.perso ? ` « ${esc(l.perso)} »` : ""}</b>` : ""}${persoTxt(l) ? ` <span class="pm">– ${esc(persoTxt(l))}</span>` : ""}`).join("<br>")}</td>
+        <td>${p.o.lignes.map(l => `${l.qte > 1 ? l.qte + " × " : ""}${esc(l.nom)}${l.taille ? ` (${esc(l.taille)})` : ""}${l.color ? ` · ${esc(l.color)}` : ""}${l.floc ? ` · <b>floqué${l.perso ? ` « ${esc(l.perso)} »` : ""}</b>` : ""}${persoTxt(l) ? ` <span class="pm">– ${esc(persoTxt(l))}</span>` : ""}`).join("<br>")}</td>
         <td${p.montant < 0 ? ' class="neg"' : ""}>${NATURES[p.nature] || p.nature}</td><td><b class="${p.mode === "cb" ? "cb" : "esp"}">${MODES[p.mode] || "Espèces"}</b></td><td class="r num${p.montant < 0 ? " neg" : ""}"><b>${eur(p.montant)}</b></td></tr>`).join("")
       : `<tr><td colspan="8" class="pm">Aucun encaissement ce jour-là.</td></tr>`}
     </tbody></table></div>
@@ -1836,13 +1891,13 @@ function journalHTML(day, cn){
       return `<div class="sheetbreak"><span>Feuille 3</span></div>
       <h3>Précommandes merchandising</h3>
       <p class="pm" style="margin:0">${pres.length} précommande${pres.length > 1 ? "s" : ""} payée${pres.length > 1 ? "s" : ""} à la commande, à transmettre au club pour le suivi et la livraison.</p>
-      <h4 class="tl">Synthèse par article et taille</h4>
-      <div class="tbl"><table><thead class="tl"><tr><th>Article</th><th>Taille</th><th class="r">Sans flocage</th><th class="r">Avec flocage</th><th class="r">Total</th></tr></thead><tbody>
-        ${syn.map(r => `<tr><td><b>${esc(r.nom)}</b></td><td>${esc(r.taille || "–")}</td><td class="r num">${r.sans || ""}</td><td class="r num">${r.avec || ""}</td><td class="r num"><b>${r.sans + r.avec}</b></td></tr>`).join("")}
+      <h4 class="tl">Synthèse par article, coloris et taille</h4>
+      <div class="tbl"><table><thead class="tl"><tr><th>Article</th><th>Coloris</th><th>Taille</th><th class="r">Sans flocage</th><th class="r">Avec flocage</th><th class="r">Total</th></tr></thead><tbody>
+        ${syn.map(r => `<tr><td><b>${esc(r.nom)}</b></td><td>${esc(r.color || "–")}</td><td>${esc(r.taille || "–")}</td><td class="r num">${r.sans || ""}</td><td class="r num">${r.avec || ""}</td><td class="r num"><b>${r.sans + r.avec}</b></td></tr>`).join("")}
       </tbody></table></div>
       <h4 class="tl">Détail par client</h4>
-      <div class="tbl"><table><thead class="tl"><tr><th>Client</th><th>N°</th><th>Article</th><th>Taille</th><th>Flocage (nom · n°)</th><th class="r">Qté</th><th class="r">Montant</th></tr></thead><tbody>
-        ${pres.flatMap(o => o.lignes.map(l => `<tr><td><b>${esc(o.client.nom || "Client")}</b>${o.client.tel ? `<br><span class="pm">${esc(o.client.tel)}</span>` : ""}</td><td class="num">${o.num}</td><td>${esc(l.nom)}</td><td>${esc(l.taille || "–")}</td><td>${l.floc ? `<b>${esc(l.perso || "oui, sans texte")}</b>` : "–"}</td><td class="r num">${l.qte}</td><td class="r num">${eur(l.prix * l.qte)}</td></tr>`)).join("")}
+      <div class="tbl"><table><thead class="tl"><tr><th>Client</th><th>N°</th><th>Article</th><th>Coloris</th><th>Taille</th><th>Flocage (nom · n°)</th><th class="r">Qté</th><th class="r">Montant</th></tr></thead><tbody>
+        ${pres.flatMap(o => o.lignes.map(l => `<tr><td><b>${esc(o.client.nom || "Client")}</b>${o.client.tel ? `<br><span class="pm">${esc(o.client.tel)}</span>` : ""}</td><td class="num">${o.num}</td><td>${esc(l.nom)}</td><td>${esc(l.color || "–")}</td><td>${esc(l.taille || "–")}</td><td>${l.floc ? `<b>${esc(l.perso || "oui, sans texte")}</b>` : "–"}</td><td class="r num">${l.qte}</td><td class="r num">${eur(l.prix * l.qte)}</td></tr>`)).join("")}
       </tbody></table></div>`; })()}
   </div>`;
 }
@@ -1975,8 +2030,8 @@ function bestSellers(du, au, cn){
   const m = new Map();
   S.orders.forEach(o => { if(o.statut === "annulee") return; if(cn && cn !== "tous" && o.canal !== cn) return;
     const d = dayOf(o.date); if(d < du || d > au) return;
-    o.lignes.forEach(l => { const k = (l.artId || ("nom:" + l.nom)) + "|" + (l.taille || "") + (l.floc ? "|f" : "");
-      const r = m.get(k) || {nom:l.nom, tz:l.taille || "", taille:(l.taille || "") + (l.floc ? (l.taille ? " · " : "") + "floqué" : ""), kind:l.kind || "resine", canal:o.canal, qte:0, ca:0, artId:l.artId};
+    o.lignes.forEach(l => { const k = (l.artId || ("nom:" + l.nom)) + "|" + (l.taille || "") + "|" + (l.color || "") + (l.floc ? "|f" : "");
+      const r = m.get(k) || {nom:l.nom, tz:l.taille || "", taille:[l.taille, l.color, l.floc ? "floqué" : ""].filter(Boolean).join(" · "), kind:l.kind || "resine", canal:o.canal, qte:0, ca:0, artId:l.artId};
       r.qte += l.qte; r.ca = r2(r.ca + l.prix * l.qte); m.set(k, r); }); });
   return [...m.values()].map(r => { const a = r.artId && art(r.artId);
     return {...r, nom:a ? a.nom : r.nom, stock: a && a.mode === "stock" ? stockOf(a, r.tz) : null}; })
